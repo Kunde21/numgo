@@ -1,10 +1,6 @@
 package numgo
 
-import (
-	"fmt"
-	"math"
-	"testing"
-)
+import "testing"
 
 func TestCreate(t *testing.T) {
 	shp := []int{2, 3, 4}
@@ -58,29 +54,4 @@ func TestArange(t *testing.T) {
 			t.Logf("Value %f.  Expected %d\n", v, i)
 		}
 	}
-}
-
-func TestAdd(t *testing.T) {
-	a, b := Arange(20), Arange(20)
-	a.Add(b)
-	fmt.Println(a.Add(b.Reshape(2, 10)))
-	fmt.Println(Arange(20).Reshape(2, 10).Add(b.Reshape(2, 10)))
-	fmt.Println(Arange(20))
-	fmt.Println(Arange(20).Reshape(2, 10))
-	fmt.Println(Arange(20).Reshape(2, 2, 5).Add(Arange(5)))
-}
-
-func TestSubtr(t *testing.T) {
-	fmt.Println(Arange(20).Reshape(2, 10).Subtr(Arange(10)))
-	fmt.Println(Arange(20).Reshape(2, 10).Subtr(Arange(10)))
-	fmt.Println(Arange(20).Reshape(2, 2, 5).Subtr(Arange(5)))
-	fmt.Println(Arange(20).Reshape(2, 1, 1, 2, 5).Subtr(Arange(5)))
-}
-
-func TestMult(t *testing.T) {
-	a := Arange(1, 100, .5)
-	fmt.Println(a)
-	a = Full(math.NaN(), 4, 4)
-	fmt.Println(a)
-
 }

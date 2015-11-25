@@ -6,16 +6,16 @@ import (
 	"sync"
 )
 
-type Arrayf struct {
+type Arrayb struct {
 	sync.RWMutex
 	shape   []uint64
 	strides []uint64
-	data    []float64
+	data    []bool
 }
 
 // Create creates an Arrayf object with dimensions given in order from outer-most to inner-most
 // All values will default to zero
-func Create(shape ...int) (a *Arrayf) {
+func Createb(shape ...int) (a *Arrayb) {
 	var sz uint64 = 1
 	sh := make([]uint64, len(shape))
 	for i, v := range shape {
@@ -26,9 +26,9 @@ func Create(shape ...int) (a *Arrayf) {
 		sh[i] = uint64(v)
 	}
 
-	a = new(Arrayf)
+	a = new(Arrayb)
 	a.shape = sh
-	a.data = make([]float64, sz)
+	a.data = make([]bool, sz)
 
 	a.strides = make([]uint64, len(sh)+1)
 	tmp := uint64(1)
@@ -41,7 +41,7 @@ func Create(shape ...int) (a *Arrayf) {
 }
 
 // Internal function to create using the shape of another array
-func create(shape ...uint64) (a *Arrayf) {
+func createb(shape ...uint64) (a *Arrayb) {
 	var sz uint64 = 1
 	sh := make([]uint64, len(shape))
 	for i, v := range shape {
@@ -52,9 +52,9 @@ func create(shape ...uint64) (a *Arrayf) {
 		sh[i] = uint64(v)
 	}
 
-	a = new(Arrayf)
+	a = new(Arrayb)
 	a.shape = sh
-	a.data = make([]float64, sz)
+	a.data = make([]bool, sz)
 
 	a.strides = make([]uint64, len(sh)+1)
 	tmp := uint64(1)
@@ -68,26 +68,32 @@ func create(shape ...uint64) (a *Arrayf) {
 
 // Full creates an Arrayf object with dimensions givin in order from outer-most to inner-most
 // All elements will be set to 'val' in the retuen
-func Full(val float64, shape ...int) (a *Arrayf) {
-	a = Create(shape...)
+func Fullb(val bool, shape ...int) (a *Arrayb) {
+	a = Createb(shape...)
 	if a == nil {
 		return nil
 	}
-	a.AddC(val)
+
+	for i := 0; i < len(a.data); i++ {
+		a.data[i] = val
+	}
 	return
 }
 
-func full(val float64, shape ...uint64) (a *Arrayf) {
-	a = create(shape...)
+func fullb(val bool, shape ...uint64) (a *Arrayb) {
+	a = createb(shape...)
 	if a == nil {
 		return nil
 	}
-	a.AddC(val)
+
+	for i := 0; i < len(a.data); i++ {
+		a.data[i] = val
+	}
 	return
 }
 
 // String Satisfies the Stringer interface for fmt package
-func (a *Arrayf) String() (s string) {
+func (a *Arrayb) String() (s string) {
 
 	a.RLock()
 	defer a.RUnlock()
@@ -124,47 +130,10 @@ func (a *Arrayf) String() (s string) {
 	return
 }
 
-// Arange Creates an array in one of three different ways, depending on input:
-// One (stop):         Arrayf from zero to positive value or negative value to zero
-// Two (start,stop):   Arrayf from start to stop, with increment of 1 or -1, depending on inputs
-// Three (start, stop, step): Arrayf from start to stop, with increment of step
-//
-// Any inputs beyond three values are ignored
-func Arange(vals ...float64) (a *Arrayf) {
-	var start, stop, step float64 = 0, 0, 1
-
-	switch len(vals) {
-	case 0:
-		return nil
-	case 1:
-		if vals[0] <= 0 {
-			start, stop, step = vals[0], 0, -1
-		} else {
-			stop = vals[0]
-		}
-	case 2:
-		if vals[1] < vals[0] {
-			step = -1
-		}
-		start, stop = vals[0], vals[1]
-	default:
-		if vals[1] < vals[0] && vals[2] >= 0 || vals[1] > vals[0] && vals[2] <= 0 {
-			return nil
-		}
-		start, stop, step = vals[0], vals[1], vals[2]
-	}
-
-	a = Create(int((stop - start) / step))
-	for i, v := 0, start; i < len(a.data); i, v = i+1, v+step {
-		a.data[i] = v
-	}
-	return
-}
-
 // Reshape Changes the size of the array axes.  Values are not changed or moved.
 // This must not change the size of the array.
 // Incorrect dimensions will return a nil pointer
-func (a *Arrayf) Reshape(shape ...int) *Arrayf {
+func (a *Arrayb) Reshape(shape ...int) *Arrayb {
 	if a == nil {
 		return nil
 	}
@@ -199,12 +168,12 @@ func (a *Arrayf) Reshape(shape ...int) *Arrayf {
 }
 
 // C will return a deep copy of the source array.
-func (a *Arrayf) C() (b *Arrayf) {
+func (a *Arrayb) C() (b *Arrayb) {
 	if a == nil {
 		return nil
 	}
 
-	b = create(a.shape...)
+	b = createb(a.shape...)
 	for i, v := range a.data {
 		b.data[i] = v
 	}
