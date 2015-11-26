@@ -5,7 +5,53 @@ import (
 	"sort"
 )
 
-// Any will return true if any element is non-zero, false otherwise.
+// cleanAxis removes any duplicate axes and returns the cleaned slice.
+// only the first instance of an axis is retained.
+func cleanAxis(axis ...int) []int {
+	if len(axis) < 2 {
+		return axis
+	}
+	length := len(axis) - 1
+	for i := 0; i < length; i++ {
+		for j := i + 1; j <= length; j++ {
+			if axis[i] == axis[j] {
+				if j == length {
+					axis = axis[:j]
+				} else {
+					axis = append(axis[:j], axis[j+1:]...)
+				}
+				length--
+				j--
+			}
+		}
+	}
+	return axis
+}
+
+func (a *Arrayf) Collapse(axis ...int) *Arrayf {
+	if a == nil {
+		return nil
+	}
+
+	if len(axis) == 0 {
+		return a
+	}
+	axis = cleanAxis(axis...)
+
+	t := make([]int, len(axis))
+	copy(t, axis)
+
+	span := 1
+	for _, v := range axis {
+		span *= v
+
+	}
+
+	return a
+}
+
+// Sum calculates the sum result array along a given axes.
+// Empty call gives the grand sum of all elements.
 func (a *Arrayf) Sum(axis ...int) *Arrayf {
 	if a == nil {
 		return nil
@@ -18,6 +64,8 @@ func (a *Arrayf) Sum(axis ...int) *Arrayf {
 		}
 		return Full(tot, 1)
 	}
+
+	axis = cleanAxis(axis...)
 
 	//Validate input
 	for _, v := range axis {
@@ -45,12 +93,16 @@ func (a *Arrayf) Sum(axis ...int) *Arrayf {
 
 	t := a.data
 	for i := 0; i < len(axis); i++ {
+		fmt.Println("Axis:", axis[i])
 
 		maj, min := a.strides[axis[i]], a.strides[axis[i]+1]
 
 		for j := uint64(0); j+maj <= uint64(len(t)); j += maj {
 			for k := j; k < j+min; k += 1 {
 				for z := k + min; z < j+maj; z += min {
+					if k == 0 {
+						fmt.Println(z)
+					}
 					t[k] += t[z]
 				}
 			}
@@ -84,10 +136,13 @@ func (a *Arrayf) Count(axis ...int) *Arrayf {
 		return nil
 	}
 
+	axis = cleanAxis(axis...)
+
 	ret := full(1, a.shape...).Sum(axis...)
 	return ret
 }
 
 func (a *Arrayf) Mean(axis ...int) *Arrayf {
+	axis = cleanAxis(axis...)
 	return a.C().Sum(axis...).Div(a.Count(axis...))
 }
