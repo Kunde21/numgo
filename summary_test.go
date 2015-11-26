@@ -79,13 +79,15 @@ func BenchmarkCollapse(b *testing.B) {
 	}
 }
 
-func BenchmarkMapSum(b *testing.B) {
+func BenchmarkMapMean(b *testing.B) {
 	a := Arange(2*3*4*5*6*7*8*9*10).Reshape(2, 3, 4, 5, 6, 7, 8, 9, 10)
 	sm := func(d []float64) (r float64) {
+		i := 0
 		for _, v := range d {
 			r += v
+			i++
 		}
-		return r
+		return r / float64(i)
 	}
 
 	if !a.C().Sum(1, 3, 5, 7).Equals(a.Map(sm, 1, 3, 5, 7)).All().data[0] {
@@ -102,13 +104,15 @@ func BenchmarkMapSum(b *testing.B) {
 func BenchmarkMapCCSum(b *testing.B) {
 	a := Arange(2*3*4*5*6*7*8*9*10).Reshape(2, 3, 4, 5, 6, 7, 8, 9, 10)
 	sm := func(d []float64) (r float64) {
+		i := 0
 		for _, v := range d {
 			r += v
+			i++
 		}
-		return r
+		return r / float64(i)
 	}
 
-	if !a.C().Sum(1, 3, 5, 7).Equals(a.Map(sm, 1, 3, 5, 7)).All().data[0] {
+	if !a.C().Mean(1, 3, 5, 7).Equals(a.Map(sm, 1, 3, 5, 7)).All().data[0] {
 		b.FailNow()
 	}
 
@@ -119,12 +123,12 @@ func BenchmarkMapCCSum(b *testing.B) {
 	}
 }
 
-func BenchmarkSum(b *testing.B) {
+func BenchmarkMean(b *testing.B) {
 	a := Arange(2*3*4*5*6*7*8*9*10).Reshape(2, 3, 4, 5, 6, 7, 8, 9, 10)
 
 	b.ReportAllocs()
 	b.ResetTimer()
 	for i := 0; i < b.N; i++ {
-		a.C().Sum(1, 3, 5, 7)
+		a.Mean(1, 3, 5, 7)
 	}
 }
