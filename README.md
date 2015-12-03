@@ -13,11 +13,11 @@ go get github.com/Kunde21/numgo
 Most of the functionality resembles numpy's API, with some changes to work with Go's type system.  
 
 ```go
-var array := numgo.Create(/*shape of the array*/1,2,3)  // This will be filled with zeros by default
+var array := numgo.Create(/*shape of the array*/1,2,3)	// This will be filled with zeros by default
 var arange := numgo.Arange(100)                         // Simple 1-D array filled with incrementing numbers
 arange.Reshape(2,5,10)                                  // Changes the shape from 1-D to 3-D
-arange.Mean(2)                                          // Takes the mean across axis 2, returning a 2-D (2x5) array
-arange.Sum()						// An empty call operates over all data on all axes
+arange.Mean(2)                                          // Mean across axis 2, returning a 2-D (2x5) array
+arange.Sum()                                            // An empty call operates over all data on all axes
 ```
 
 Any formula can be created and mapped onto one or more axes within the array:
