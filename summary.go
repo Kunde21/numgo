@@ -60,9 +60,7 @@ func (a *Arrayf) Sum(axis ...int) *Arrayf {
 
 		j := uint64(1)
 		for ; j < uint64(len(t))/maj; j++ {
-			a := t[j*min : (j+1)*min]
-			b := t[j*maj : j*maj+min]
-			copy(a, b)
+			copy(t[j*min:(j+1)*min], t[j*maj:j*maj+min])
 		}
 
 		t = append(t[:0], t[0:j*min]...)
@@ -83,6 +81,10 @@ func (a *Arrayf) Sum(axis ...int) *Arrayf {
 // Count calculates the number of values along a given axes.
 // Empty call gives the total number of elements.
 func (a *Arrayf) NaNSum(axis ...int) *Arrayf {
+
+	a.Lock()
+	defer a.Unlock()
+
 	if a == nil {
 		return nil
 	}
@@ -140,12 +142,10 @@ func (a *Arrayf) NaNSum(axis ...int) *Arrayf {
 
 		j := uint64(1)
 		for ; j < uint64(len(t))/maj; j++ {
-			a := t[j*min : (j+1)*min]
-			b := t[j*maj : j*maj+min]
-			copy(a, b)
+			copy(t[j*min:(j+1)*min], t[j*maj:j*maj+min])
 		}
 
-		t = append(t[:0], t[0:j*min]...)
+		t = t[:j*min]
 	}
 	a.data = t
 	a.shape = n
@@ -253,7 +253,15 @@ func (a *Arrayf) NaNCount(axis ...int) *Arrayf {
 	return a
 }
 
+// Mean calculates the mean across the given axes
 func (a *Arrayf) Mean(axis ...int) *Arrayf {
 	axis = cleanAxis(axis...)
 	return a.C().Sum(axis...).Div(a.Count(axis...))
+}
+
+// NaNMean calculates the mean across the given axes
+// NaN values are ignored in this calculation
+func (a *Arrayf) NaNMean(axis ...int) *Arrayf {
+	axis = cleanAxis(axis...)
+	return a.C().NaNSum(axis...).Div(a.NaNCount(axis...))
 }

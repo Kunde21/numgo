@@ -66,11 +66,20 @@ func TestCollapse(t *testing.T) {
 	} else {
 		fmt.Println("Success on 3 Axis.")
 	}
-	fmt.Println(2 * 3 * 4 * 5 * 6 * 7 * 8 * 9 * 10)
+	fmt.Println(2 * 3 * 4 * 5 * 6 * 7 * 8 * 9 * 10 * 11)
+	fmt.Println(Arange(2*3*4*5*6*7*8*9*10*11).Reshape(2, 3, 4, 5, 6, 7, 8, 9, 10, 11).Count(1, 3, 5, 7).strides[0])
+}
+
+func TestNanMean(t *testing.T) {
+	a := Arange(2*3*4*5).Reshape(2, 3, 4, 5)
+	if !a.Mean(1, 3).Equals(a.NaNMean(1, 3)).All().data[0] {
+		t.Log("NaNMean producing different results than Mean")
+		t.FailNow()
+	}
 }
 
 func BenchmarkCollapse(b *testing.B) {
-	a := Arange(2*3*4*5*6*7*8*9*10).Reshape(2, 3, 4, 5, 6, 7, 8, 9, 10)
+	a := Arange(2*3*4*5*6*7*8*9*10*11).Reshape(2, 3, 4, 5, 6, 7, 8, 9, 10, 11)
 
 	b.ReportAllocs()
 	b.ResetTimer()
@@ -80,7 +89,7 @@ func BenchmarkCollapse(b *testing.B) {
 }
 
 func BenchmarkMapMean(b *testing.B) {
-	a := Arange(2*3*4*5*6*7*8*9*10).Reshape(2, 3, 4, 5, 6, 7, 8, 9, 10)
+	a := Arange(2*3*4*5*6*7*8*9*10*11).Reshape(2, 3, 4, 5, 6, 7, 8, 9, 10, 11)
 	sm := func(d []float64) (r float64) {
 		i := 0
 		for _, v := range d {
@@ -102,7 +111,7 @@ func BenchmarkMapMean(b *testing.B) {
 }
 
 func BenchmarkMapCCSum(b *testing.B) {
-	a := Arange(2*3*4*5*6*7*8*9*10).Reshape(2, 3, 4, 5, 6, 7, 8, 9, 10)
+	a := Arange(2*3*4*5*6*7*8*9*10*11).Reshape(2, 3, 4, 5, 6, 7, 8, 9, 10, 11)
 	sm := func(d []float64) (r float64) {
 		i := 0
 		for _, v := range d {
@@ -124,7 +133,7 @@ func BenchmarkMapCCSum(b *testing.B) {
 }
 
 func BenchmarkMean(b *testing.B) {
-	a := Arange(2*3*4*5*6*7*8*9*10).Reshape(2, 3, 4, 5, 6, 7, 8, 9, 10)
+	a := Arange(2*3*4*5*6*7*8*9*10*11).Reshape(2, 3, 4, 5, 6, 7, 8, 9, 10, 11)
 
 	b.ReportAllocs()
 	b.ResetTimer()
