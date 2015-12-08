@@ -74,6 +74,8 @@ func TestNanMean(t *testing.T) {
 	a := Arange(2*3*4*5).Reshape(2, 3, 4, 5)
 	if !a.Mean(1, 3).Equals(a.NaNMean(1, 3)).All().data[0] {
 		t.Log("NaNMean producing different results than Mean")
+		t.Log(a.Mean(1, 3))
+		t.Log(a.NaNMean(1, 3))
 		t.FailNow()
 	}
 }
