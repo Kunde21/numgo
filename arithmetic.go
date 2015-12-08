@@ -9,20 +9,26 @@ import (
 // Arrays must be the same size or able to broadcast.
 // This will modify the source array.
 func (a *Arrayf) Add(b *Arrayf) *Arrayf {
-	if a == nil {
+	a.RLock()
+	switch {
+	case a.err != nil:
+		return nil
+	case a == nil:
+		a.err = NilError
 		return nil
 	}
+	a.RUnlock()
 
 	a.Lock()
 	defer a.Unlock()
 
 	if len(a.shape) < len(b.shape) {
-		fmt.Println("Base array must have as many or more dimensions", a.shape, "<", b.shape)
+		a.err = ShapeError
 		return nil
 	}
 	for i, j := len(b.shape)-1, len(a.shape)-1; i >= 0; i, j = i-1, j-1 {
 		if a.shape[j] != b.shape[i] {
-			fmt.Println("Base array must have as many or more dimensions", a.shape, "<", b.shape)
+			a.err = ShapeError
 			return nil
 		}
 	}
@@ -44,9 +50,15 @@ func (a *Arrayf) Add(b *Arrayf) *Arrayf {
 
 // AddC adds a constant to all elements of the array.
 func (a *Arrayf) AddC(b float64) *Arrayf {
-	if a == nil {
+	a.RLock()
+	switch {
+	case a.err != nil:
+		return nil
+	case a == nil:
+		a.err = NilError
 		return nil
 	}
+	a.RUnlock()
 
 	a.Lock()
 	defer a.Unlock()

@@ -58,7 +58,8 @@ func TestEquals(t *testing.T) {
 
 func TestA(t *testing.T) {
 	a := Create(2, 3, 4, 5)
-	fmt.Println(a.Equals(Arange(5*4*3*2).Reshape(2, 3, 4, 5)))
+	b := a.Equals(Arange(5*4*3*2).Reshape(2, 3, 4, 5))
+	fmt.Println(b.shape)
 	fmt.Println(a.Equals(Arange(5*4*3*2).Reshape(2, 3, 4, 5)).Any(0, 2))
 	fmt.Println(a.Equals(Arange(5*4*3*2).Reshape(2, 3, 4, 5)).All(0, 2))
 	fmt.Println(a.Equals(Create(2, 3, 4, 5)).Any(0, 3))

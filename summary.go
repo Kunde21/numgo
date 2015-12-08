@@ -78,27 +78,36 @@ func (a *Arrayf) Sum(axis ...int) *Arrayf {
 	return a
 }
 
-// Count calculates the number of values along a given axes.
-// Empty call gives the total number of elements.
+// NaNSum calculates the sum result array along a given axes.
+// All NaN values will be ignored in the Sum calculation.
+// If all element values along the axis are NaN, NaN is in the return element.
+//
+// Empty call gives the grand sum of all elements.
 func (a *Arrayf) NaNSum(axis ...int) *Arrayf {
-
 	if a == nil {
 		return nil
 	}
+
 	ns := func(d []float64) (r float64) {
+		flag := false
 		for _, v := range d {
 			if !math.IsNaN(v) {
+				flag = true
 				r += v
 			}
 		}
-		return r
+		if flag {
+			return r
+		}
+		return math.NaN()
 	}
 
 	return a.Map(ns, axis...)
 
 }
 
-// Any will return true if any element is non-zero, false otherwise.
+// Count gives the number of elements along a set of axis.
+// Value in the element is not tested, all elements are counted.
 func (a *Arrayf) Count(axis ...int) *Arrayf {
 	if a == nil {
 		return nil
@@ -108,12 +117,27 @@ func (a *Arrayf) Count(axis ...int) *Arrayf {
 	}
 
 	axis = cleanAxis(axis...)
-	ret := full(1, a.shape...).Sum(axis...)
-
-	return ret
+	tAxis := make([]uint64, len(a.shape)-len(axis))
+	cnt := uint64(1)
+	for i, t := 0, 0; i < len(a.shape); i++ {
+		tmp := false
+		for _, w := range axis {
+			if i == w {
+				tmp = true
+				break
+			}
+		}
+		if !tmp {
+			tAxis[t] = a.shape[i]
+			t++
+		} else {
+			cnt *= a.shape[i]
+		}
+	}
+	return full(float64(cnt), tAxis...)
 }
 
-// Count calculates the number of values along a given axes.
+// NaNCount calculates the number of values along a given axes.
 // Empty call gives the total number of elements.
 func (a *Arrayf) NaNCount(axis ...int) *Arrayf {
 	if a == nil {
@@ -131,15 +155,16 @@ func (a *Arrayf) NaNCount(axis ...int) *Arrayf {
 	return a.Map(nc, axis...)
 }
 
-// Mean calculates the mean across the given axes
+// Mean calculates the mean across the given axes.
+// NaN values in the dataa will result in NaN result elements.
 func (a *Arrayf) Mean(axis ...int) *Arrayf {
 	axis = cleanAxis(axis...)
 	return a.C().Sum(axis...).Div(a.Count(axis...))
 }
 
-// NaNMean calculates the mean across the given axes
-// NaN values are ignored in this calculation
+// NaNMean calculates the mean across the given axes.
+// NaN values are ignored in this calculation.
 func (a *Arrayf) NaNMean(axis ...int) *Arrayf {
 	axis = cleanAxis(axis...)
-	return a.C().NaNSum(axis...).Div(a.NaNCount(axis...))
+	return a.NaNSum(axis...).Div(a.NaNCount(axis...))
 }

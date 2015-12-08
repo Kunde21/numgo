@@ -27,8 +27,8 @@ func cleanAxis(axis ...int) []int {
 	return axis
 }
 
-// collapse will reorganize data to put element data in continuous sections of data
-// returned Arrayf must call reform after calculation to create a valid array object
+// collapse will reorganize data by putting element dataset in continuous sections of data slice.
+// Returned Arrayf must be condensed with a summary calculation to create a valid array object.
 func (a *Arrayf) collapse(axis ...int) (uint64, *Arrayf) {
 	if a == nil {
 		return 0, nil
@@ -163,7 +163,7 @@ func (a *Arrayf) collapse(axis ...int) (uint64, *Arrayf) {
 }
 
 // MapCC applies function f along the given axes concurrently. Each call to f will launch a goroutine.
-// In order to leverage this concurrency, MapCC should only be used for complex functions.
+// In order to leverage this concurrency, MapCC should only be used for complex and CPU-heavy functions.
 //
 // Simple functions should use Map(f, axes...), as it's more performant.
 func (a *Arrayf) MapCC(f MapFunc, axis ...int) (ret *Arrayf) {
@@ -194,7 +194,7 @@ func (a *Arrayf) MapCC(f MapFunc, axis ...int) (ret *Arrayf) {
 
 // Map applies function f along the given axes.
 // Slice containing all data to be consolidated into an element will be passed to f.
-// Return value will be the resulting element's
+// Return value will be the resulting element's value.
 func (a *Arrayf) Map(f MapFunc, axis ...int) (ret *Arrayf) {
 	span, ret := a.collapse(axis...)
 	for i := uint64(0); i+span <= a.strides[0]; i += span {

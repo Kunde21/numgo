@@ -1,6 +1,9 @@
 package numgo
 
-import "testing"
+import (
+	"fmt"
+	"testing"
+)
 
 func TestCreate(t *testing.T) {
 	shp := []int{2, 3, 4}
@@ -54,4 +57,27 @@ func TestArange(t *testing.T) {
 			t.Logf("Value %f.  Expected %d\n", v, i)
 		}
 	}
+}
+
+func TestIdent(t *testing.T) {
+	tmp := Identity(0)
+	if len(tmp.shape) != 2 {
+		t.Log("Incorrect identity shape.", tmp.shape)
+		t.Fail()
+	}
+	if tmp.shape[0] != 0 || tmp.shape[1] != 0 {
+		t.Log("Incorrect shape values.", tmp.shape)
+		t.Fail()
+	}
+	if len(tmp.data) > 0 {
+		t.Log("Data array incorrect.", tmp.data)
+		t.Fail()
+	}
+}
+
+func TestSubArray(t *testing.T) {
+	a := Arange(100).Reshape(2, 5, 10)
+	b := Arange(50).Reshape(5, 10)
+	fmt.Println(*a.SubArr(0).Equals(b).All().E(0))
+
 }

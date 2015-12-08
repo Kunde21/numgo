@@ -18,12 +18,10 @@ func (a *Arrayf) Equals(b *Arrayf) (r *Arrayb) {
 	defer b.RUnlock()
 
 	if len(a.shape) < len(b.shape) {
-		fmt.Println("Base array must have as many or more dimensions", a.shape, "<", b.shape)
 		return nil
 	}
 	for i, j := len(b.shape)-1, len(a.shape)-1; i >= 0; i, j = i-1, j-1 {
 		if a.shape[j] != b.shape[i] {
-			fmt.Println("Base array must have as many or more dimensions", a.shape, "<", b.shape)
 			return nil
 		}
 	}
