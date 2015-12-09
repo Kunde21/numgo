@@ -20,8 +20,12 @@ func TestAdd(t *testing.T) {
 	}
 
 	a = Arange(20).Reshape(2, 2, 5).Add(Arange(5))
-	//for i := 0; i < a.strides[0]; i += a.shape[len(a.shape)-1] {
-
+	for i, v := range a.data {
+		if int(v) != i%5*2+i/5*5 {
+			t.Log("Incorrect result at:", i, "Expected", i%5*2+i/5*5, "Got", v)
+			t.Fail()
+		}
+	}
 }
 
 func TestSubtr(t *testing.T) {

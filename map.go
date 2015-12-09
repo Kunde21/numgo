@@ -2,6 +2,8 @@ package numgo
 
 import "sort"
 
+// MapFunc can be received by Map and MapCC to apply as a summary function
+// across one or multiple axes.
 type MapFunc func([]float64) float64
 
 // cleanAxis removes any duplicate axes and returns the cleaned slice.
@@ -167,6 +169,18 @@ func (a *Arrayf) collapse(axis ...int) (uint64, *Arrayf) {
 //
 // Simple functions should use Map(f, axes...), as it's more performant.
 func (a *Arrayf) MapCC(f MapFunc, axis ...int) (ret *Arrayf) {
+	if a.err != nil {
+		return nil
+	}
+	if a == nil {
+		a.err = NilError
+		return nil
+	}
+
+	axis = cleanAxis(axis...)
+	if len(axis) == 0 {
+		return a.C()
+	}
 
 	type rt struct {
 		index uint64
@@ -196,6 +210,19 @@ func (a *Arrayf) MapCC(f MapFunc, axis ...int) (ret *Arrayf) {
 // Slice containing all data to be consolidated into an element will be passed to f.
 // Return value will be the resulting element's value.
 func (a *Arrayf) Map(f MapFunc, axis ...int) (ret *Arrayf) {
+	if a.err != nil {
+		return nil
+	}
+	if a == nil {
+		a.err = NilError
+		return nil
+	}
+
+	axis = cleanAxis(axis...)
+	if len(axis) == 0 {
+		return a.C()
+	}
+
 	span, ret := a.collapse(axis...)
 	for i := uint64(0); i+span <= a.strides[0]; i += span {
 		ret.data[i/span] = f(ret.data[i : i+span])

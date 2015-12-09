@@ -99,14 +99,9 @@ func (a *Arrayb) String() (s string) {
 	a.RLock()
 	defer a.RUnlock()
 
-	fmt.Println("Start", a.strides)
-
-	if a.HasErr() {
-		fmt.Println("Err", a.HasErr())
-		fmt.Println(a.GetErr())
-		return a.err.Error()
+	if a.err != nil {
+		return a.err.s
 	}
-	fmt.Println("empty", a.strides)
 	if a.strides[0] == 0 {
 		return "[]"
 	}
@@ -115,16 +110,10 @@ func (a *Arrayb) String() (s string) {
 		a.err = NilError
 		return ""
 	}
-
-	fmt.Println("PreLoop")
-
 	stride := a.strides[len(a.strides)-2]
-
-	fmt.Println("LoopStart", a.strides)
 
 	for i, k := uint64(0), 0; i+stride < uint64(len(a.data)); i, k = i+stride, k+1 {
 
-		fmt.Println("Start")
 		t := ""
 		for j, v := range a.strides {
 			if i%v == 0 && j < len(a.strides)-2 {
@@ -134,8 +123,6 @@ func (a *Arrayb) String() (s string) {
 
 		s += strings.Repeat(" ", len(a.shape)-len(t)-1) + t
 		s += fmt.Sprint(a.data[i : i+stride])
-
-		fmt.Println("Second")
 		t = ""
 		for j, v := range a.strides {
 			if (i+stride)%v == 0 && j < len(a.strides)-2 {
@@ -143,7 +130,6 @@ func (a *Arrayb) String() (s string) {
 			}
 		}
 
-		fmt.Println("Third")
 		s += t + strings.Repeat(" ", len(a.shape)-len(t)-1)
 		if i+stride != uint64(len(a.data)) {
 			s += "\n"
@@ -159,7 +145,11 @@ func (a *Arrayb) String() (s string) {
 // This must not change the size of the array.
 // Incorrect dimensions will return a nil pointer
 func (a *Arrayb) Reshape(shape ...int) *Arrayb {
+	if a.err != nil {
+		return nil
+	}
 	if a == nil {
+		a.err = NilError
 		return nil
 	}
 
@@ -169,7 +159,8 @@ func (a *Arrayb) Reshape(shape ...int) *Arrayb {
 	var sz uint64 = 1
 	sh := make([]uint64, len(shape))
 	for i, v := range shape {
-		if v <= 0 {
+		if v < 0 {
+			a.err = NegativeAxis
 			return nil
 		}
 		sz *= uint64(v)
@@ -177,6 +168,7 @@ func (a *Arrayb) Reshape(shape ...int) *Arrayb {
 	}
 
 	if sz != uint64(len(a.data)) {
+		a.err = ReshapeError
 		return nil
 	}
 
@@ -194,7 +186,11 @@ func (a *Arrayb) Reshape(shape ...int) *Arrayb {
 
 // C will return a deep copy of the source array.
 func (a *Arrayb) C() (b *Arrayb) {
+	if a.err != nil {
+		return nil
+	}
 	if a == nil {
+		a.err = NilError
 		return nil
 	}
 

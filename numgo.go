@@ -23,6 +23,7 @@ func Create(shape ...int) (a *Arrayf) {
 	sh := make([]uint64, len(shape))
 	for i, v := range shape {
 		if v < 0 {
+			a.err = NegativeAxis
 			return nil
 		}
 		sz *= uint64(v)
@@ -49,6 +50,7 @@ func create(shape ...uint64) (a *Arrayf) {
 	sh := make([]uint64, len(shape))
 	for i, v := range shape {
 		if v < 0 {
+			a.err = NegativeAxis
 			return nil
 		}
 		sz *= uint64(v)
@@ -95,6 +97,9 @@ func (a *Arrayf) String() (s string) {
 	a.RLock()
 	defer a.RUnlock()
 
+	if a.err != nil {
+		return a.err.s
+	}
 	if a.strides[0] == 0 {
 		return "[]"
 	}
@@ -133,7 +138,7 @@ func (a *Arrayf) String() (s string) {
 
 // Arange Creates an array in one of three different ways, depending on input:
 // One (stop):         Arrayf from zero to positive value or negative value to zero
-// Two (start,stop):   Arrayf from start to stop, with increment of 1 or -1, depending on inputs
+// Two (start, stop):   Arrayf from start to stop, with increment of 1 or -1, depending on inputs
 // Three (start, stop, step): Arrayf from start to stop, with increment of step
 //
 // Any inputs beyond three values are ignored
@@ -188,7 +193,11 @@ func Identity(size int) (r *Arrayf) {
 // This must not change the size of the array.
 // Incorrect dimensions will return a nil pointer
 func (a *Arrayf) Reshape(shape ...int) *Arrayf {
+	if a.err != nil {
+		return nil
+	}
 	if a == nil {
+		a.err = NilError
 		return nil
 	}
 
@@ -198,7 +207,8 @@ func (a *Arrayf) Reshape(shape ...int) *Arrayf {
 	var sz uint64 = 1
 	sh := make([]uint64, len(shape))
 	for i, v := range shape {
-		if v <= 0 {
+		if v < 0 {
+			a.err = NegativeAxis
 			return nil
 		}
 		sz *= uint64(v)
@@ -206,6 +216,7 @@ func (a *Arrayf) Reshape(shape ...int) *Arrayf {
 	}
 
 	if sz != uint64(len(a.data)) {
+		a.err = ReshapeError
 		return nil
 	}
 
@@ -223,6 +234,13 @@ func (a *Arrayf) Reshape(shape ...int) *Arrayf {
 
 // Flatten reshapes the data to a 1-D array.
 func (a *Arrayf) Flatten() *Arrayf {
+	if a.err != nil {
+		return nil
+	}
+	if a == nil {
+		a.err = NilError
+		return nil
+	}
 	a.shape[0] = a.strides[0]
 	a.shape = a.shape[:1]
 	fmt.Println(a.shape)
@@ -231,7 +249,11 @@ func (a *Arrayf) Flatten() *Arrayf {
 
 // C will return a deep copy of the source array.
 func (a *Arrayf) C() (b *Arrayf) {
+	if a.err != nil {
+		return nil
+	}
 	if a == nil {
+		a.err = NilError
 		return nil
 	}
 
@@ -269,12 +291,21 @@ func (a *Arrayf) E(index ...int) float64 {
 // Eslice returns the element group at one axis above the leaf elements.
 // Data is returned as a copy  in a float slice.
 func (a *Arrayf) SliceElement(index ...int) (ret []float64) {
+	if a.err != nil {
+		return nil
+	}
+	if a == nil {
+		a.err = NilError
+		return nil
+	}
 	if len(a.shape)-1 != len(index) {
+		a.err = IndexError
 		return nil
 	}
 	idx := uint64(0)
 	for i, v := range index {
 		if uint64(v) > a.shape[i] {
+			a.err = IndexError
 			return nil
 		}
 		idx += uint64(v) * a.strides[i+1]
@@ -282,15 +313,17 @@ func (a *Arrayf) SliceElement(index ...int) (ret []float64) {
 	return append(ret, a.data[idx:idx+a.strides[len(a.strides)-2]]...)
 }
 
-// SubArr slices
+// SubArr slices the array at a given index.
 func (a *Arrayf) SubArr(index ...int) (ret *Arrayf) {
 	if len(index) > len(a.shape) {
+		a.err = ShapeError
 		return nil
 	}
 
 	idx := uint64(0)
 	for i, v := range index {
 		if uint64(v) > a.shape[i] {
+			a.err = IndexError
 			return nil
 		}
 		idx += uint64(v) * a.strides[i+1]

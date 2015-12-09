@@ -1,14 +1,15 @@
 package numgo
 
-import (
-	"fmt"
-	"sort"
-)
+import "sort"
 
 // Equals performs boolean '==' element-wise comparison
 // Currently uses '1' and '0' in place of boolean
 func (a *Arrayf) Equals(b *Arrayf) (r *Arrayb) {
-	if a == nil {
+	if a.err != nil || b.err != nil {
+		return nil
+	}
+	if a == nil || b == nil {
+		a.err = NilError
 		return nil
 	}
 
@@ -18,10 +19,12 @@ func (a *Arrayf) Equals(b *Arrayf) (r *Arrayb) {
 	defer b.RUnlock()
 
 	if len(a.shape) < len(b.shape) {
+		a.err = ShapeError
 		return nil
 	}
 	for i, j := len(b.shape)-1, len(a.shape)-1; i >= 0; i, j = i-1, j-1 {
 		if a.shape[j] != b.shape[i] {
+			a.err = ShapeError
 			return nil
 		}
 	}
@@ -50,7 +53,11 @@ func (a *Arrayf) Equals(b *Arrayf) (r *Arrayb) {
 
 // Any will return true if any element is non-zero, false otherwise.
 func (a *Arrayb) Any(axis ...int) *Arrayb {
+	if a.err != nil {
+		return nil
+	}
 	if a == nil {
+		a.err = NilError
 		return nil
 	}
 
@@ -66,7 +73,7 @@ func (a *Arrayb) Any(axis ...int) *Arrayb {
 	//Validate input
 	for _, v := range axis {
 		if v < 0 || v > len(a.shape) {
-			fmt.Println("Axis outside of range", v)
+			a.err = IndexError
 			return nil
 		}
 	}
@@ -118,14 +125,17 @@ func (a *Arrayb) Any(axis ...int) *Arrayb {
 		tmp *= n[i-1]
 	}
 	a.strides[0] = tmp
-	a.strides = append(a.strides[:0], a.strides[0:len(n)+1]...)
-	fmt.Println(a.shape, a.strides)
+	a.strides = a.strides[0 : len(n)+1]
 	return a
 }
 
 // Any will return true if all elements are non-zero, false otherwise.
 func (a *Arrayb) All(axis ...int) *Arrayb {
+	if a.err != nil {
+		return nil
+	}
 	if a == nil {
+		a.err = NilError
 		return nil
 	}
 
@@ -141,7 +151,7 @@ func (a *Arrayb) All(axis ...int) *Arrayb {
 	//Validate input
 	for _, v := range axis {
 		if v < 0 || v > len(a.shape) {
-			fmt.Println("Axis outside of range", v)
+			a.err = IndexError
 			return nil
 		}
 	}
@@ -194,13 +204,16 @@ func (a *Arrayb) All(axis ...int) *Arrayb {
 	}
 	a.strides[0] = tmp
 	a.strides = append(a.strides[:0], a.strides[0:len(n)+1]...)
-	fmt.Println(a.shape, a.strides)
 	return a
 }
 
 // Nonzero counts the number of non-zero elements are in the array
 func (a *Arrayf) Nonzero() (c uint64) {
+	if a.err != nil {
+		return 0
+	}
 	if a == nil {
+		a.err = NilError
 		return 0
 	}
 

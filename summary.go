@@ -113,7 +113,7 @@ func (a *Arrayf) Count(axis ...int) *Arrayf {
 		return nil
 	}
 	if len(axis) == 0 {
-		return full(float64(a.shape[0]), 1)
+		return full(float64(a.strides[0]), 1)
 	}
 
 	axis = cleanAxis(axis...)
