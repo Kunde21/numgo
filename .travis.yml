@@ -1,4 +1,5 @@
 language: go
+sudo: required
 go:
   - 1.1
   - 1.2
@@ -7,8 +8,12 @@ go:
   - 1.5
   - 1.5.2
   - tip
+before_install:
+  - sudo pip install codecov
 script:
   - go test
+after_success:
+  - codecov
 notifications:
   email:
     recipients:
