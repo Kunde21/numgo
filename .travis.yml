@@ -9,7 +9,7 @@ go:
   - 1.5.2
   - tip
 before_install:
-  - sudo pip install codecov
+  - sudo -H pip install codecov
 script:
   - go test
 after_success:
