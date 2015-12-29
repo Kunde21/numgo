@@ -5,11 +5,17 @@ import "sort"
 // Equals performs boolean '==' element-wise comparison
 // Currently uses '1' and '0' in place of boolean
 func (a *Arrayf) Equals(b *Arrayf) (r *Arrayb) {
-	if a.err != nil || b.err != nil {
-		return nil
-	}
-	if a == nil || b == nil {
+	switch {
+	case a == nil:
+		a = new(Arrayf)
+		fallthrough
+	case b == nil:
 		a.err = NilError
+		fallthrough
+	case a.err != nil:
+		return nil
+	case len(a.shape) < len(b.shape):
+		a.err = ShapeError
 		return nil
 	}
 
@@ -18,10 +24,6 @@ func (a *Arrayf) Equals(b *Arrayf) (r *Arrayb) {
 	defer a.RUnlock()
 	defer b.RUnlock()
 
-	if len(a.shape) < len(b.shape) {
-		a.err = ShapeError
-		return nil
-	}
 	for i, j := len(b.shape)-1, len(a.shape)-1; i >= 0; i, j = i-1, j-1 {
 		if a.shape[j] != b.shape[i] {
 			a.err = ShapeError
@@ -47,18 +49,23 @@ func (a *Arrayf) Equals(b *Arrayf) (r *Arrayb) {
 	for k := 0; k < mul; k++ {
 		<-compChan
 	}
+	close(compChan)
 
 	return
 }
 
 // Any will return true if any element is non-zero, false otherwise.
 func (a *Arrayb) Any(axis ...int) *Arrayb {
-	if a.err != nil {
-		return nil
-	}
-	if a == nil {
+	switch {
+	case a == nil:
+		a = new(Arrayb)
 		a.err = NilError
-		return nil
+		fallthrough
+	case a.err != nil:
+		return a
+	case len(a.shape) < len(axis):
+		a.err = ShapeError
+		return a
 	}
 
 	if len(axis) == 0 {
@@ -74,7 +81,7 @@ func (a *Arrayb) Any(axis ...int) *Arrayb {
 	for _, v := range axis {
 		if v < 0 || v > len(a.shape) {
 			a.err = IndexError
-			return nil
+			return a
 		}
 	}
 
@@ -131,12 +138,16 @@ func (a *Arrayb) Any(axis ...int) *Arrayb {
 
 // Any will return true if all elements are non-zero, false otherwise.
 func (a *Arrayb) All(axis ...int) *Arrayb {
-	if a.err != nil {
-		return nil
-	}
-	if a == nil {
+	switch {
+	case a == nil:
+		a = new(Arrayb)
 		a.err = NilError
-		return nil
+		fallthrough
+	case a.err != nil:
+		return a
+	case len(a.shape) < len(axis):
+		a.err = ShapeError
+		return a
 	}
 
 	if len(axis) == 0 {
@@ -152,7 +163,7 @@ func (a *Arrayb) All(axis ...int) *Arrayb {
 	for _, v := range axis {
 		if v < 0 || v > len(a.shape) {
 			a.err = IndexError
-			return nil
+			return a
 		}
 	}
 
@@ -208,18 +219,20 @@ func (a *Arrayb) All(axis ...int) *Arrayb {
 }
 
 // Nonzero counts the number of non-zero elements are in the array
-func (a *Arrayf) Nonzero() (c uint64) {
-	if a.err != nil {
-		return 0
-	}
-	if a == nil {
+func (a *Arrayf) Nonzero() (c *uint64) {
+	switch {
+	case a == nil:
+		a = new(Arrayf)
 		a.err = NilError
-		return 0
+		fallthrough
+	case a.err != nil:
+		return nil
 	}
 
+	*c = 0
 	for _, v := range a.data {
 		if v != float64(0) {
-			c++
+			(*c)++
 		}
 	}
 	return

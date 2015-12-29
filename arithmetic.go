@@ -9,27 +9,30 @@ import (
 // Arrays must be the same size or able to broadcast.
 // This will modify the source array.
 func (a *Arrayf) Add(b *Arrayf) *Arrayf {
-	a.RLock()
 	switch {
-	case a.err != nil:
-		return nil
 	case a == nil:
+		a = new(Arrayf)
 		a.err = NilError
-		return nil
+		fallthrough
+	case a.err != nil:
+		return a
+	case b == nil:
+		a.err = NilError
+		fallthrough
+	case b.err != nil:
+		return a
+	case len(a.shape) < len(b.shape):
+		a.err = ShapeError
+		return a
 	}
-	a.RUnlock()
 
 	a.Lock()
 	defer a.Unlock()
 
-	if len(a.shape) < len(b.shape) {
-		a.err = ShapeError
-		return nil
-	}
 	for i, j := len(b.shape)-1, len(a.shape)-1; i >= 0; i, j = i-1, j-1 {
 		if a.shape[j] != b.shape[i] {
 			a.err = ShapeError
-			return nil
+			return a
 		}
 	}
 	compChan := make(chan struct{})
@@ -45,20 +48,20 @@ func (a *Arrayf) Add(b *Arrayf) *Arrayf {
 	for k := 0; k < mul; k++ {
 		<-compChan
 	}
+	close(compChan)
 	return a
 }
 
 // AddC adds a constant to all elements of the array.
 func (a *Arrayf) AddC(b float64) *Arrayf {
-	a.RLock()
 	switch {
-	case a.err != nil:
-		return nil
 	case a == nil:
+		a = new(Arrayf)
 		a.err = NilError
-		return nil
+		fallthrough
+	case a.err != nil:
+		return a
 	}
-	a.RUnlock()
 
 	a.Lock()
 	defer a.Unlock()
@@ -73,21 +76,30 @@ func (a *Arrayf) AddC(b float64) *Arrayf {
 // Arrays must be the same size or albe to broadcast.
 // This will modify the source array.
 func (a *Arrayf) Subtr(b *Arrayf) *Arrayf {
-	if a == nil {
-		return nil
+	switch {
+	case a == nil:
+		a = new(Arrayf)
+		a.err = NilError
+		fallthrough
+	case a.err != nil:
+		return a
+	case b == nil:
+		a.err = NilError
+		fallthrough
+	case b.err != nil:
+		return a
+	case len(a.shape) < len(b.shape):
+		a.err = ShapeError
+		return a
 	}
 
 	a.Lock()
 	defer a.Unlock()
 
-	if len(a.shape) < len(b.shape) {
-		fmt.Println("Base array must have as many or more dimensions", a.shape, "<", b.shape)
-		return nil
-	}
 	for i, j := len(b.shape)-1, len(a.shape)-1; i >= 0; i, j = i-1, j-1 {
 		if a.shape[j] != b.shape[i] {
-			fmt.Println("Base array must have as many or more dimensions", a.shape, "<", b.shape)
-			return nil
+			a.err = ShapeError
+			return a
 		}
 	}
 	compChan := make(chan struct{})
@@ -103,13 +115,19 @@ func (a *Arrayf) Subtr(b *Arrayf) *Arrayf {
 	for k := 0; k < mul; k++ {
 		<-compChan
 	}
+	close(compChan)
 	return a
 }
 
 // SubtrC subtracts a constant from all elements of the array.
 func (a *Arrayf) SubtrC(b float64) *Arrayf {
-	if a == nil {
-		return nil
+	switch {
+	case a == nil:
+		a = new(Arrayf)
+		a.err = NilError
+		fallthrough
+	case a.err != nil:
+		return a
 	}
 
 	a.Lock()
@@ -125,21 +143,30 @@ func (a *Arrayf) SubtrC(b float64) *Arrayf {
 // Arrays must be the same size or able to broadcast.
 // This will modify the source array.
 func (a *Arrayf) Mult(b *Arrayf) *Arrayf {
-	if a == nil {
-		return nil
+	switch {
+	case a == nil:
+		a = new(Arrayf)
+		a.err = NilError
+		fallthrough
+	case a.err != nil:
+		return a
+	case b == nil:
+		a.err = NilError
+		fallthrough
+	case b.err != nil:
+		return a
+	case len(a.shape) < len(b.shape):
+		a.err = ShapeError
+		return a
 	}
 
 	a.Lock()
 	defer a.Unlock()
 
-	if len(a.shape) < len(b.shape) {
-		fmt.Println("Base array must have as many or more dimensions", a.shape, "<", b.shape)
-		return nil
-	}
 	for i, j := len(b.shape)-1, len(a.shape)-1; i >= 0; i, j = i-1, j-1 {
 		if a.shape[j] != b.shape[i] {
-			fmt.Println("Base array must have as many or more dimensions", a.shape, "<", b.shape)
-			return nil
+			a.err = ShapeError
+			return a
 		}
 	}
 	compChan := make(chan struct{})
@@ -155,13 +182,19 @@ func (a *Arrayf) Mult(b *Arrayf) *Arrayf {
 	for k := 0; k < mul; k++ {
 		<-compChan
 	}
+	close(compChan)
 	return a
 }
 
 // MultC multiplies all elements of the array by a constant.
 func (a *Arrayf) MultC(b float64) *Arrayf {
-	if a == nil {
-		return nil
+	switch {
+	case a == nil:
+		a = new(Arrayf)
+		a.err = NilError
+		fallthrough
+	case a.err != nil:
+		return a
 	}
 
 	a.Lock()
@@ -178,12 +211,21 @@ func (a *Arrayf) MultC(b float64) *Arrayf {
 // Division by zero will result in a math.NaN() values.
 // This will modify the source array.
 func (a *Arrayf) Div(b *Arrayf) *Arrayf {
-	if a == nil {
-		return nil
-	}
-	if len(a.shape) < len(b.shape) {
-		fmt.Println("Base array must have as many or more dimensions", a.shape, "<", b.shape)
-		return nil
+	switch {
+	case a == nil:
+		a = new(Arrayf)
+		a.err = NilError
+		fallthrough
+	case a.err != nil:
+		return a
+	case b == nil:
+		a.err = NilError
+		fallthrough
+	case b.err != nil:
+		return a
+	case len(a.shape) < len(b.shape):
+		a.err = ShapeError
+		return a
 	}
 	for i, j := len(b.shape)-1, len(a.shape)-1; i >= 0; i, j = i-1, j-1 {
 		if a.shape[j] != b.shape[i] {
@@ -191,6 +233,7 @@ func (a *Arrayf) Div(b *Arrayf) *Arrayf {
 			return nil
 		}
 	}
+
 	compChan := make(chan bool)
 	mul := len(a.data) / len(b.data)
 	for k := 0; k < mul; k++ {
@@ -211,8 +254,9 @@ func (a *Arrayf) Div(b *Arrayf) *Arrayf {
 	for k := 0; k < mul; k++ {
 		flg = flg || <-compChan
 	}
+	close(compChan)
 	if flg {
-		fmt.Println("Division by zero encountered.")
+		a.err = DivZeroError
 	}
 	return a
 }
@@ -220,8 +264,13 @@ func (a *Arrayf) Div(b *Arrayf) *Arrayf {
 // MultC divides all elements of the array by a constant.
 // Division by zero will result in a math.NaN() values.
 func (a *Arrayf) DivC(b float64) *Arrayf {
-	if a == nil {
-		return nil
+	switch {
+	case a == nil:
+		a = new(Arrayf)
+		a.err = NilError
+		return a
+	case a.err != nil:
+		return a
 	}
 
 	a.Lock()
@@ -247,11 +296,18 @@ func (a *Arrayf) DivC(b float64) *Arrayf {
 // Arrays must be the same size or able to broadcast.
 // This will modify the source array.
 func (a *Arrayf) Pow(b *Arrayf) *Arrayf {
-	if a == nil {
-		return nil
-	}
-	if len(a.shape) < len(b.shape) {
-		fmt.Println("Base array must have as many or more dimensions", a.shape, "<", b.shape)
+	switch {
+	case a == nil:
+		a = new(Arrayf)
+		a.err = NilError
+		return a
+	case a.err != nil || b.err != nil:
+		return a
+	case b == nil:
+		a.err = NilError
+		return a
+	case len(a.shape) < len(b.shape):
+		a.err = ShapeError
 		return nil
 	}
 	for i, j := len(b.shape)-1, len(a.shape)-1; i >= 0; i, j = i-1, j-1 {
@@ -280,8 +336,13 @@ func (a *Arrayf) Pow(b *Arrayf) *Arrayf {
 // MultC divides all elements of the array by a constant.
 // Division by zero will result in a math.NaN() values.
 func (a *Arrayf) PowC(b float64) *Arrayf {
-	if a == nil {
-		return nil
+	switch {
+	case a == nil:
+		a = new(Arrayf)
+		a.err = NilError
+		fallthrough
+	case a.err != nil:
+		return a
 	}
 
 	a.Lock()

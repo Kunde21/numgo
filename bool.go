@@ -1,6 +1,7 @@
 package numgo
 
 import (
+	"encoding/json"
 	"fmt"
 	"strings"
 	"sync"
@@ -12,23 +13,24 @@ type Arrayb struct {
 	strides []uint64
 	data    []bool
 	err     *ngError
-	debug   []byte
+	debug   string
 }
 
 // Create creates an Arrayf object with dimensions given in order from outer-most to inner-most
 // All values will default to zero
 func Createb(shape ...int) (a *Arrayb) {
+	a = new(Arrayb)
 	var sz uint64 = 1
 	sh := make([]uint64, len(shape))
 	for i, v := range shape {
 		if v <= 0 {
-			return nil
+			a.err = NegativeAxis
+			return
 		}
 		sz *= uint64(v)
 		sh[i] = uint64(v)
 	}
 
-	a = new(Arrayb)
 	a.shape = sh
 	a.data = make([]bool, sz)
 
@@ -44,17 +46,18 @@ func Createb(shape ...int) (a *Arrayb) {
 
 // Internal function to create using the shape of another array
 func createb(shape ...uint64) (a *Arrayb) {
+	a = new(Arrayb)
 	var sz uint64 = 1
 	sh := make([]uint64, len(shape))
 	for i, v := range shape {
 		if v <= 0 {
-			return nil
+			a.err = NegativeAxis
+			return
 		}
 		sz *= uint64(v)
 		sh[i] = uint64(v)
 	}
 
-	a = new(Arrayb)
 	a.shape = sh
 	a.data = make([]bool, sz)
 
@@ -72,8 +75,8 @@ func createb(shape ...uint64) (a *Arrayb) {
 // All elements will be set to 'val' in the retuen
 func Fullb(val bool, shape ...int) (a *Arrayb) {
 	a = Createb(shape...)
-	if a == nil {
-		return nil
+	if a.err != nil {
+		return a
 	}
 
 	for i := 0; i < len(a.data); i++ {
@@ -84,8 +87,8 @@ func Fullb(val bool, shape ...int) (a *Arrayb) {
 
 func fullb(val bool, shape ...uint64) (a *Arrayb) {
 	a = createb(shape...)
-	if a == nil {
-		return nil
+	if a.err != nil {
+		return a
 	}
 
 	for i := 0; i < len(a.data); i++ {
@@ -96,20 +99,20 @@ func fullb(val bool, shape ...uint64) (a *Arrayb) {
 
 // String Satisfies the Stringer interface for fmt package
 func (a *Arrayb) String() (s string) {
-	a.RLock()
-	defer a.RUnlock()
-
-	if a.err != nil {
+	switch {
+	case a == nil:
+		a = new(Arrayb)
+		a.err = NilError
+		return ""
+	case a.err != nil:
 		return a.err.s
-	}
-	if a.strides[0] == 0 {
+	case a.strides[0] == 0:
 		return "[]"
 	}
 
-	if a == nil {
-		a.err = NilError
-		return ""
-	}
+	a.RLock()
+	defer a.RUnlock()
+
 	stride := a.strides[len(a.strides)-2]
 
 	for i, k := uint64(0), 0; i+stride < uint64(len(a.data)); i, k = i+stride, k+1 {
@@ -145,12 +148,13 @@ func (a *Arrayb) String() (s string) {
 // This must not change the size of the array.
 // Incorrect dimensions will return a nil pointer
 func (a *Arrayb) Reshape(shape ...int) *Arrayb {
-	if a.err != nil {
-		return nil
-	}
-	if a == nil {
+	switch {
+	case a == nil:
+		a = new(Arrayb)
 		a.err = NilError
-		return nil
+		fallthrough
+	case a.err != nil:
+		return a
 	}
 
 	a.Lock()
@@ -161,7 +165,7 @@ func (a *Arrayb) Reshape(shape ...int) *Arrayb {
 	for i, v := range shape {
 		if v < 0 {
 			a.err = NegativeAxis
-			return nil
+			return a
 		}
 		sz *= uint64(v)
 		sh[i] = uint64(v)
@@ -169,7 +173,7 @@ func (a *Arrayb) Reshape(shape ...int) *Arrayb {
 
 	if sz != uint64(len(a.data)) {
 		a.err = ReshapeError
-		return nil
+		return a
 	}
 
 	a.strides = make([]uint64, len(sh)+1)
@@ -186,12 +190,13 @@ func (a *Arrayb) Reshape(shape ...int) *Arrayb {
 
 // C will return a deep copy of the source array.
 func (a *Arrayb) C() (b *Arrayb) {
-	if a.err != nil {
-		return nil
-	}
-	if a == nil {
-		a.err = NilError
-		return nil
+	switch {
+	case a == nil:
+		b = new(Arrayb)
+		b.err = NilError
+		return b
+	case a.err != nil:
+		return a
 	}
 
 	b = createb(a.shape...)
@@ -205,21 +210,22 @@ func (a *Arrayb) C() (b *Arrayb) {
 // Any errors will return a nil value and record the error for the
 // HasErr() and GetErr() functions.
 func (a *Arrayb) E(index ...int) *bool {
-	if a.err != nil {
-		return nil
-	}
-	if a == nil {
+	switch {
+	case a == nil:
+		a = new(Arrayb)
 		a.err = NilError
+		fallthrough
+	case a.err != nil:
 		return nil
-	}
-	if len(a.shape) != len(index) {
+	case len(a.shape) != len(index):
 		a.err = ShapeError
 		return nil
 	}
 
 	idx := uint64(0)
 	for i, v := range index {
-		if uint64(v) > a.shape[i] {
+		if uint64(v) > a.shape[i] || v < 0 {
+			a.err = IndexError
 			return nil
 		}
 		idx += uint64(v) * a.strides[i+1]
@@ -231,11 +237,15 @@ func (a *Arrayb) E(index ...int) *bool {
 // Eslice returns the element group at one axis above the leaf elements.
 // Data is returned as a copy  in a float slice.
 func (a *Arrayb) SliceElement(index ...int) (ret []bool) {
-	if a.err != nil {
-		return nil
-	}
-	if a == nil {
+	switch {
+	case a == nil:
+		a = new(Arrayb)
 		a.err = NilError
+		fallthrough
+	case a.err != nil:
+		return nil
+	case len(a.shape)-1 != len(index):
+		a.err = ShapeError
 		return nil
 	}
 
@@ -255,15 +265,14 @@ func (a *Arrayb) SliceElement(index ...int) (ret []bool) {
 // These are applied startig from the top axis.
 // Intermediate slicing of axes is not available at this point.
 func (a *Arrayb) SubArr(index ...int) (ret *Arrayb) {
-	if a.err != nil {
-		return nil
-	}
-	if a == nil {
+	switch {
+	case a == nil:
+		a = new(Arrayb)
 		a.err = NilError
+		fallthrough
+	case a.err != nil:
 		return nil
-	}
-
-	if len(index) > len(a.shape) {
+	case len(a.shape) < len(index):
 		a.err = ShapeError
 		return nil
 	}
@@ -271,7 +280,8 @@ func (a *Arrayb) SubArr(index ...int) (ret *Arrayb) {
 	idx := uint64(0)
 	for i, v := range index {
 		if uint64(v) > a.shape[i] {
-			return nil
+
+			return
 		}
 		idx += uint64(v) * a.strides[i+1]
 	}
@@ -280,4 +290,159 @@ func (a *Arrayb) SubArr(index ...int) (ret *Arrayb) {
 	copy(ret.data, a.data[idx:idx+a.strides[len(index)]])
 
 	return
+}
+
+// SetE sets the element at the given index.
+// There should be one index per axis.  Generates a ShapeError if incorrect index.
+func (a *Arrayb) SetE(val bool, index ...int) *Arrayb {
+	switch {
+	case a == nil:
+		a = new(Arrayb)
+		a.err = NilError
+		return a
+	case a.err != nil:
+		return a
+	case len(a.shape) != len(index):
+		a.err = ShapeError
+		return a
+	}
+
+	idx := uint64(0)
+	for i, v := range index {
+		if uint64(v) > a.shape[i] || v < 0 {
+			a.err = IndexError
+			return a
+		}
+		idx += uint64(v) * a.strides[i+1]
+	}
+	a.data[idx] = val
+	return a
+}
+
+// SetSliceElement sets the element group at one axis above the leaf elements.
+// Source Array is returned, for function-chaining design.
+func (a *Arrayb) SetSliceElement(vals []bool, index ...int) *Arrayb {
+	switch {
+	case a == nil:
+		a = new(Arrayb)
+		a.err = NilError
+		return a
+	case a.err != nil:
+		return a
+	case len(a.shape)-1 != len(index) || uint64(len(vals)) != a.shape[len(a.shape)-1]:
+		a.err = ShapeError
+		return a
+	}
+	idx := uint64(0)
+	for i, v := range index {
+		if uint64(v) > a.shape[i] || v < 0 {
+			a.err = IndexError
+			return a
+		}
+		idx += uint64(v) * a.strides[i+1]
+	}
+
+	copy(a.data[idx:idx+a.strides[len(a.strides)-2]], vals)
+	return a
+}
+
+// SetSubArr sets the array below a given index to the values in vals.
+// Values will be broadcast up multiple axes if the shapes match.
+func (a *Arrayb) SetSubArr(vals *Arrayb, index ...int) *Arrayb {
+	switch {
+	case a == nil:
+		a = new(Arrayb)
+		a.err = NilError
+		return a
+	case a.err != nil:
+		return a
+	case len(vals.shape)+len(index) > len(a.shape):
+		a.err = ShapeError
+		return a
+	}
+
+	for i, j := len(a.shape)-1, len(vals.shape)-1; i >= 0; i, j = i-1, j-1 {
+		if a.shape[i] != vals.shape[j] {
+			a.err = ShapeError
+			return a
+		}
+	}
+
+	idx := uint64(0)
+	for i, v := range index {
+		if uint64(v) > a.shape[i] {
+			a.err = IndexError
+			return a
+		}
+		idx += uint64(v) * a.strides[i+1]
+	}
+
+	if len(vals.shape)-len(index)-len(a.shape) == 0 {
+		copy(a.data[idx:idx+uint64(len(vals.data))], vals.data)
+		return a
+	}
+
+	reps := uint64(1)
+	for i := len(index); i < len(a.shape)-len(vals.shape); i++ {
+		reps *= a.shape[i]
+	}
+
+	ln := uint64(len(vals.data))
+	for i := uint64(1); i <= reps; i++ {
+		copy(a.data[idx+ln*(i-1):idx+ln*i], vals.data)
+	}
+	return a
+}
+
+// MarshalJSON fulfills the json.Marshaler Interface for encoding data.
+// Custom Unmarshaler is needed to encode/send unexported values.
+func (a *Arrayb) MarshalJSON() ([]byte, error) {
+	if a == nil {
+		return nil, NilError
+	}
+	return json.Marshal(struct {
+		Shape []uint64 `json:"shape"`
+		Data  []bool   `json:"data"`
+		Err   int8     `json:"err,omitempty"`
+	}{
+		Shape: a.shape,
+		Data:  a.data,
+		Err:   encodeErr(a.err),
+	})
+}
+
+// UnmarshalJSON fulfills the json.Unmarshaler interface for decoding data.
+// Custom Unmarshaler is needed to load/decode unexported values and build strides.
+func (a *Arrayb) UnmarshalJSON(b []byte) error {
+
+	if a == nil {
+		a = new(Arrayb)
+		a.err = NilError
+		return NilError
+	}
+
+	tmpA := new(struct {
+		Shape []uint64 `json:"shape"`
+		Data  []bool   `json:"data"`
+		Err   int8     `json:"err,omitempty"`
+	})
+
+	err := json.Unmarshal(b, tmpA)
+	if err != nil {
+		return err
+	}
+
+	a.shape = tmpA.Shape
+	a.data = tmpA.Data
+	a.err.decodeErr(tmpA.Err)
+
+	a.strides = make([]uint64, len(a.shape)+1)
+	tmp := uint64(1)
+	for i := len(a.strides) - 1; i > 0; i-- {
+		a.strides[i] = tmp
+		tmp *= a.shape[i-1]
+	}
+	a.strides[0] = tmp
+
+	return nil
 }

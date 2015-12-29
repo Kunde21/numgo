@@ -8,7 +8,7 @@ import (
 func TestAdd(t *testing.T) {
 	a, b := Arange(20), Arange(20)
 	a.Add(b)
-	if c := a.Add(b.Reshape(2, 10)); c != nil {
+	if c := a.Add(b.Reshape(2, 10)); c.err != ShapeError {
 		t.Log("Shape tests failed.  Expected nil, returned:", c)
 		t.Fail()
 	}

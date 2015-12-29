@@ -1,6 +1,7 @@
 package numgo
 
 import (
+	"encoding/json"
 	"fmt"
 	"math"
 	"strings"
@@ -13,24 +14,24 @@ type Arrayf struct {
 	strides []uint64
 	data    []float64
 	err     *ngError
-	debug   []byte
+	debug   string
 }
 
 // Create creates an Arrayf object with dimensions given in order from outer-most to inner-most
 // All values will default to zero
 func Create(shape ...int) (a *Arrayf) {
+	a = new(Arrayf)
 	var sz uint64 = 1
 	sh := make([]uint64, len(shape))
 	for i, v := range shape {
 		if v < 0 {
 			a.err = NegativeAxis
-			return nil
+			return
 		}
 		sz *= uint64(v)
 		sh[i] = uint64(v)
 	}
 
-	a = new(Arrayf)
 	a.shape = sh
 	a.data = make([]float64, sz)
 
@@ -50,8 +51,9 @@ func create(shape ...uint64) (a *Arrayf) {
 	sh := make([]uint64, len(shape))
 	for i, v := range shape {
 		if v < 0 {
+			a = new(Arrayf)
 			a.err = NegativeAxis
-			return nil
+			return
 		}
 		sz *= uint64(v)
 		sh[i] = uint64(v)
@@ -71,12 +73,28 @@ func create(shape ...uint64) (a *Arrayf) {
 	return
 }
 
+// FromSlice wraps a float64 slice as a 1-D Arrayf object.
+func FromSlice(data []float64) (a *Arrayf) {
+	if data == nil {
+		a = new(Arrayf)
+		a.err = NilError
+		return nil
+	}
+
+	a = new(Arrayf)
+	a.shape = []uint64{uint64(len(data))}
+	a.strides = []uint64{a.shape[0], 1}
+	a.data = make([]float64, len(data))
+	copy(a.data, data)
+	return a
+}
+
 // Full creates an Arrayf object with dimensions given in order from outer-most to inner-most
 // All elements will be set to the value passed in val.
 func Full(val float64, shape ...int) (a *Arrayf) {
 	a = Create(shape...)
-	if a == nil {
-		return nil
+	if a.err != nil {
+		return
 	}
 	a.AddC(val)
 	return
@@ -84,25 +102,85 @@ func Full(val float64, shape ...int) (a *Arrayf) {
 
 func full(val float64, shape ...uint64) (a *Arrayf) {
 	a = create(shape...)
-	if a == nil {
-		return nil
+	if a.err != nil {
+		return
 	}
 	a.AddC(val)
 	return
 }
 
+// Arange Creates an array in one of three different ways, depending on input:
+// One (stop):         Arrayf from zero to positive value or negative value to zero
+// Two (start, stop):   Arrayf from start to stop, with increment of 1 or -1, depending on inputs
+// Three (start, stop, step): Arrayf from start to stop, with increment of step
+//
+// Any inputs beyond three values are ignored
+func Arange(vals ...float64) (a *Arrayf) {
+	var start, stop, step float64 = 0, 0, 1
+
+	switch len(vals) {
+	case 0:
+		return Create(0)
+	case 1:
+		if vals[0] <= 0 {
+			start, stop, step = vals[0], 0, -1
+		} else {
+			stop = vals[0]
+		}
+	case 2:
+		if vals[1] < vals[0] {
+			step = -1
+		}
+		start, stop = vals[0], vals[1]
+	default:
+		if vals[1] < vals[0] && vals[2] >= 0 || vals[1] > vals[0] && vals[2] <= 0 {
+			a = new(Arrayf)
+			a.err = ShapeError
+			return
+		}
+		start, stop, step = vals[0], vals[1], vals[2]
+	}
+
+	a = Create(int((stop - start) / step))
+	for i, v := 0, start; i < len(a.data); i, v = i+1, v+step {
+		a.data[i] = v
+	}
+	return
+}
+
+// Identity creates a size x size matrix with 1's on the main diagonal.
+// All other values will be zero.
+//
+// Negative size values will generate an error and return a nil value.
+func Identity(size int) (r *Arrayf) {
+	if size < 0 {
+		r = new(Arrayf)
+		r.err = ShapeError
+		return
+	}
+
+	r = Create(size, size)
+	for i := uint64(0); i < r.strides[0]; i = +r.strides[1] + r.strides[2] {
+		r.data[i] = 1
+	}
+	return
+}
+
 // String Satisfies the Stringer interface for fmt package
 func (a *Arrayf) String() (s string) {
+	switch {
+	case a == nil:
+		a = new(Arrayf)
+		a.err = NilError
+		return "<nil>"
+	case a.err != nil:
+		return a.err.s
+	case a.strides[0] == 0:
+		return "[]"
+	}
 
 	a.RLock()
 	defer a.RUnlock()
-
-	if a.err != nil {
-		return a.err.s
-	}
-	if a.strides[0] == 0 {
-		return "[]"
-	}
 
 	stride := a.shape[len(a.shape)-1]
 
@@ -136,69 +214,17 @@ func (a *Arrayf) String() (s string) {
 	return
 }
 
-// Arange Creates an array in one of three different ways, depending on input:
-// One (stop):         Arrayf from zero to positive value or negative value to zero
-// Two (start, stop):   Arrayf from start to stop, with increment of 1 or -1, depending on inputs
-// Three (start, stop, step): Arrayf from start to stop, with increment of step
-//
-// Any inputs beyond three values are ignored
-func Arange(vals ...float64) (a *Arrayf) {
-	var start, stop, step float64 = 0, 0, 1
-
-	switch len(vals) {
-	case 0:
-		return nil
-	case 1:
-		if vals[0] <= 0 {
-			start, stop, step = vals[0], 0, -1
-		} else {
-			stop = vals[0]
-		}
-	case 2:
-		if vals[1] < vals[0] {
-			step = -1
-		}
-		start, stop = vals[0], vals[1]
-	default:
-		if vals[1] < vals[0] && vals[2] >= 0 || vals[1] > vals[0] && vals[2] <= 0 {
-			return nil
-		}
-		start, stop, step = vals[0], vals[1], vals[2]
-	}
-
-	a = Create(int((stop - start) / step))
-	for i, v := 0, start; i < len(a.data); i, v = i+1, v+step {
-		a.data[i] = v
-	}
-	return
-}
-
-// Identity creates a size x size matrix with 1's on the main diagonal.
-// All other values will be zero.
-//
-// Negative size values will generate an error and return a nil value.
-func Identity(size int) (r *Arrayf) {
-	if size < 0 {
-		return nil
-	}
-
-	r = Create(size, size)
-	for i := uint64(0); i < r.strides[0]; i = +r.strides[1] + r.strides[2] {
-		r.data[i] = 1
-	}
-	return
-}
-
 // Reshape Changes the size of the array axes.  Values are not changed or moved.
 // This must not change the size of the array.
 // Incorrect dimensions will return a nil pointer
 func (a *Arrayf) Reshape(shape ...int) *Arrayf {
-	if a.err != nil {
-		return nil
-	}
-	if a == nil {
+	switch {
+	case a == nil:
+		a = new(Arrayf)
 		a.err = NilError
-		return nil
+		return a
+	case a.err != nil:
+		return a
 	}
 
 	a.Lock()
@@ -209,7 +235,7 @@ func (a *Arrayf) Reshape(shape ...int) *Arrayf {
 	for i, v := range shape {
 		if v < 0 {
 			a.err = NegativeAxis
-			return nil
+			return a
 		}
 		sz *= uint64(v)
 		sh[i] = uint64(v)
@@ -217,7 +243,7 @@ func (a *Arrayf) Reshape(shape ...int) *Arrayf {
 
 	if sz != uint64(len(a.data)) {
 		a.err = ReshapeError
-		return nil
+		return a
 	}
 
 	a.strides = make([]uint64, len(sh)+1)
@@ -232,105 +258,98 @@ func (a *Arrayf) Reshape(shape ...int) *Arrayf {
 	return a
 }
 
-// Flatten reshapes the data to a 1-D array.
-func (a *Arrayf) Flatten() *Arrayf {
-	if a.err != nil {
-		return nil
-	}
-	if a == nil {
-		a.err = NilError
-		return nil
-	}
-	a.shape[0] = a.strides[0]
-	a.shape = a.shape[:1]
-	fmt.Println(a.shape)
-	return a.Reshape(int(a.strides[0]))
-}
-
-// C will return a deep copy of the source array.
-func (a *Arrayf) C() (b *Arrayf) {
-	if a.err != nil {
-		return nil
-	}
-	if a == nil {
-		a.err = NilError
-		return nil
+// encode is used to prepare data for MarshalJSON that isn't JSON defined.
+func (a *Arrayf) encode() (inf, nan []int64, err int8) {
+	for k, v := range a.data {
+		a.data[k] = 0
+		switch {
+		case math.IsNaN(float64(v)):
+			nan = append(nan, int64(k))
+		case math.IsInf(float64(v), 1):
+			inf = append(inf, int64(k))
+		case math.IsInf(float64(v), -1):
+			inf = append(inf, int64(-k))
+		}
 	}
 
-	b = create(a.shape...)
-	for i, v := range a.data {
-		b.data[i] = v
-	}
+	err = encodeErr(a.err)
 	return
 }
 
-// E returns the element at the given index.
-func (a *Arrayf) E(index ...int) float64 {
-	if a.err != nil {
-		return math.NaN()
-	}
+// MarshalJSON fulfills the json.Marshaler Interface for encoding data.
+// Custom Unmarshaler is needed to encode/send unexported values.
+func (a *Arrayf) MarshalJSON() ([]byte, error) {
 	if a == nil {
-		a.err = NilError
-		return math.NaN()
+		return nil, NilError
 	}
-	if len(a.shape) != len(index) {
-		a.err = ShapeError
-		return math.NaN()
-	}
-
-	idx := uint64(0)
-	for i, v := range index {
-		if uint64(v) > a.shape[i] {
-			return math.NaN()
-		}
-		idx += uint64(v) * a.strides[i+1]
-	}
-	return a.data[idx]
+	t := a.C()
+	inf, nan, err := t.encode()
+	return json.Marshal(struct {
+		Shape []uint64  `json:"shape"`
+		Data  []float64 `json:"data"`
+		Inf   []int64   `json:"inf,omitempty"`
+		Nan   []int64   `json:"nan,omitempty"`
+		Err   int8      `json:"err,omitempty"`
+	}{
+		Shape: t.shape,
+		Data:  t.data,
+		Inf:   inf,
+		Nan:   nan,
+		Err:   err,
+	})
 }
 
-// Eslice returns the element group at one axis above the leaf elements.
-// Data is returned as a copy  in a float slice.
-func (a *Arrayf) SliceElement(index ...int) (ret []float64) {
-	if a.err != nil {
-		return nil
+// decode is used to build Array from UnmarshalJSON for values that aren't JSON defined.
+func (a *Arrayf) decode(i, n []int64, err int8) {
+	inf, nInf := math.Inf(1), math.Inf(-1)
+	nan := math.NaN()
+
+	for _, v := range n {
+		a.data[v] = nan
 	}
-	if a == nil {
-		a.err = NilError
-		return nil
-	}
-	if len(a.shape)-1 != len(index) {
-		a.err = IndexError
-		return nil
-	}
-	idx := uint64(0)
-	for i, v := range index {
-		if uint64(v) > a.shape[i] {
-			a.err = IndexError
-			return nil
+
+	for _, v := range i {
+		if v >= 0 {
+			a.data[v] = inf
+		} else {
+			a.data[-v] = nInf
 		}
-		idx += uint64(v) * a.strides[i+1]
 	}
-	return append(ret, a.data[idx:idx+a.strides[len(a.strides)-2]]...)
+	a.err.decodeErr(err)
 }
 
-// SubArr slices the array at a given index.
-func (a *Arrayf) SubArr(index ...int) (ret *Arrayf) {
-	if len(index) > len(a.shape) {
-		a.err = ShapeError
-		return nil
+// UnmarshalJSON fulfills the json.Unmarshaler interface for decoding data.
+// Custom Unmarshaler is needed to load/decode unexported values and build strides.
+func (a *Arrayf) UnmarshalJSON(b []byte) error {
+
+	if a == nil {
+		a = new(Arrayf)
 	}
 
-	idx := uint64(0)
-	for i, v := range index {
-		if uint64(v) > a.shape[i] {
-			a.err = IndexError
-			return nil
-		}
-		idx += uint64(v) * a.strides[i+1]
+	tmpA := new(struct {
+		Shape []uint64  `json:"shape"`
+		Data  []float64 `json:"data"`
+		Inf   []int64   `json:"inf,omitempty"`
+		Nan   []int64   `json:"nan,omitempty"`
+		Err   int8      `json:"err,omitempty"`
+	})
+
+	err := json.Unmarshal(b, tmpA)
+	if err != nil {
+		return err
 	}
 
-	ret = create(a.shape[len(index):]...)
-	copy(ret.data, a.data[idx:idx+a.strides[len(index)]])
+	a.shape = tmpA.Shape
+	a.data = tmpA.Data
+	a.decode(tmpA.Inf, tmpA.Nan, tmpA.Err)
 
-	return
+	a.strides = make([]uint64, len(a.shape)+1)
+	tmp := uint64(1)
+	for i := len(a.strides) - 1; i > 0; i-- {
+		a.strides[i] = tmp
+		tmp *= a.shape[i-1]
+	}
+	a.strides[0] = tmp
+
+	return nil
 }

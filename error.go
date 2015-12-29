@@ -36,6 +36,10 @@ var (
 // Use HasErr() as a gate for the GetErr() or GetDebug() choice in
 // error handling code.
 func (a *Arrayf) HasErr() bool {
+	if a == nil {
+		a = new(Arrayf)
+		a.err = NilError
+	}
 	return a.err != nil
 }
 
@@ -45,8 +49,12 @@ func (a *Arrayf) HasErr() bool {
 // it in the if statment to test for the existence of an error.  HasErr() is
 // provided for that purpose.
 func (a *Arrayf) GetErr() (err error) {
+	if a == nil {
+		a = new(Arrayf)
+		a.err = NilError
+	}
 	err = a.err
-	a.err, a.debug = nil, nil
+	a.err, a.debug = nil, ""
 	return
 }
 
@@ -55,10 +63,57 @@ func (a *Arrayf) GetErr() (err error) {
 //
 // This debug information will only be generated and returned if numgo.Debug is set to true
 // before the function call that causes the error.
-func (a *Arrayf) GetDebug() (err error, debug []byte) {
+func (a *Arrayf) GetDebug() (err error, debug string) {
+	if a == nil {
+		a = new(Arrayf)
+		a.err = NilError
+	}
 	err, debug = a.err, a.debug
-	a.err, a.debug = nil, nil
+	a.err, a.debug = nil, ""
 	return
+}
+
+// encodeErr is a supporting function for MarshalJSON
+func encodeErr(err *ngError) int8 {
+	switch err {
+	case nil:
+		return 0
+	case NilError:
+		return 1
+	case ShapeError:
+		return 2
+	case ReshapeError:
+		return 3
+	case NegativeAxis:
+		return 4
+	case IndexError:
+		return 5
+	case DivZeroError:
+		return 6
+	}
+	return -1
+}
+
+// decodeErr is a supporting method for UnmarshalJSON
+func (a *ngError) decodeErr(err int8) {
+	switch err {
+	case 0:
+		a = nil
+	case 1:
+		a = NilError
+	case 2:
+		a = ShapeError
+	case 3:
+		a = ReshapeError
+	case 4:
+		a = NegativeAxis
+	case 5:
+		a = IndexError
+	case 6:
+		a = DivZeroError
+	default:
+		a = &ngError{"Unknown error Unmarshaled."}
+	}
 }
 
 // HasErr tests for the existence of an error on the Arrayb object.
@@ -68,6 +123,10 @@ func (a *Arrayf) GetDebug() (err error, debug []byte) {
 // Use HasErr() as a gate for the GetErr() or GetDebug() choice in
 // error handling code.
 func (a *Arrayb) HasErr() bool {
+	if a == nil {
+		a = new(Arrayb)
+		a.err = NilError
+	}
 	return a.err != nil
 }
 
@@ -77,8 +136,12 @@ func (a *Arrayb) HasErr() bool {
 // it in the if statment to test for the existence of an error.  HasErr() is
 // provided for that purpose.
 func (a *Arrayb) GetErr() (err error) {
+	if a == nil {
+		a = new(Arrayb)
+		a.err = NilError
+	}
 	err = a.err
-	a.err, a.debug = nil, nil
+	a.err, a.debug = nil, ""
 	return
 }
 
@@ -87,8 +150,12 @@ func (a *Arrayb) GetErr() (err error) {
 //
 // This debug information will only be generated and returned if numgo.Debug is set to true
 // before the function call that causes the error.
-func (a *Arrayb) GetDebug() (err error, debug []byte) {
+func (a *Arrayb) GetDebug() (err error, debug string) {
+	if a == nil {
+		a = new(Arrayb)
+		a.err = NilError
+	}
 	err, debug = a.err, a.debug
-	a.err, a.debug = nil, nil
+	a.err, a.debug = nil, ""
 	return
 }

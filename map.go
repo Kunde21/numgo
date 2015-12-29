@@ -32,10 +32,11 @@ func cleanAxis(axis ...int) []int {
 // collapse will reorganize data by putting element dataset in continuous sections of data slice.
 // Returned Arrayf must be condensed with a summary calculation to create a valid array object.
 func (a *Arrayf) collapse(axis ...int) (uint64, *Arrayf) {
-	if a == nil {
-		return 0, nil
+	switch {
+	case a == nil:
+		a.err = NilError
+		return 0, a
 	}
-
 	if len(axis) == 0 {
 		return 1, a.C()
 	}
@@ -169,17 +170,17 @@ func (a *Arrayf) collapse(axis ...int) (uint64, *Arrayf) {
 //
 // Simple functions should use Map(f, axes...), as it's more performant.
 func (a *Arrayf) MapCC(f MapFunc, axis ...int) (ret *Arrayf) {
-	if a.err != nil {
-		return nil
-	}
-	if a == nil {
-		a.err = NilError
-		return nil
-	}
-
 	axis = cleanAxis(axis...)
-	if len(axis) == 0 {
-		return a.C()
+	switch {
+	case a == nil:
+		a = new(Arrayf)
+		a.err = NilError
+		fallthrough
+	case a.err != nil:
+		return a
+	case len(axis) > len(a.shape):
+		a.err = ShapeError
+		return a
 	}
 
 	type rt struct {
@@ -189,19 +190,23 @@ func (a *Arrayf) MapCC(f MapFunc, axis ...int) (ret *Arrayf) {
 
 	span, ret := a.collapse(axis...)
 
-	retChan := make(chan rt)
-	i := uint64(0)
-	for i = uint64(0); i+span <= a.strides[0]; i += span {
+	retChan, compChan := make(chan rt), make(chan struct{})
+	defer close(retChan)
+	defer close(compChan)
+	go func() {
+		for i := uint64(0); i+span <= a.strides[0]; i += span {
+			c := <-retChan
+			ret.data[c.index] = c.value
+		}
+		compChan <- struct{}{}
+	}()
+
+	for i := uint64(0); i+span <= a.strides[0]; i += span {
 		go func(i uint64) {
 			retChan <- rt{i / span, f(ret.data[i : i+span])}
 		}(i)
 	}
-	for i = uint64(0); i+span <= a.strides[0]; i += span {
-		c := <-retChan
-		ret.data[c.index] = c.value
-	}
-
-	close(retChan)
+	<-compChan
 	ret.data = ret.data[:a.strides[0]]
 	return ret
 }
@@ -210,17 +215,17 @@ func (a *Arrayf) MapCC(f MapFunc, axis ...int) (ret *Arrayf) {
 // Slice containing all data to be consolidated into an element will be passed to f.
 // Return value will be the resulting element's value.
 func (a *Arrayf) Map(f MapFunc, axis ...int) (ret *Arrayf) {
-	if a.err != nil {
-		return nil
-	}
-	if a == nil {
-		a.err = NilError
-		return nil
-	}
-
 	axis = cleanAxis(axis...)
-	if len(axis) == 0 {
-		return a.C()
+	switch {
+	case a == nil:
+		a = new(Arrayf)
+		a.err = NilError
+		fallthrough
+	case a.err != nil:
+		return a
+	case len(axis) > len(a.shape):
+		a.err = ShapeError
+		return a
 	}
 
 	span, ret := a.collapse(axis...)
