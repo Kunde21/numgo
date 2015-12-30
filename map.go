@@ -6,6 +6,9 @@ import "sort"
 // across one or multiple axes.
 type MapFunc func([]float64) float64
 
+// ApplyFunc can be received by Apply to apply element-wise to an array.
+type ApplyFunc func(float64) float64
+
 // cleanAxis removes any duplicate axes and returns the cleaned slice.
 // only the first instance of an axis is retained.
 func cleanAxis(axis ...int) []int {
@@ -38,7 +41,9 @@ func (a *Arrayf) collapse(axis ...int) (uint64, *Arrayf) {
 		return 0, a
 	}
 	if len(axis) == 0 {
-		return 1, a.C()
+		r := create(1)
+		r.data = append(r.data[:0], a.data...)
+		return a.strides[0], r
 	}
 	axis = cleanAxis(axis...)
 
@@ -55,105 +60,93 @@ func (a *Arrayf) collapse(axis ...int) (uint64, *Arrayf) {
 		}
 	}
 
-	sort.Sort(sort.Reverse(sort.IntSlice(axis)))
-	asteps := make([]uint64, len(axis)) // Element strides
-	abrks := make([]uint64, len(axis))  // Stride-ending breaks
-	for i, v := range axis {
-		asteps[i], abrks[i] = a.strides[v+1], a.strides[v]
-	}
+	ln := len(a.shape) - len(axis)
+	asteps := make([]uint64, ln) // Element strides
+	abrks := make([]uint64, ln)  // Stride-ending breaks
+	newShape := make([]uint64, ln)
+	sort.Ints(axis)
 
-	// Axis-level offsets
-	sort.IntSlice(axis).Sort()
-	offsets := make([]uint64, len(a.strides))
-	copy(offsets, a.strides)
-	for _, v := range steps {
-		for i, w := range offsets {
-			if v == w && i == len(offsets)-1 {
-				offsets = offsets[:i]
-			} else if v == w {
-				offsets = append(offsets[:i], offsets[i+1:]...)
+shape:
+	for i, j := 0, len(asteps)-1; i < len(a.shape); i++ {
+		for _, v := range axis {
+			if i == v {
+				continue shape
 			}
 		}
-	}
-
-	// Reverse the offsets to make increment code cleaner
-	for i, j := 0, len(offsets)-1; i < j; i, j = i+1, j-1 {
-		offsets[i], offsets[j] = offsets[j], offsets[i]
-	}
-
-	for len(asteps) > 0 && offsets[0] > asteps[0] {
-		asteps = asteps[1:]
+		newShape[ln-j-1] = a.shape[i]
+		asteps[j], abrks[j] = a.strides[i+1], a.strides[i]
+		j--
 	}
 
 	tmp := make([]float64, a.strides[0]) // Holds re-arranged data for return
-	inc := make([]uint64, len(axis))     // N-dimensional incrementor
-	off := make([]uint64, len(axis))     // N-dimensional offset incrementor
+	retChan, compChan := make(chan struct{}), make(chan struct{})
+	defer close(retChan)
+	defer close(compChan)
+
+	go func() {
+		for sl := uint64(0); sl+mx <= a.strides[0]; sl += mx {
+			<-retChan
+		}
+		compChan <- struct{}{}
+	}()
 
 	for sl := uint64(0); sl+mx <= a.strides[0]; sl += mx {
 
-		// Inner loop might be made concurrent using slices
-		// Unknown performance gains in doing so, tuning needed
-		offset := uint64(0)
-		for sp := uint64(0); sp+span <= mx; sp += span {
+		go func(sl uint64) {
+			inc := make([]uint64, len(axis))              // N-dimensional incrementor
+			off := make([]uint64, len(a.shape)-len(axis)) // N-dimensional offset incrementor
 
-			//fmt.Println(off, offsets, asteps, steps, offset, span)
+			// Inner loop might be made concurrent using slices
+			// Unknown performance gains in doing so, tuning needed
+			offset := uint64(0)
+			for sp := uint64(0); sp+span <= mx; sp += span {
 
-			for i, k := uint64(0), uint64(0); i < span; i++ {
-				tmp[sl+i+sp] = a.data[sl+k+offset]
-				k, inc[0] = k+steps[0], inc[0]+steps[0]
+				for i, k := uint64(0), uint64(0); i < span; i++ {
+					tmp[sl+i+sp] = a.data[sl+k+offset]
 
-				// Incrementor loop to handle all dims
-				for c, v := range brks {
-					if uint64(i+1) == span {
+					k, inc[0] = k+steps[0], inc[0]+steps[0]
+
+					// Incrementor loop to handle all dims
+					for c, v := range brks {
+						if uint64(i+1) == span {
+							// Reset at end of loop
+							inc[c] = 0
+						}
+						if inc[c] >= v {
+							k = k - v + steps[c+1]
+							inc[c] -= v
+							inc[c+1] += steps[c+1]
+						}
+					}
+				}
+
+				// Increment to the next dimension
+				offset, off[0] = offset+asteps[0], off[0]+1
+
+				for c, v := range abrks {
+					if sp+span == mx {
 						// Reset at end of loop
-						inc[c] = 0
+						off[c] = 0
 					}
-					if inc[c] >= v {
-						k = k - v + steps[c+1]
-						inc[c] -= v
-						inc[c+1] += steps[c+1]
+					if off[c] >= v && c+1 < len(off) {
+						offset = offset - v + asteps[c+1]
+						off[c] -= v
+						off[c+1] += asteps[c+1]
 					}
+
 				}
 			}
-
-			//fmt.Println(tmp[sp : sp+span])
-
-			// Increment to the next dimension
-			offset, off[0] = offset+offsets[0], off[0]+1
-			//fmt.Println(sp+span, mx)
-			for c, v := range asteps {
-				if sp+span == mx {
-					// Reset at end of loop
-					off[c] = 0
-				}
-				if off[c] >= v && c+1 < len(off) {
-					offset = offset - v + offsets[c+1]
-					off[c] -= v
-					off[c+1] += offsets[c+1]
-				}
-			}
-		}
+			retChan <- struct{}{}
+		}(sl)
 	}
+
+	<-compChan
 
 	// Create return object.  Data is invalid format until reform is called.
 	b := new(Arrayf)
-	b.shape = make([]uint64, len(a.shape)-len(axis))
+	b.shape = newShape
 	b.strides = make([]uint64, len(b.shape)+1)
 	b.data = tmp
-
-	for i, t := 0, 0; i < len(a.shape); i++ {
-		tmp := false
-		for _, w := range axis {
-			if i == w {
-				tmp = true
-				break
-			}
-		}
-		if !tmp {
-			b.shape[t] = a.shape[i]
-			t++
-		}
-	}
 
 	t := uint64(1)
 	for i := len(b.strides) - 1; i > 0; i-- {
@@ -232,6 +225,24 @@ func (a *Arrayf) Map(f MapFunc, axis ...int) (ret *Arrayf) {
 	for i := uint64(0); i+span <= a.strides[0]; i += span {
 		ret.data[i/span] = f(ret.data[i : i+span])
 	}
-	ret.data = ret.data[:a.strides[0]]
+	ret.data = ret.data[:ret.strides[0]]
 	return ret
+}
+
+// Apply applies function f to each element in the array.
+func (a *Arrayf) Apply(f ApplyFunc) (r *Arrayf) {
+	switch {
+	case a == nil:
+		a = new(Arrayf)
+		a.err = NilError
+		fallthrough
+	case a.err != nil:
+		return a
+	}
+
+	r = create(a.shape...)
+	for i := uint64(0); i < a.shape[0]; i++ {
+		r.data[i] = f(a.data[i])
+	}
+	return
 }

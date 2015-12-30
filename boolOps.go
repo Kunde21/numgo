@@ -7,16 +7,20 @@ import "sort"
 func (a *Arrayf) Equals(b *Arrayf) (r *Arrayb) {
 	switch {
 	case a == nil:
-		a = new(Arrayf)
+		a = create(0)
 		fallthrough
 	case b == nil:
 		a.err = NilError
 		fallthrough
 	case a.err != nil:
-		return nil
+		r = createb(0)
+		r.err = a.err
+		return r
 	case len(a.shape) < len(b.shape):
 		a.err = ShapeError
-		return nil
+		r = createb(0)
+		r.err = a.err
+		return r
 	}
 
 	a.RLock()
@@ -27,7 +31,9 @@ func (a *Arrayf) Equals(b *Arrayf) (r *Arrayb) {
 	for i, j := len(b.shape)-1, len(a.shape)-1; i >= 0; i, j = i-1, j-1 {
 		if a.shape[j] != b.shape[i] {
 			a.err = ShapeError
-			return nil
+			r = createb(0)
+			r.err = a.err
+			return r
 		}
 	}
 

@@ -221,7 +221,7 @@ func (a *Arrayf) Mean(axis ...int) *Arrayf {
 	}
 
 	axis = cleanAxis(axis...)
-	return a.C().Sum(axis...).Div(a.Count(axis...))
+	return a.C().Sum(axis...).DivC(a.Count(axis...).data[0])
 }
 
 // NaNMean calculates the mean across the given axes.

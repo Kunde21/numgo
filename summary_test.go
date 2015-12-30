@@ -88,6 +88,22 @@ func TestMean(t *testing.T) {
 	}
 }
 
+func TestMapMean(t *testing.T) {
+	a := Arange(2*3*4*5*6*7*8*9*10*11).Reshape(2, 3, 4, 5, 6, 7, 8, 9, 10, 11)
+	sm := func(d []float64) (r float64) {
+		i := 0
+		for _, v := range d {
+			r += v
+			i++
+		}
+		return r / float64(i)
+	}
+
+	if !a.Mean(1, 3, 5, 7).Equals(a.Map(sm, 1, 3, 5, 7)).All().data[0] {
+		t.Fail()
+	}
+}
+
 func TestClean(t *testing.T) {
 	for i, v := range cleanAxis(0, 1, 2, 3, 4) {
 		if i != v {
@@ -140,7 +156,7 @@ func TestNanMean(t *testing.T) {
 		t.Log("NaNMean producing different results than Mean")
 		t.Log(a.Mean(1, 3))
 		t.Log(a.NaNMean(1, 3))
-		t.FailNow()
+		t.Fail()
 	}
 }
 
@@ -165,14 +181,14 @@ func BenchmarkMapMean(b *testing.B) {
 		return r / float64(i)
 	}
 
-	if !a.C().Sum(1, 3, 5, 7).Equals(a.Map(sm, 1, 3, 5, 7)).All().data[0] {
+	if !a.C().Mean(1, 3, 5, 7).Equals(a.Map(sm, 1, 3, 5, 7)).All().data[0] {
 		b.FailNow()
 	}
 
 	b.ReportAllocs()
 	b.ResetTimer()
 	for i := 0; i < b.N; i++ {
-		a.Map(sm, 1, 3, 5, 7)
+		a.Map(sm, 5, 3, 7, 8)
 	}
 }
 
@@ -187,14 +203,14 @@ func BenchmarkMapCCMean(b *testing.B) {
 		return r / float64(i)
 	}
 
-	if !a.C().Mean(1, 3, 5, 7).Equals(a.Map(sm, 1, 3, 5, 7)).All().data[0] {
+	if !a.C().Mean(1, 3, 5, 7).Equals(a.MapCC(sm, 1, 3, 5, 7)).All().data[0] {
 		b.FailNow()
 	}
 
 	b.ReportAllocs()
 	b.ResetTimer()
 	for i := 0; i < b.N; i++ {
-		a.MapCC(sm, 1, 3, 5, 7)
+		a.MapCC(sm, 5, 3, 7, 8)
 	}
 }
 
@@ -204,6 +220,6 @@ func BenchmarkMean(b *testing.B) {
 	b.ReportAllocs()
 	b.ResetTimer()
 	for i := 0; i < b.N; i++ {
-		a.Mean(1, 3, 5, 7)
+		a.Mean(5, 3, 7, 8)
 	}
 }
