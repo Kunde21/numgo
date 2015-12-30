@@ -26,6 +26,9 @@ func Create(shape ...int) (a *Arrayf) {
 	for i, v := range shape {
 		if v < 0 {
 			a.err = NegativeAxis
+			if debug {
+				a.debug = fmt.Sprintf("Negative axis length received by Create: %v", shape)
+			}
 			return
 		}
 		sz *= uint64(v)
@@ -48,26 +51,19 @@ func Create(shape ...int) (a *Arrayf) {
 // Internal function to create using the shape of another array
 func create(shape ...uint64) (a *Arrayf) {
 	var sz uint64 = 1
-	sh := make([]uint64, len(shape))
-	for i, v := range shape {
-		if v < 0 {
-			a = new(Arrayf)
-			a.err = NegativeAxis
-			return
-		}
+	for _, v := range shape {
 		sz *= uint64(v)
-		sh[i] = uint64(v)
 	}
 
 	a = new(Arrayf)
-	a.shape = sh
+	a.shape = shape
 	a.data = make([]float64, sz)
 
-	a.strides = make([]uint64, len(sh)+1)
+	a.strides = make([]uint64, len(shape)+1)
 	tmp := uint64(1)
 	for i := len(a.strides) - 1; i > 0; i-- {
 		a.strides[i] = tmp
-		tmp *= sh[i-1]
+		tmp *= shape[i-1]
 	}
 	a.strides[0] = tmp
 	return
@@ -78,7 +74,10 @@ func FromSlice(data []float64) (a *Arrayf) {
 	if data == nil {
 		a = new(Arrayf)
 		a.err = NilError
-		return nil
+		if debug {
+			a.debug = "Nil slice pointer received by FromSlice()"
+		}
+		return
 	}
 
 	a = new(Arrayf)
@@ -136,6 +135,9 @@ func Arange(vals ...float64) (a *Arrayf) {
 		if vals[1] < vals[0] && vals[2] >= 0 || vals[1] > vals[0] && vals[2] <= 0 {
 			a = new(Arrayf)
 			a.err = ShapeError
+			if debug {
+				a.debug = fmt.Sprintf("Arange received illegal values %v", vals)
+			}
 			return
 		}
 		start, stop, step = vals[0], vals[1], vals[2]
@@ -156,6 +158,9 @@ func Identity(size int) (r *Arrayf) {
 	if size < 0 {
 		r = new(Arrayf)
 		r.err = ShapeError
+		if debug {
+			r.debug = fmt.Sprintf("Negative dimension received by Identity: %d", size)
+		}
 		return
 	}
 
@@ -172,6 +177,9 @@ func (a *Arrayf) String() (s string) {
 	case a == nil:
 		a = new(Arrayf)
 		a.err = NilError
+		if debug {
+			a.debug = "Nil pointer received by String()"
+		}
 		return "<nil>"
 	case a.err != nil:
 		return a.err.s
@@ -222,6 +230,10 @@ func (a *Arrayf) Reshape(shape ...int) *Arrayf {
 	case a == nil:
 		a = new(Arrayf)
 		a.err = NilError
+		if debug {
+			a.debug = "Nil pointer received by Reshape()"
+		}
+
 		return a
 	case a.err != nil:
 		return a
@@ -235,6 +247,9 @@ func (a *Arrayf) Reshape(shape ...int) *Arrayf {
 	for i, v := range shape {
 		if v < 0 {
 			a.err = NegativeAxis
+			if debug {
+				a.debug = fmt.Sprintf("Negative dimension received by Reshape(): %v", shape)
+			}
 			return a
 		}
 		sz *= uint64(v)
@@ -243,6 +258,9 @@ func (a *Arrayf) Reshape(shape ...int) *Arrayf {
 
 	if sz != uint64(len(a.data)) {
 		a.err = ReshapeError
+		if debug {
+			a.debug = fmt.Sprintf("Reshape() can not change data size.  Dimensions: %v reshape: %v", a.shape, shape)
+		}
 		return a
 	}
 
@@ -280,6 +298,9 @@ func (a *Arrayf) encode() (inf, nan []int64, err int8) {
 // Custom Unmarshaler is needed to encode/send unexported values.
 func (a *Arrayf) MarshalJSON() ([]byte, error) {
 	if a == nil {
+		if debug {
+			a.debug = "Negative dimension received by MarshalJSON"
+		}
 		return nil, NilError
 	}
 	t := a.C()

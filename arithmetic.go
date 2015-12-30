@@ -13,16 +13,29 @@ func (a *Arrayf) Add(b *Arrayf) *Arrayf {
 	case a == nil:
 		a = new(Arrayf)
 		a.err = NilError
+		if debug {
+			a.debug = "Nil pointer received by Add()"
+		}
 		fallthrough
 	case a.err != nil:
 		return a
 	case b == nil:
 		a.err = NilError
+		if debug {
+			a.debug = "Array received by Add() is a Nil pointer."
+		}
 		fallthrough
 	case b.err != nil:
+		a.err = b.err
+		if debug {
+			a.debug = "Array received by Add() is in error."
+		}
 		return a
 	case len(a.shape) < len(b.shape):
 		a.err = ShapeError
+		if debug {
+			a.debug = fmt.Sprintf("Array received by Add() can not be broadcast.  Shape: %v  Val shape: %v", a.shape, b.shape)
+		}
 		return a
 	}
 
@@ -32,6 +45,9 @@ func (a *Arrayf) Add(b *Arrayf) *Arrayf {
 	for i, j := len(b.shape)-1, len(a.shape)-1; i >= 0; i, j = i-1, j-1 {
 		if a.shape[j] != b.shape[i] {
 			a.err = ShapeError
+			if debug {
+				a.debug = fmt.Sprintf("Array received by Add() can not be broadcast.  Shape: %v  Val shape: %v", a.shape, b.shape)
+			}
 			return a
 		}
 	}
@@ -58,6 +74,10 @@ func (a *Arrayf) AddC(b float64) *Arrayf {
 	case a == nil:
 		a = new(Arrayf)
 		a.err = NilError
+		if debug {
+			a.debug = "Nil pinter received by AddC()"
+		}
+
 		fallthrough
 	case a.err != nil:
 		return a
@@ -80,16 +100,29 @@ func (a *Arrayf) Subtr(b *Arrayf) *Arrayf {
 	case a == nil:
 		a = new(Arrayf)
 		a.err = NilError
+		if debug {
+			a.debug = "Nil pointer received by Subtr()"
+		}
 		fallthrough
 	case a.err != nil:
 		return a
 	case b == nil:
 		a.err = NilError
+		if debug {
+			a.debug = "Array received by Subtr() is a Nil pointer."
+		}
 		fallthrough
 	case b.err != nil:
+		a.err = b.err
+		if debug {
+			a.debug = "Array received by Subtr() is in error."
+		}
 		return a
 	case len(a.shape) < len(b.shape):
 		a.err = ShapeError
+		if debug {
+			a.debug = fmt.Sprintf("Array received by Subtr() can not be broadcast.  Shape: %v  Val shape: %v", a.shape, b.shape)
+		}
 		return a
 	}
 
@@ -99,9 +132,13 @@ func (a *Arrayf) Subtr(b *Arrayf) *Arrayf {
 	for i, j := len(b.shape)-1, len(a.shape)-1; i >= 0; i, j = i-1, j-1 {
 		if a.shape[j] != b.shape[i] {
 			a.err = ShapeError
+			if debug {
+				a.debug = fmt.Sprintf("Array received by Subtr() can not be broadcast.  Shape: %v  Val shape: %v", a.shape, b.shape)
+			}
 			return a
 		}
 	}
+
 	compChan := make(chan struct{})
 	mul := len(a.data) / len(b.data)
 	for k := 0; k < mul; k++ {
@@ -125,6 +162,9 @@ func (a *Arrayf) SubtrC(b float64) *Arrayf {
 	case a == nil:
 		a = new(Arrayf)
 		a.err = NilError
+		if debug {
+			a.debug = "Nil pointer received by SubtrC()"
+		}
 		fallthrough
 	case a.err != nil:
 		return a
@@ -147,16 +187,29 @@ func (a *Arrayf) Mult(b *Arrayf) *Arrayf {
 	case a == nil:
 		a = new(Arrayf)
 		a.err = NilError
+		if debug {
+			a.debug = "Nil pointer received by Mult()"
+		}
 		fallthrough
 	case a.err != nil:
 		return a
 	case b == nil:
 		a.err = NilError
+		if debug {
+			a.debug = "Array received by Mult() is a Nil pointer."
+		}
 		fallthrough
 	case b.err != nil:
+		a.err = b.err
+		if debug {
+			a.debug = "Array received by Mult() is in error."
+		}
 		return a
 	case len(a.shape) < len(b.shape):
 		a.err = ShapeError
+		if debug {
+			a.debug = fmt.Sprintf("Array received by Mult() can not be broadcast.  Shape: %v  Val shape: %v", a.shape, b.shape)
+		}
 		return a
 	}
 
@@ -166,6 +219,9 @@ func (a *Arrayf) Mult(b *Arrayf) *Arrayf {
 	for i, j := len(b.shape)-1, len(a.shape)-1; i >= 0; i, j = i-1, j-1 {
 		if a.shape[j] != b.shape[i] {
 			a.err = ShapeError
+			if debug {
+				a.debug = fmt.Sprintf("Array received by Mult() can not be broadcast.  Shape: %v  Val shape: %v", a.shape, b.shape)
+			}
 			return a
 		}
 	}
@@ -192,6 +248,9 @@ func (a *Arrayf) MultC(b float64) *Arrayf {
 	case a == nil:
 		a = new(Arrayf)
 		a.err = NilError
+		if debug {
+			a.debug = "Nil pointer received by MultC()"
+		}
 		fallthrough
 	case a.err != nil:
 		return a
@@ -215,49 +274,67 @@ func (a *Arrayf) Div(b *Arrayf) *Arrayf {
 	case a == nil:
 		a = new(Arrayf)
 		a.err = NilError
+		if debug {
+			a.debug = "Nil pointer received by Div()"
+		}
+
 		fallthrough
 	case a.err != nil:
 		return a
 	case b == nil:
 		a.err = NilError
+		if debug {
+			a.debug = "Array received by Div() is a Nil pointer."
+		}
+
 		fallthrough
 	case b.err != nil:
+		a.err = b.err
+		if debug {
+			a.debug = "Array received by Div() is in error."
+		}
 		return a
 	case len(a.shape) < len(b.shape):
 		a.err = ShapeError
+		if debug {
+			a.debug = fmt.Sprintf("Array received by Div() can not be broadcast.  Shape: %v  Val shape: %v", a.shape, b.shape)
+		}
 		return a
 	}
 	for i, j := len(b.shape)-1, len(a.shape)-1; i >= 0; i, j = i-1, j-1 {
 		if a.shape[j] != b.shape[i] {
-			fmt.Println("Base array must have as many or more dimensions", a.shape, "<", b.shape)
-			return nil
+			if debug {
+				a.debug = fmt.Sprintf("Array received by Div() can not be broadcast.  Shape: %v  Val shape: %v", a.shape, b.shape)
+			}
+			return a
 		}
 	}
 
-	compChan := make(chan bool)
+	compChan := make(chan struct{})
 	mul := len(a.data) / len(b.data)
 	for k := 0; k < mul; k++ {
 		go func(m int) {
-			flg := false
 			for i, v := range b.data {
 				if v == 0 {
-					flg = true
 					a.data[i+m] = math.NaN()
+					if a.err == nil {
+						a.err = DivZeroError
+						if debug {
+							a.debug = "Division by zero encountered in Div()"
+						}
+					}
 				} else {
 					a.data[i+m] /= v
 				}
 			}
-			compChan <- flg
+			compChan <- struct{}{}
 		}(k * len(b.data))
 	}
-	flg := false
+
 	for k := 0; k < mul; k++ {
-		flg = flg || <-compChan
+		<-compChan
 	}
 	close(compChan)
-	if flg {
-		a.err = DivZeroError
-	}
 	return a
 }
 
@@ -268,26 +345,28 @@ func (a *Arrayf) DivC(b float64) *Arrayf {
 	case a == nil:
 		a = new(Arrayf)
 		a.err = NilError
+		if debug {
+			a.debug = "Nil pointer received by DivC()"
+		}
 		return a
 	case a.err != nil:
 		return a
+	case b == 0:
+		a.err = DivZeroError
+		if debug {
+			a.debug = "Division by zero encountered in DivC()"
+		}
 	}
 
 	a.Lock()
 	defer a.Unlock()
 
-	flg := false
 	for i := 0; i < len(a.data); i++ {
 		if b == 0 {
-			flg = true
 			a.data[i] = math.NaN()
 		} else {
 			a.data[i] /= b
 		}
-
-	}
-	if flg {
-		fmt.Println("Division by zero encountered.")
 	}
 	return a
 }
@@ -300,20 +379,37 @@ func (a *Arrayf) Pow(b *Arrayf) *Arrayf {
 	case a == nil:
 		a = new(Arrayf)
 		a.err = NilError
-		return a
-	case a.err != nil || b.err != nil:
+		if debug {
+			a.debug = "Nil pointer received by Pow()"
+		}
+		fallthrough
+	case a.err != nil:
 		return a
 	case b == nil:
 		a.err = NilError
+		if debug {
+			a.debug = "Array received by Pow() is a Nil pointer."
+		}
 		return a
+	case b.err != nil:
+		a.err = b.err
+		if debug {
+			a.debug = "Array received by Pow() is in error."
+		}
 	case len(a.shape) < len(b.shape):
 		a.err = ShapeError
-		return nil
+		if debug {
+			a.debug = fmt.Sprintf("Array received by Pow() can not be broadcast.  Shape: %v  Val shape: %v", a.shape, b.shape)
+		}
+		return a
 	}
 	for i, j := len(b.shape)-1, len(a.shape)-1; i >= 0; i, j = i-1, j-1 {
 		if a.shape[j] != b.shape[i] {
-			fmt.Println("Base array must have as many or more dimensions", a.shape, "<", b.shape)
-			return nil
+			a.err = ShapeError
+			if debug {
+				a.debug = fmt.Sprintf("Array received by Pow() can not be broadcast.  Shape: %v  Val shape: %v", a.shape, b.shape)
+			}
+			return a
 		}
 	}
 	compChan := make(chan struct{})
@@ -340,6 +436,9 @@ func (a *Arrayf) PowC(b float64) *Arrayf {
 	case a == nil:
 		a = new(Arrayf)
 		a.err = NilError
+		if debug {
+			a.debug = "Nil pointer received by PowC()"
+		}
 		fallthrough
 	case a.err != nil:
 		return a

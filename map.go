@@ -1,6 +1,9 @@
 package numgo
 
-import "sort"
+import (
+	"fmt"
+	"sort"
+)
 
 // MapFunc can be received by Map and MapCC to apply as a summary function
 // across one or multiple axes.
@@ -38,9 +41,11 @@ func (a *Arrayf) collapse(axis ...int) (uint64, *Arrayf) {
 	switch {
 	case a == nil:
 		a.err = NilError
+		if debug {
+			a.debug = "Nil pointer received by collapse()"
+		}
 		return 0, a
-	}
-	if len(axis) == 0 {
+	case len(axis) == 0:
 		r := create(1)
 		r.data = append(r.data[:0], a.data...)
 		return a.strides[0], r
@@ -168,11 +173,17 @@ func (a *Arrayf) MapCC(f MapFunc, axis ...int) (ret *Arrayf) {
 	case a == nil:
 		a = new(Arrayf)
 		a.err = NilError
+		if debug {
+			a.debug = "Nil pointer received by MapCC()"
+		}
 		fallthrough
 	case a.err != nil:
 		return a
 	case len(axis) > len(a.shape):
 		a.err = ShapeError
+		if debug {
+			a.debug = fmt.Sprintf("Too many axes received by MapCC().  Shape: %v  Axes: %v", a.shape, axis)
+		}
 		return a
 	}
 
@@ -213,11 +224,17 @@ func (a *Arrayf) Map(f MapFunc, axis ...int) (ret *Arrayf) {
 	case a == nil:
 		a = new(Arrayf)
 		a.err = NilError
+		if debug {
+			a.debug = "Nil pointer received by Map()"
+		}
 		fallthrough
 	case a.err != nil:
 		return a
 	case len(axis) > len(a.shape):
 		a.err = ShapeError
+		if debug {
+			a.debug = fmt.Sprintf("Too many axes received by Map().  Shape: %v  Axes: %v", a.shape, axis)
+		}
 		return a
 	}
 
@@ -235,6 +252,9 @@ func (a *Arrayf) Apply(f ApplyFunc) (r *Arrayf) {
 	case a == nil:
 		a = new(Arrayf)
 		a.err = NilError
+		if debug {
+			a.debug = "Nil pointer received by Apply()"
+		}
 		fallthrough
 	case a.err != nil:
 		return a

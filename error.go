@@ -8,6 +8,16 @@ func (n *ngError) Error() string {
 	return n.s
 }
 
+var (
+	NilError     = &ngError{"Nil pointer recieved."}
+	ShapeError   = &ngError{"Array shapes don't match and can't be broadcast."}
+	ReshapeError = &ngError{"New shape cannot change the size of the array."}
+	NegativeAxis = &ngError{"Negative axis length received."}
+	IndexError   = &ngError{"Index or Axis out of range."}
+	DivZeroError = &ngError{"Division by zero encountered."}
+	debug        bool
+)
+
 // Debug sets the error reporting level for the library.
 // To get debugging data from the library, set this to true
 // and use GetDebug() in place of GetErr().
@@ -18,16 +28,15 @@ func (n *ngError) Error() string {
 // use it for development and debugging purposes.
 //
 // Performance and memory will be better when using GetErr() and Debug = false.
-var Debug = false
-
-var (
-	NilError     = &ngError{"Nil pointer recieved."}
-	ShapeError   = &ngError{"Array shapes don't match and can't be broadcast."}
-	ReshapeError = &ngError{"New shape cannot change the size of the array."}
-	NegativeAxis = &ngError{"Negative axis length received."}
-	IndexError   = &ngError{"Index or Axis out of range."}
-	DivZeroError = &ngError{"Division by zero encountered."}
-)
+// Debug will turn debugging on or off for the library.
+// Only the first value will be used for setting the debug flag.
+// An empty call will return the current value.
+func Debug(set ...bool) bool {
+	if len(set) > 0 {
+		debug = set[0]
+	}
+	return debug
+}
 
 // HasErr tests for the existence of an error on the Arrayf object.
 //
@@ -39,6 +48,9 @@ func (a *Arrayf) HasErr() bool {
 	if a == nil {
 		a = new(Arrayf)
 		a.err = NilError
+		if debug {
+			a.debug = "Nil pointer received by HasErr()"
+		}
 	}
 	return a.err != nil
 }
@@ -63,12 +75,15 @@ func (a *Arrayf) GetErr() (err error) {
 //
 // This debug information will only be generated and returned if numgo.Debug is set to true
 // before the function call that causes the error.
-func (a *Arrayf) GetDebug() (err error, debug string) {
+func (a *Arrayf) GetDebug() (err error, debugStr string) {
 	if a == nil {
 		a = new(Arrayf)
 		a.err = NilError
+		if debug {
+			a.debug = "Nil pointer received by GetDebug()"
+		}
 	}
-	err, debug = a.err, a.debug
+	err, debugStr = a.err, a.debug
 	a.err, a.debug = nil, ""
 	return
 }
@@ -126,6 +141,9 @@ func (a *Arrayb) HasErr() bool {
 	if a == nil {
 		a = new(Arrayb)
 		a.err = NilError
+		if debug {
+			a.debug = "Nil pointer received by HasErr()"
+		}
 	}
 	return a.err != nil
 }
@@ -150,12 +168,15 @@ func (a *Arrayb) GetErr() (err error) {
 //
 // This debug information will only be generated and returned if numgo.Debug is set to true
 // before the function call that causes the error.
-func (a *Arrayb) GetDebug() (err error, debug string) {
+func (a *Arrayb) GetDebug() (err error, debugStr string) {
 	if a == nil {
 		a = new(Arrayb)
 		a.err = NilError
+		if debug {
+			a.debug = "Nil pointer received by HasErr()"
+		}
 	}
-	err, debug = a.err, a.debug
+	err, debugStr = a.err, a.debug
 	a.err, a.debug = nil, ""
 	return
 }

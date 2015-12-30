@@ -25,6 +25,9 @@ func Createb(shape ...int) (a *Arrayb) {
 	for i, v := range shape {
 		if v <= 0 {
 			a.err = NegativeAxis
+			if debug {
+				a.debug = fmt.Sprintf("Negative axis length received by Createb.  Shape: %v", shape)
+			}
 			return
 		}
 		sz *= uint64(v)
@@ -50,10 +53,6 @@ func createb(shape ...uint64) (a *Arrayb) {
 	var sz uint64 = 1
 	sh := make([]uint64, len(shape))
 	for i, v := range shape {
-		if v <= 0 {
-			a.err = NegativeAxis
-			return
-		}
 		sz *= uint64(v)
 		sh[i] = uint64(v)
 	}
@@ -103,6 +102,9 @@ func (a *Arrayb) String() (s string) {
 	case a == nil:
 		a = new(Arrayb)
 		a.err = NilError
+		if debug {
+			a.debug = "Nil pointer received by String()"
+		}
 		return ""
 	case a.err != nil:
 		return a.err.s
@@ -152,6 +154,9 @@ func (a *Arrayb) Reshape(shape ...int) *Arrayb {
 	case a == nil:
 		a = new(Arrayb)
 		a.err = NilError
+		if debug {
+			a.debug = "Nil pointer received by Reshape()"
+		}
 		fallthrough
 	case a.err != nil:
 		return a
@@ -165,6 +170,9 @@ func (a *Arrayb) Reshape(shape ...int) *Arrayb {
 	for i, v := range shape {
 		if v < 0 {
 			a.err = NegativeAxis
+			if debug {
+				a.debug = fmt.Sprintf("Negative axis length received by Reshape().  Shape: %v", shape)
+			}
 			return a
 		}
 		sz *= uint64(v)
@@ -173,6 +181,9 @@ func (a *Arrayb) Reshape(shape ...int) *Arrayb {
 
 	if sz != uint64(len(a.data)) {
 		a.err = ReshapeError
+		if debug {
+			a.debug = fmt.Sprintf("Reshape() can not change data size.  Dimensions: %v reshape: %v", a.shape, shape)
+		}
 		return a
 	}
 
@@ -194,6 +205,9 @@ func (a *Arrayb) C() (b *Arrayb) {
 	case a == nil:
 		b = new(Arrayb)
 		b.err = NilError
+		if debug {
+			a.debug = "Nil pointer received by C()"
+		}
 		return b
 	case a.err != nil:
 		return a
@@ -214,11 +228,17 @@ func (a *Arrayb) E(index ...int) *bool {
 	case a == nil:
 		a = new(Arrayb)
 		a.err = NilError
+		if debug {
+			a.debug = "Nil pointer received by E()"
+		}
 		fallthrough
 	case a.err != nil:
 		return nil
 	case len(a.shape) != len(index):
 		a.err = ShapeError
+		if debug {
+			a.debug = fmt.Sprintf("Indexes E(%v) do not match array shape %v", index, a.shape)
+		}
 		return nil
 	}
 
@@ -226,6 +246,9 @@ func (a *Arrayb) E(index ...int) *bool {
 	for i, v := range index {
 		if uint64(v) > a.shape[i] || v < 0 {
 			a.err = IndexError
+			if debug {
+				a.debug = fmt.Sprintf("Index in E(%v) does not exist in array with shape %v", index, a.shape)
+			}
 			return nil
 		}
 		idx += uint64(v) * a.strides[i+1]
@@ -241,18 +264,27 @@ func (a *Arrayb) SliceElement(index ...int) (ret []bool) {
 	case a == nil:
 		a = new(Arrayb)
 		a.err = NilError
+		if debug {
+			a.debug = "Nil pointer received by Flatten()"
+		}
 		fallthrough
 	case a.err != nil:
 		return nil
 	case len(a.shape)-1 != len(index):
 		a.err = ShapeError
+		if debug {
+			a.debug = fmt.Sprintf("Incorrect number of indicies received by SliceElement().  Shape: %v  Index: %v", a.shape, index)
+		}
 		return nil
 	}
 
 	idx := uint64(0)
 	for i, v := range index {
-		if uint64(v) > a.shape[i] {
+		if uint64(v) > a.shape[i] || v < 0 {
 			a.err = ShapeError
+			if debug {
+				a.debug = fmt.Sprintf("Index received by SliceElement() does not exist shape: %v index: %v", a.shape, index)
+			}
 			return nil
 		}
 		idx += uint64(v) * a.strides[i+1]
@@ -269,18 +301,26 @@ func (a *Arrayb) SubArr(index ...int) (ret *Arrayb) {
 	case a == nil:
 		a = new(Arrayb)
 		a.err = NilError
+		if debug {
+			a.debug = "Nil pointer received by SubArr()"
+		}
 		fallthrough
 	case a.err != nil:
 		return nil
 	case len(a.shape) < len(index):
 		a.err = ShapeError
-		return nil
+		if debug {
+			a.debug = fmt.Sprintf("Too many indicies received by SubArr().  Shape: %v Indicies: %v", a.shape, index)
+		}
+		return a
 	}
 
 	idx := uint64(0)
 	for i, v := range index {
-		if uint64(v) > a.shape[i] {
-
+		if uint64(v) > a.shape[i] || v < 0 {
+			if debug {
+				a.debug = fmt.Sprintf("Index received by SubArr() does not exist shape: %v index: %v", a.shape, index)
+			}
 			return
 		}
 		idx += uint64(v) * a.strides[i+1]
@@ -299,11 +339,17 @@ func (a *Arrayb) SetE(val bool, index ...int) *Arrayb {
 	case a == nil:
 		a = new(Arrayb)
 		a.err = NilError
+		if debug {
+			a.debug = "Nil pointer received by SetE()"
+		}
 		return a
 	case a.err != nil:
 		return a
 	case len(a.shape) != len(index):
 		a.err = ShapeError
+		if debug {
+			a.debug = fmt.Sprintf("Incorrect number of indicies received by SetE().  Shape: %v Index: %v", a.shape, index)
+		}
 		return a
 	}
 
@@ -311,6 +357,9 @@ func (a *Arrayb) SetE(val bool, index ...int) *Arrayb {
 	for i, v := range index {
 		if uint64(v) > a.shape[i] || v < 0 {
 			a.err = IndexError
+			if debug {
+				a.debug = fmt.Sprintf("Index received by SetE() does not exist shape: %v index: %v", a.shape, index)
+			}
 			return a
 		}
 		idx += uint64(v) * a.strides[i+1]
@@ -326,17 +375,32 @@ func (a *Arrayb) SetSliceElement(vals []bool, index ...int) *Arrayb {
 	case a == nil:
 		a = new(Arrayb)
 		a.err = NilError
+		if debug {
+			a.debug = "Nil pointer received by SetSliceElement()"
+		}
 		return a
 	case a.err != nil:
 		return a
-	case len(a.shape)-1 != len(index) || uint64(len(vals)) != a.shape[len(a.shape)-1]:
+	case len(a.shape)-1 != len(index):
+		if debug {
+			a.debug = fmt.Sprintf("Incorrect number of indicies received by SetSliceElement().  Shape: %v  Index: %v", a.shape, index)
+		}
+		fallthrough
+	case uint64(len(vals)) != a.shape[len(a.shape)-1]:
 		a.err = ShapeError
+		if debug {
+			a.debug = fmt.Sprintf("Incorrect slice length received by SetSliceElement().  Shape: %v  Index: %v", a.shape, len(index))
+		}
 		return a
 	}
 	idx := uint64(0)
 	for i, v := range index {
 		if uint64(v) > a.shape[i] || v < 0 {
 			a.err = IndexError
+			if debug {
+				a.debug = fmt.Sprintf("Index received by SetSliceElement() does not exist shape: %v index: %v", a.shape, index)
+			}
+
 			return a
 		}
 		idx += uint64(v) * a.strides[i+1]
@@ -352,26 +416,48 @@ func (a *Arrayb) SetSubArr(vals *Arrayb, index ...int) *Arrayb {
 	switch {
 	case a == nil:
 		a = new(Arrayb)
+		if debug {
+			a.debug = "Nil pointer received by SetE"
+		}
+		fallthrough
+	case vals == nil:
 		a.err = NilError
-		return a
+		if debug {
+			a.debug = "Input array value received by SetE is a Nil pointer."
+		}
+		fallthrough
 	case a.err != nil:
 		return a
+	case vals.err != nil:
+		a.err = vals.err
+		if debug {
+			a.debug = "Array received by SetSubArr() is in error."
+		}
 	case len(vals.shape)+len(index) > len(a.shape):
 		a.err = ShapeError
+		if debug {
+			a.debug = fmt.Sprintf("Array received by SetSubArr() cant be broadcast.  Shape: %v  Vals shape: %v index: %v", a.shape, vals.shape, index)
+		}
 		return a
 	}
 
 	for i, j := len(a.shape)-1, len(vals.shape)-1; i >= 0; i, j = i-1, j-1 {
 		if a.shape[i] != vals.shape[j] {
 			a.err = ShapeError
+			if debug {
+				a.debug = fmt.Sprintf("Shape of array recieved by SetSubArr() doesn't match receiver.  Shape: %v  Vals Shape: %v", a.shape, vals.shape)
+			}
 			return a
 		}
 	}
 
 	idx := uint64(0)
 	for i, v := range index {
-		if uint64(v) > a.shape[i] {
+		if uint64(v) > a.shape[i] || v < 0 {
 			a.err = IndexError
+			if debug {
+				a.debug = fmt.Sprintf("Index received by SetSubArr() out of range.  Shape: %v  Index: %v", a.shape, index)
+			}
 			return a
 		}
 		idx += uint64(v) * a.strides[i+1]
@@ -394,10 +480,135 @@ func (a *Arrayb) SetSubArr(vals *Arrayb, index ...int) *Arrayb {
 	return a
 }
 
+// Resize will change the underlying array size.
+//
+// Make a copy C() if the original array needs to remain unchanged.
+// Element location in the underlying slice will not be adjusted to the new shape.
+func (a *Arrayb) Resize(shape ...int) *Arrayb {
+	switch {
+	case a == nil:
+		a = new(Arrayb)
+		a.err = NilError
+		if debug {
+			a.debug = "Nil pointer received by Resize."
+		}
+		fallthrough
+	case a.err != nil:
+		return a
+	case len(shape) == 0:
+		return createb(0)
+	}
+
+	a.Lock()
+	defer a.Unlock()
+
+	var sz uint64 = 1
+	a.shape = make([]uint64, len(shape))
+	for i, v := range shape {
+		if v < 0 {
+			a.err = NegativeAxis
+			if debug {
+				a.debug = fmt.Sprintf("Negative axis length received by Resize.  Shape: %v", shape)
+			}
+			return a
+		}
+		sz *= uint64(v)
+		a.shape[i] = uint64(v)
+	}
+
+	if sz > a.strides[0] {
+		a.data = append(a.data, make([]bool, a.strides[0]-sz)...)
+	} else {
+		a.data = a.data[:sz]
+	}
+
+	a.strides = make([]uint64, len(shape)+1)
+	a.strides[0] = sz
+	sz = 1
+	for i := len(a.strides) - 1; i > 0; i-- {
+		a.strides[i] = sz
+		sz *= a.shape[i-1]
+	}
+	return a
+}
+
+// Append will concatenate a and val at the given axis.
+//
+// Source array will be changed, so use C() if the original data is needed.
+// All axes must be the same except the appending axis.
+func (a *Arrayb) Append(val *Arrayb, axis int) *Arrayb {
+	switch {
+	case a == nil:
+		a = new(Arrayb)
+		a.err = NilError
+		if debug {
+			a.debug = "Nil pointer received by Append"
+		}
+		fallthrough
+	case a.err != nil:
+		return a
+	case axis >= len(a.shape) || axis < 0:
+		a.err = IndexError
+		if debug {
+			a.debug = fmt.Sprintf("Axis received by Append() out of range.  Shape: %v  Axis: %v", a.shape, axis)
+		}
+		return a
+	case val.err != nil:
+		a.err = val.err
+		if debug {
+			a.debug = "Array received by Append() is in error."
+		}
+	case len(a.shape) != len(val.shape):
+		a.err = ShapeError
+		if debug {
+			a.debug = fmt.Sprintf("Array received by Append() can not be matched.  Shape: %v  Val shape: %v", a.shape, val.shape)
+		}
+		return a
+	}
+
+	a.Lock()
+	val.RLock()
+	defer a.Unlock()
+	defer val.Unlock()
+
+	for k, v := range a.shape {
+		if v != val.shape[k] && k != axis {
+			a.err = ShapeError
+			if debug {
+				a.debug = fmt.Sprintf("Array received by Append() can not be matched.  Shape: %v  Val shape: %v", a.shape, val.shape)
+			}
+			return a
+		}
+	}
+
+	a.data = append(a.data, val.data...)
+
+	as, vs := a.strides[axis], val.strides[axis+1]
+	for i, j := a.strides[0]-as, val.strides[0]-vs; i >= 0; i, j = i-as, j-vs {
+		copy(a.data[i+j+as:i+j+as+vs], val.data[j:j+vs])
+		copy(a.data[i+j:i+j+as], a.data[i:i+as])
+	}
+
+	a.shape[axis] += val.shape[axis]
+
+	tmp := a.strides[axis+1]
+	for i := axis; i >= 0; i-- {
+		tmp *= a.shape[i]
+		a.strides[i] = tmp
+	}
+
+	return a
+}
+
 // MarshalJSON fulfills the json.Marshaler Interface for encoding data.
 // Custom Unmarshaler is needed to encode/send unexported values.
 func (a *Arrayb) MarshalJSON() ([]byte, error) {
 	if a == nil {
+		a = createb(0)
+		a.err = NilError
+		if debug {
+			a.debug = "Nil pointer received by MarshalJSON()"
+		}
 		return nil, NilError
 	}
 	return json.Marshal(struct {

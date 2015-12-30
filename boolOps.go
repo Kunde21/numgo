@@ -1,6 +1,9 @@
 package numgo
 
-import "sort"
+import (
+	"fmt"
+	"sort"
+)
 
 // Equals performs boolean '==' element-wise comparison
 // Currently uses '1' and '0' in place of boolean
@@ -8,18 +11,29 @@ func (a *Arrayf) Equals(b *Arrayf) (r *Arrayb) {
 	switch {
 	case a == nil:
 		a = create(0)
+		if debug {
+			a.debug = "Nil pointer received by Equals()"
+		}
 		fallthrough
 	case b == nil:
 		a.err = NilError
+		if debug {
+			a.debug = "Array received by Equals() is a Nil Pointer."
+		}
 		fallthrough
 	case a.err != nil:
 		r = createb(0)
 		r.err = a.err
+		if debug {
+			r.debug = "Error in Equals() arrays"
+		}
 		return r
 	case len(a.shape) < len(b.shape):
-		a.err = ShapeError
 		r = createb(0)
-		r.err = a.err
+		r.err = ShapeError
+		if debug {
+			r.debug = fmt.Sprintf("Array received by Equals() can not be broadcast.  Shape: %v  Val shape: %v", a.shape, b.shape)
+		}
 		return r
 	}
 
@@ -30,9 +44,11 @@ func (a *Arrayf) Equals(b *Arrayf) (r *Arrayb) {
 
 	for i, j := len(b.shape)-1, len(a.shape)-1; i >= 0; i, j = i-1, j-1 {
 		if a.shape[j] != b.shape[i] {
-			a.err = ShapeError
 			r = createb(0)
-			r.err = a.err
+			r.err = ShapeError
+			if debug {
+				a.debug = fmt.Sprintf("Array received by Equals() can not be broadcast.  Shape: %v  Val shape: %v", a.shape, b.shape)
+			}
 			return r
 		}
 	}
@@ -66,11 +82,17 @@ func (a *Arrayb) Any(axis ...int) *Arrayb {
 	case a == nil:
 		a = new(Arrayb)
 		a.err = NilError
+		if debug {
+			a.debug = "Nil pointer received by Any()"
+		}
 		fallthrough
 	case a.err != nil:
 		return a
 	case len(a.shape) < len(axis):
 		a.err = ShapeError
+		if debug {
+			a.debug = fmt.Sprintf("Too many axes received by Any().  Shape: %v  Axes: %v", a.shape, axis)
+		}
 		return a
 	}
 
@@ -87,6 +109,9 @@ func (a *Arrayb) Any(axis ...int) *Arrayb {
 	for _, v := range axis {
 		if v < 0 || v > len(a.shape) {
 			a.err = IndexError
+			if debug {
+				a.debug = fmt.Sprintf("Illegal axis received by Any().  Shape: %v  Axes: %v", a.shape, axis)
+			}
 			return a
 		}
 	}
@@ -148,11 +173,17 @@ func (a *Arrayb) All(axis ...int) *Arrayb {
 	case a == nil:
 		a = new(Arrayb)
 		a.err = NilError
+		if debug {
+			a.debug = "Array received by All() is a Nil pointer."
+		}
 		fallthrough
 	case a.err != nil:
 		return a
 	case len(a.shape) < len(axis):
 		a.err = ShapeError
+		if debug {
+			a.debug = fmt.Sprintf("Too many axes received by All().  Shape: %v  Axes: %v", a.shape, axis)
+		}
 		return a
 	}
 
@@ -230,6 +261,9 @@ func (a *Arrayf) Nonzero() (c *uint64) {
 	case a == nil:
 		a = new(Arrayf)
 		a.err = NilError
+		if debug {
+			a.debug = "Nil pointer received by Nonzero"
+		}
 		fallthrough
 	case a.err != nil:
 		return nil

@@ -1,6 +1,9 @@
 package numgo
 
-import "math"
+import (
+	"fmt"
+	"math"
+)
 
 // Flatten reshapes the data to a 1-D array.
 func (a *Arrayf) Flatten() *Arrayf {
@@ -8,7 +11,10 @@ func (a *Arrayf) Flatten() *Arrayf {
 	case a == nil:
 		a = new(Arrayf)
 		a.err = NilError
-		return a
+		if debug {
+			a.debug = "Nil pointer received by Flatten()"
+		}
+		fallthrough
 	case a.err != nil:
 		return a
 	}
@@ -23,6 +29,9 @@ func (a *Arrayf) C() (b *Arrayf) {
 	case a == nil:
 		b = new(Arrayf)
 		b.err = NilError
+		if debug {
+			b.debug = "Nil pointer received by C()"
+		}
 		return
 	case a.err != nil:
 		return a
@@ -42,11 +51,17 @@ func (a *Arrayf) E(index ...int) float64 {
 	case a == nil:
 		a = new(Arrayf)
 		a.err = NilError
+		if debug {
+			a.debug = "Nil pointer received by E()"
+		}
 		fallthrough
 	case a.err != nil:
 		return math.NaN()
 	case len(a.shape) != len(index):
 		a.err = ShapeError
+		if debug {
+			a.debug = fmt.Sprintf("Indexes E(%v) do not match array shape %v", index, a.shape)
+		}
 		return math.NaN()
 	}
 
@@ -54,6 +69,9 @@ func (a *Arrayf) E(index ...int) float64 {
 	for i, v := range index {
 		if uint64(v) > a.shape[i] || v < 0 {
 			a.err = IndexError
+			if debug {
+				a.debug = fmt.Sprintf("Index in E(%v) does not exist in array with shape %v", index, a.shape)
+			}
 			return math.NaN()
 		}
 		idx += uint64(v) * a.strides[i+1]
@@ -68,17 +86,26 @@ func (a *Arrayf) SliceElement(index ...int) (ret []float64) {
 	case a == nil:
 		a = new(Arrayf)
 		a.err = NilError
+		if debug {
+			a.debug = "Nil pointer received by Flatten()"
+		}
 		fallthrough
 	case a.err != nil:
 		return nil
 	case len(a.shape)-1 != len(index):
 		a.err = IndexError
+		if debug {
+			a.debug = fmt.Sprintf("Incorrect number of indicies received by SliceElement().  Shape: %v  Index: %v", a.shape, index)
+		}
 		return nil
 	}
 	idx := uint64(0)
 	for i, v := range index {
-		if uint64(v) > a.shape[i] {
+		if uint64(v) > a.shape[i] || v < 0 {
 			a.err = IndexError
+			if debug {
+				a.debug = fmt.Sprintf("Index received by SliceElement() does not exist shape: %v index: %v", a.shape, index)
+			}
 			return nil
 		}
 		idx += uint64(v) * a.strides[i+1]
@@ -92,11 +119,17 @@ func (a *Arrayf) SubArr(index ...int) (ret *Arrayf) {
 	case a == nil:
 		a = new(Arrayf)
 		a.err = NilError
-		return a
+		if debug {
+			a.debug = fmt.Sprintf("Negative dimension received by Reshape(): %v", index)
+		}
+		fallthrough
 	case a.err != nil:
 		return a
 	case len(index) > len(a.shape):
 		a.err = ShapeError
+		if debug {
+			a.debug = fmt.Sprintf("Too many indicies received by SubArr().  Shape: %v Indicies: %v", a.shape, index)
+		}
 		return a
 	}
 
@@ -104,6 +137,9 @@ func (a *Arrayf) SubArr(index ...int) (ret *Arrayf) {
 	for i, v := range index {
 		if uint64(v) > a.shape[i] {
 			a.err = IndexError
+			if debug {
+				a.debug = fmt.Sprintf("Index received by SubArr() does not exist shape: %v index: %v", a.shape, index)
+			}
 			return a
 		}
 		idx += uint64(v) * a.strides[i+1]
@@ -122,11 +158,17 @@ func (a *Arrayf) SetE(val float64, index ...int) *Arrayf {
 	case a == nil:
 		a = new(Arrayf)
 		a.err = NilError
-		return a
+		if debug {
+			a.debug = "Nil pointer received by SetE"
+		}
+		fallthrough
 	case a.err != nil:
 		return a
 	case len(a.shape) != len(index):
 		a.err = ShapeError
+		if debug {
+			a.debug = fmt.Sprintf("Incorrect number of indicies received by SetE().  Shape: %v Index: %v", a.shape, index)
+		}
 		return a
 	}
 
@@ -134,6 +176,9 @@ func (a *Arrayf) SetE(val float64, index ...int) *Arrayf {
 	for i, v := range index {
 		if uint64(v) > a.shape[i] || v < 0 {
 			a.err = IndexError
+			if debug {
+				a.debug = fmt.Sprintf("Index received by SetE() does not exist shape: %v index: %v", a.shape, index)
+			}
 			return a
 		}
 		idx += uint64(v) * a.strides[i+1]
@@ -149,17 +194,32 @@ func (a *Arrayf) SetSliceElement(vals []float64, index ...int) *Arrayf {
 	case a == nil:
 		a = new(Arrayf)
 		a.err = NilError
+		if debug {
+			a.debug = "Nil pointer received by SetSliceElement()"
+		}
 		return a
 	case a.err != nil:
 		return a
-	case len(a.shape)-1 != len(index) || uint64(len(vals)) != a.shape[len(a.shape)-1]:
+	case len(a.shape)-1 != len(index):
+		if debug {
+			a.debug = fmt.Sprintf("Incorrect number of indicies received by SetSliceElement().  Shape: %v  Index: %v", a.shape, index)
+		}
+		fallthrough
+	case uint64(len(vals)) != a.shape[len(a.shape)-1]:
 		a.err = ShapeError
+		if debug {
+			a.debug = fmt.Sprintf("Incorrect slice length received by SetSliceElement().  Shape: %v  Index: %v", a.shape, len(index))
+		}
 		return a
 	}
 	idx := uint64(0)
 	for i, v := range index {
 		if uint64(v) > a.shape[i] || v < 0 {
 			a.err = IndexError
+			if debug {
+				a.debug = fmt.Sprintf("Index received by SetSliceElement() does not exist shape: %v index: %v", a.shape, index)
+			}
+
 			return a
 		}
 		idx += uint64(v) * a.strides[i+1]
@@ -175,28 +235,48 @@ func (a *Arrayf) SetSubArr(vals *Arrayf, index ...int) *Arrayf {
 	switch {
 	case a == nil:
 		a = new(Arrayf)
+		if debug {
+			a.debug = "Nil pointer received by SetE"
+		}
 		fallthrough
 	case vals == nil:
 		a.err = NilError
+		if debug {
+			a.debug = "Input array value received by SetE is a Nil pointer."
+		}
 		fallthrough
 	case a.err != nil:
 		return a
+	case vals.err != nil:
+		a.err = vals.err
+		if debug {
+			a.debug = "Array received by SetSubArr() is in error."
+		}
 	case len(vals.shape)+len(index) > len(a.shape):
 		a.err = ShapeError
+		if debug {
+			a.debug = fmt.Sprintf("Array received by SetSubArr() cant be broadcast.  Shape: %v  Vals shape: %v index: %v", a.shape, vals.shape, index)
+		}
 		return a
 	}
 
 	for i, j := len(a.shape)-1, len(vals.shape)-1; i >= 0; i, j = i-1, j-1 {
 		if a.shape[i] != vals.shape[j] {
 			a.err = ShapeError
+			if debug {
+				a.debug = fmt.Sprintf("Shape of array recieved by SetSubArr() doesn't match receiver.  Shape: %v  Vals Shape: %v", a.shape, vals.shape)
+			}
 			return a
 		}
 	}
 
 	idx := uint64(0)
 	for i, v := range index {
-		if uint64(v) > a.shape[i] {
+		if uint64(v) > a.shape[i] || v < 0 {
 			a.err = IndexError
+			if debug {
+				a.debug = fmt.Sprintf("Index received by SetSubArr() out of range.  Shape: %v  Index: %v", a.shape, index)
+			}
 			return a
 		}
 		idx += uint64(v) * a.strides[i+1]
@@ -228,6 +308,9 @@ func (a *Arrayf) Resize(shape ...int) *Arrayf {
 	case a == nil:
 		a = new(Arrayf)
 		a.err = NilError
+		if debug {
+			a.debug = "Nil pointer received by Resize."
+		}
 		fallthrough
 	case a.err != nil:
 		return a
@@ -243,6 +326,9 @@ func (a *Arrayf) Resize(shape ...int) *Arrayf {
 	for i, v := range shape {
 		if v < 0 {
 			a.err = NegativeAxis
+			if debug {
+				a.debug = fmt.Sprintf("Negative axis length received by Resize.  Shape: %v", shape)
+			}
 			return a
 		}
 		sz *= uint64(v)
@@ -274,14 +360,28 @@ func (a *Arrayf) Append(val *Arrayf, axis int) *Arrayf {
 	case a == nil:
 		a = new(Arrayf)
 		a.err = NilError
+		if debug {
+			a.debug = "Nil pointer received by Append"
+		}
 		fallthrough
 	case a.err != nil:
 		return a
 	case axis >= len(a.shape) || axis < 0:
 		a.err = IndexError
+		if debug {
+			a.debug = fmt.Sprintf("Axis received by Append() out of range.  Shape: %v  Axis: %v", a.shape, axis)
+		}
 		return a
+	case val.err != nil:
+		a.err = val.err
+		if debug {
+			a.debug = "Array received by Append() is in error."
+		}
 	case len(a.shape) != len(val.shape):
 		a.err = ShapeError
+		if debug {
+			a.debug = fmt.Sprintf("Array received by Append() can not be matched.  Shape: %v  Val shape: %v", a.shape, val.shape)
+		}
 		return a
 	}
 
@@ -293,6 +393,9 @@ func (a *Arrayf) Append(val *Arrayf, axis int) *Arrayf {
 	for k, v := range a.shape {
 		if v != val.shape[k] && k != axis {
 			a.err = ShapeError
+			if debug {
+				a.debug = fmt.Sprintf("Array received by Append() can not be matched.  Shape: %v  Val shape: %v", a.shape, val.shape)
+			}
 			return a
 		}
 	}

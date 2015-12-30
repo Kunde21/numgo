@@ -1,23 +1,30 @@
 package numgo
 
 import (
+	"fmt"
 	"math"
 	"sort"
 )
 
 // Sum calculates the sum result array along a given axes.
 // Empty call gives the grand sum of all elements.
-func (a *Arrayf) Sum(axis ...int) *Arrayf {
+func (a *Arrayf) Sum(axis ...int) (r *Arrayf) {
 	axis = cleanAxis(axis...)
 	switch {
 	case a == nil:
 		a = new(Arrayf)
 		a.err = NilError
+		if debug {
+			a.debug = "Nil pointer received by Sum()"
+		}
 		fallthrough
 	case a.err != nil:
 		return a
 	case len(axis) > len(a.shape):
 		a.err = ShapeError
+		if debug {
+			a.debug = fmt.Sprintf("Too many axes received by Sum().  Shape: %v  Axes: %v", a.shape, axis)
+		}
 		return a
 	case len(axis) == 0:
 		a.RLock()
@@ -36,6 +43,9 @@ func (a *Arrayf) Sum(axis ...int) *Arrayf {
 	for _, v := range axis {
 		if v < 0 || v > len(a.shape) {
 			a.err = IndexError
+			if debug {
+				a.debug = fmt.Sprintf("Axis out of range received by Sum().  Shape: %v  Axes: %v", a.shape, axis)
+			}
 			return a
 		}
 	}
@@ -98,16 +108,25 @@ func (a *Arrayf) NaNSum(axis ...int) *Arrayf {
 	case a == nil:
 		a = new(Arrayf)
 		a.err = NilError
+		if debug {
+			a.debug = "Nil pointer received by NaNSum()"
+		}
 		fallthrough
 	case a.err != nil:
 		return a
 	case len(axis) > len(a.shape):
 		a.err = ShapeError
+		if debug {
+			a.debug = fmt.Sprintf("Too many axes received by NaNSum().  Shape: %v  Axes: %v", a.shape, axis)
+		}
 		return a
 	}
 	for _, v := range axis {
 		if v < 0 || v > len(a.shape) {
 			a.err = IndexError
+			if debug {
+				a.debug = fmt.Sprintf("Axis out of range received by Sum().  Shape: %v  Axes: %v", a.shape, axis)
+			}
 			return a
 		}
 	}
@@ -138,11 +157,17 @@ func (a *Arrayf) Count(axis ...int) *Arrayf {
 	case a == nil:
 		a = new(Arrayf)
 		a.err = NilError
+		if debug {
+			a.debug = "Nil pointer received by Count()"
+		}
 		fallthrough
 	case a.err != nil:
 		return a
 	case len(axis) > len(a.shape):
 		a.err = ShapeError
+		if debug {
+			a.debug = fmt.Sprintf("Too many axes received by Count().  Shape: %v  Axes: %v", a.shape, axis)
+		}
 		return a
 	case len(axis) == 0:
 		return full(float64(a.strides[0]), 1)
@@ -151,6 +176,9 @@ func (a *Arrayf) Count(axis ...int) *Arrayf {
 	for _, v := range axis {
 		if v < 0 || v > len(a.shape) {
 			a.err = IndexError
+			if debug {
+				a.debug = fmt.Sprintf("Axis out of range received by Sum().  Shape: %v  Axes: %v", a.shape, axis)
+			}
 			return a
 		}
 	}
@@ -183,13 +211,29 @@ func (a *Arrayf) NaNCount(axis ...int) *Arrayf {
 	case a == nil:
 		a = new(Arrayf)
 		a.err = NilError
+		if debug {
+			a.debug = "Nil pointer received by NaNCount()"
+		}
 		fallthrough
 	case a.err != nil:
 		return a
 	case len(axis) > len(a.shape):
 		a.err = ShapeError
+		if debug {
+			a.debug = fmt.Sprintf("Too many axes received by Count().  Shape: %v  Axes: %v", a.shape, axis)
+		}
 		return a
 	}
+	for _, v := range axis {
+		if v < 0 || v > len(a.shape) {
+			a.err = IndexError
+			if debug {
+				a.debug = fmt.Sprintf("Axis out of range received by Sum().  Shape: %v  Axes: %v", a.shape, axis)
+			}
+			return a
+		}
+	}
+
 	nc := func(d []float64) (r float64) {
 		for _, v := range d {
 			if !math.IsNaN(v) {
@@ -210,17 +254,31 @@ func (a *Arrayf) Mean(axis ...int) *Arrayf {
 	case a == nil:
 		a = new(Arrayf)
 		a.err = NilError
+		if debug {
+			a.debug = "Nil pointer received by Mean()"
+		}
 		fallthrough
 	case a.err != nil:
 		return a
 	case len(axis) > len(a.shape):
 		a.err = ShapeError
+		if debug {
+			a.debug = fmt.Sprintf("Too many axes received by Mean().  Shape: %v  Axes: %v", a.shape, axis)
+		}
 		return a
 	case len(axis) == 0:
 		return a.C()
 	}
 
-	axis = cleanAxis(axis...)
+	for _, v := range axis {
+		if v < 0 || v > len(a.shape) {
+			a.err = IndexError
+			if debug {
+				a.debug = fmt.Sprintf("Axis out of range received by Mean().  Shape: %v  Axes: %v", a.shape, axis)
+			}
+			return a
+		}
+	}
 	return a.C().Sum(axis...).DivC(a.Count(axis...).data[0])
 }
 
@@ -232,15 +290,30 @@ func (a *Arrayf) NaNMean(axis ...int) *Arrayf {
 	case a == nil:
 		a = new(Arrayf)
 		a.err = NilError
+		if debug {
+			a.debug = "Nil pointer received by Mean()"
+		}
 		fallthrough
 	case a.err != nil:
 		return a
 	case len(axis) > len(a.shape):
 		a.err = ShapeError
+		if debug {
+			a.debug = fmt.Sprintf("Too many axes received by Mean().  Shape: %v  Axes: %v", a.shape, axis)
+		}
 		return a
 	case len(axis) == 0:
 		return a.C()
 	}
 
+	for _, v := range axis {
+		if v < 0 || v > len(a.shape) {
+			a.err = IndexError
+			if debug {
+				a.debug = fmt.Sprintf("Axis out of range received by Mean().  Shape: %v  Axes: %v", a.shape, axis)
+			}
+			return a
+		}
+	}
 	return a.NaNSum(axis...).Div(a.NaNCount(axis...))
 }
