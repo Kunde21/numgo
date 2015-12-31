@@ -46,7 +46,7 @@ Any formula can be created and mapped onto one or more axes within the array:
 
 ## Function chaining
 
-numgo is designed to allow chaining of functions, to allow different actions on different axes and at different pointw in the calculation.  Errors are maintained by the object and can be checked and handled by 
+numgo is designed to allow chaining of functions, to allow different actions on different axes and at different points in the calculation.  Errors are maintained by the object and can be checked and handled using `Err()` or `GetErr()`:
 
 ```go
 	// Errors are not handled on each call, 
@@ -64,6 +64,22 @@ numgo is designed to allow chaining of functions, to allow different actions on 
 	}
 	// ng.GetErr() will always return nil here, 
 	// so avoid stacking this type of error handling 
+```
+
+## Debugging option
+
+Debugging can be enabled by calling `numgo.Debug(true)`.  This will give detailed error strings by using `GetDebug()` instead of `GetErr()`.  This makes debugging chained method calls much easier.
+
+```go
+	numgo.Debug(true)
+	var nilp *Arrayf
+	
+	nilp.SetE(12, 1,4,0).AddC(2).DivC(6).E(1,4,0)
+	if nilp.HasErr(){
+		err, debug := nilp.GetDebug()
+		fmt.Println(err)		//Prints generic error: "Nil pointer received."
+		fmt.Println(debug)		//Prints debug info: "Nil pointer received by SetE()."
+	}
 ```
 
 ## Contributions
