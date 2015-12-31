@@ -7,15 +7,7 @@ import (
 
 // Flatten reshapes the data to a 1-D array.
 func (a *Arrayf) Flatten() *Arrayf {
-	switch {
-	case a == nil:
-		a = new(Arrayf)
-		a.err = NilError
-		if debug {
-			a.debug = "Nil pointer received by Flatten()"
-		}
-		fallthrough
-	case a.err != nil:
+	if a == nil || a.err != nil {
 		return a
 	}
 	a.shape[0] = a.strides[0]
@@ -25,15 +17,7 @@ func (a *Arrayf) Flatten() *Arrayf {
 
 // C will return a deep copy of the source array.
 func (a *Arrayf) C() (b *Arrayf) {
-	switch {
-	case a == nil:
-		b = new(Arrayf)
-		b.err = NilError
-		if debug {
-			b.debug = "Nil pointer received by C()"
-		}
-		return
-	case a.err != nil:
+	if a == nil || a.err != nil {
 		return a
 	}
 
@@ -48,17 +32,10 @@ func (a *Arrayf) C() (b *Arrayf) {
 // There should be one index per axis.  Generates a ShapeError if incorrect index.
 func (a *Arrayf) E(index ...int) float64 {
 	switch {
-	case a == nil:
-		a = new(Arrayf)
-		a.err = NilError
-		if debug {
-			a.debug = "Nil pointer received by E()"
-		}
-		fallthrough
-	case a.err != nil:
+	case a == nil || a.err != nil:
 		return math.NaN()
 	case len(a.shape) != len(index):
-		a.err = ShapeError
+		a.err = InvIndexError
 		if debug {
 			a.debug = fmt.Sprintf("Indexes E(%v) do not match array shape %v", index, a.shape)
 		}
@@ -83,14 +60,7 @@ func (a *Arrayf) E(index ...int) float64 {
 // Data is returned as a copy  in a float slice.
 func (a *Arrayf) SliceElement(index ...int) (ret []float64) {
 	switch {
-	case a == nil:
-		a = new(Arrayf)
-		a.err = NilError
-		if debug {
-			a.debug = "Nil pointer received by Flatten()"
-		}
-		fallthrough
-	case a.err != nil:
+	case a == nil || a.err != nil:
 		return nil
 	case len(a.shape)-1 != len(index):
 		a.err = IndexError
@@ -116,14 +86,7 @@ func (a *Arrayf) SliceElement(index ...int) (ret []float64) {
 // SubArr slices the array at a given index.
 func (a *Arrayf) SubArr(index ...int) (ret *Arrayf) {
 	switch {
-	case a == nil:
-		a = new(Arrayf)
-		a.err = NilError
-		if debug {
-			a.debug = fmt.Sprintf("Negative dimension received by Reshape(): %v", index)
-		}
-		fallthrough
-	case a.err != nil:
+	case a == nil || a.err != nil:
 		return a
 	case len(index) > len(a.shape):
 		a.err = ShapeError
@@ -155,17 +118,10 @@ func (a *Arrayf) SubArr(index ...int) (ret *Arrayf) {
 // There should be one index per axis.  Generates a ShapeError if incorrect index.
 func (a *Arrayf) SetE(val float64, index ...int) *Arrayf {
 	switch {
-	case a == nil:
-		a = new(Arrayf)
-		a.err = NilError
-		if debug {
-			a.debug = "Nil pointer received by SetE"
-		}
-		fallthrough
-	case a.err != nil:
+	case a == nil || a.err != nil:
 		return a
 	case len(a.shape) != len(index):
-		a.err = ShapeError
+		a.err = InvIndexError
 		if debug {
 			a.debug = fmt.Sprintf("Incorrect number of indicies received by SetE().  Shape: %v Index: %v", a.shape, index)
 		}
@@ -191,14 +147,7 @@ func (a *Arrayf) SetE(val float64, index ...int) *Arrayf {
 // Source Array is returned, for function-chaining design.
 func (a *Arrayf) SetSliceElement(vals []float64, index ...int) *Arrayf {
 	switch {
-	case a == nil:
-		a = new(Arrayf)
-		a.err = NilError
-		if debug {
-			a.debug = "Nil pointer received by SetSliceElement()"
-		}
-		return a
-	case a.err != nil:
+	case a == nil || a.err != nil:
 		return a
 	case len(a.shape)-1 != len(index):
 		if debug {
@@ -206,7 +155,7 @@ func (a *Arrayf) SetSliceElement(vals []float64, index ...int) *Arrayf {
 		}
 		fallthrough
 	case uint64(len(vals)) != a.shape[len(a.shape)-1]:
-		a.err = ShapeError
+		a.err = InvIndexError
 		if debug {
 			a.debug = fmt.Sprintf("Incorrect slice length received by SetSliceElement().  Shape: %v  Index: %v", a.shape, len(index))
 		}
@@ -233,13 +182,7 @@ func (a *Arrayf) SetSliceElement(vals []float64, index ...int) *Arrayf {
 // Values will be broadcast up multiple axes if the shapes match.
 func (a *Arrayf) SetSubArr(vals *Arrayf, index ...int) *Arrayf {
 	switch {
-	case a == nil:
-		a = new(Arrayf)
-		if debug {
-			a.debug = "Nil pointer received by SetE"
-		}
-		fallthrough
-	case vals == nil:
+	case a == nil || vals == nil:
 		a.err = NilError
 		if debug {
 			a.debug = "Input array value received by SetE is a Nil pointer."
@@ -253,7 +196,7 @@ func (a *Arrayf) SetSubArr(vals *Arrayf, index ...int) *Arrayf {
 			a.debug = "Array received by SetSubArr() is in error."
 		}
 	case len(vals.shape)+len(index) > len(a.shape):
-		a.err = ShapeError
+		a.err = InvIndexError
 		if debug {
 			a.debug = fmt.Sprintf("Array received by SetSubArr() cant be broadcast.  Shape: %v  Vals shape: %v index: %v", a.shape, vals.shape, index)
 		}
@@ -305,21 +248,11 @@ func (a *Arrayf) SetSubArr(vals *Arrayf, index ...int) *Arrayf {
 // Element location in the underlying slice will not be adjusted to the new shape.
 func (a *Arrayf) Resize(shape ...int) *Arrayf {
 	switch {
-	case a == nil:
-		a = new(Arrayf)
-		a.err = NilError
-		if debug {
-			a.debug = "Nil pointer received by Resize."
-		}
-		fallthrough
-	case a.err != nil:
+	case a == nil || a.err != nil:
 		return a
 	case len(shape) == 0:
 		return create(0)
 	}
-
-	a.Lock()
-	defer a.Unlock()
 
 	var sz uint64 = 1
 	a.shape = make([]uint64, len(shape))
@@ -357,14 +290,7 @@ func (a *Arrayf) Resize(shape ...int) *Arrayf {
 // All axes must be the same except the appending axis.
 func (a *Arrayf) Append(val *Arrayf, axis int) *Arrayf {
 	switch {
-	case a == nil:
-		a = new(Arrayf)
-		a.err = NilError
-		if debug {
-			a.debug = "Nil pointer received by Append"
-		}
-		fallthrough
-	case a.err != nil:
+	case a == nil || a.err != nil:
 		return a
 	case axis >= len(a.shape) || axis < 0:
 		a.err = IndexError
@@ -384,11 +310,6 @@ func (a *Arrayf) Append(val *Arrayf, axis int) *Arrayf {
 		}
 		return a
 	}
-
-	a.Lock()
-	val.RLock()
-	defer a.Unlock()
-	defer val.Unlock()
 
 	for k, v := range a.shape {
 		if v != val.shape[k] && k != axis {

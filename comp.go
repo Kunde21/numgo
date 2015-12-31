@@ -34,14 +34,7 @@ func (a *Arrayf) Min(axis ...int) (r *Arrayf) {
 // All arrays must be the non-nil and the same shape.
 func (a *Arrayf) MaxSet(arrSet ...*Arrayf) (b *Arrayf) {
 	switch {
-	case a == nil:
-		a = new(Arrayf)
-		a.err = NilError
-		if debug {
-			a.debug = "Nil pointer received by MaxSet()."
-		}
-		fallthrough
-	case a.err != nil:
+	case a == nil || a.err != nil:
 		return a
 	case len(arrSet) == 0:
 		return a.C()
@@ -83,15 +76,7 @@ func (a *Arrayf) MaxSet(arrSet ...*Arrayf) (b *Arrayf) {
 //
 // All arrays must be the non-nil and the same shape.
 func (a *Arrayf) MinSet(arrSet ...*Arrayf) (b *Arrayf) {
-	switch {
-	case a == nil:
-		a = new(Arrayf)
-		a.err = NilError
-		if debug {
-			a.debug = "Nil pointer received by MinSet()."
-		}
-		fallthrough
-	case a.err != nil:
+	if a == nil || a.err != nil {
 		return a
 	}
 	for _, v := range arrSet {

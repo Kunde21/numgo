@@ -8,28 +8,33 @@ import (
 // Equals performs boolean '==' element-wise comparison
 // Currently uses '1' and '0' in place of boolean
 func (a *Arrayf) Equals(b *Arrayf) (r *Arrayb) {
+	r = new(Arrayb)
 	switch {
 	case a == nil:
-		a = create(0)
+		r.err = NilError
 		if debug {
-			a.debug = "Nil pointer received by Equals()"
+			r.debug = "Nil pointer received by Equals()"
 		}
-		fallthrough
+		return r
 	case b == nil:
-		a.err = NilError
+		r.err = NilError
 		if debug {
-			a.debug = "Array received by Equals() is a Nil Pointer."
+			r.debug = "Array received by Equals() is a Nil Pointer."
 		}
-		fallthrough
+		return r
 	case a.err != nil:
-		r = createb(0)
 		r.err = a.err
 		if debug {
 			r.debug = "Error in Equals() arrays"
 		}
 		return r
+	case b.err != nil:
+		r.err = b.err
+		if debug {
+			r.debug = "Error in Equals() arrays"
+		}
+		return r
 	case len(a.shape) < len(b.shape):
-		r = createb(0)
 		r.err = ShapeError
 		if debug {
 			r.debug = fmt.Sprintf("Array received by Equals() can not be broadcast.  Shape: %v  Val shape: %v", a.shape, b.shape)
@@ -37,14 +42,8 @@ func (a *Arrayf) Equals(b *Arrayf) (r *Arrayb) {
 		return r
 	}
 
-	a.RLock()
-	b.RLock()
-	defer a.RUnlock()
-	defer b.RUnlock()
-
 	for i, j := len(b.shape)-1, len(a.shape)-1; i >= 0; i, j = i-1, j-1 {
 		if a.shape[j] != b.shape[i] {
-			r = createb(0)
 			r.err = ShapeError
 			if debug {
 				a.debug = fmt.Sprintf("Array received by Equals() can not be broadcast.  Shape: %v  Val shape: %v", a.shape, b.shape)
@@ -79,14 +78,7 @@ func (a *Arrayf) Equals(b *Arrayf) (r *Arrayb) {
 // Any will return true if any element is non-zero, false otherwise.
 func (a *Arrayb) Any(axis ...int) *Arrayb {
 	switch {
-	case a == nil:
-		a = new(Arrayb)
-		a.err = NilError
-		if debug {
-			a.debug = "Nil pointer received by Any()"
-		}
-		fallthrough
-	case a.err != nil:
+	case a == nil || a.err != nil:
 		return a
 	case len(a.shape) < len(axis):
 		a.err = ShapeError
@@ -170,14 +162,7 @@ func (a *Arrayb) Any(axis ...int) *Arrayb {
 // Any will return true if all elements are non-zero, false otherwise.
 func (a *Arrayb) All(axis ...int) *Arrayb {
 	switch {
-	case a == nil:
-		a = new(Arrayb)
-		a.err = NilError
-		if debug {
-			a.debug = "Array received by All() is a Nil pointer."
-		}
-		fallthrough
-	case a.err != nil:
+	case a == nil || a.err != nil:
 		return a
 	case len(a.shape) < len(axis):
 		a.err = ShapeError
@@ -257,15 +242,7 @@ func (a *Arrayb) All(axis ...int) *Arrayb {
 
 // Nonzero counts the number of non-zero elements are in the array
 func (a *Arrayf) Nonzero() (c *uint64) {
-	switch {
-	case a == nil:
-		a = new(Arrayf)
-		a.err = NilError
-		if debug {
-			a.debug = "Nil pointer received by Nonzero"
-		}
-		fallthrough
-	case a.err != nil:
+	if a == nil || a.err != nil {
 		return nil
 	}
 

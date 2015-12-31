@@ -10,14 +10,7 @@ import (
 // This will modify the source array.
 func (a *Arrayf) Add(b *Arrayf) *Arrayf {
 	switch {
-	case a == nil:
-		a = new(Arrayf)
-		a.err = NilError
-		if debug {
-			a.debug = "Nil pointer received by Add()"
-		}
-		fallthrough
-	case a.err != nil:
+	case a == nil || a.err != nil:
 		return a
 	case b == nil:
 		a.err = NilError
@@ -38,9 +31,6 @@ func (a *Arrayf) Add(b *Arrayf) *Arrayf {
 		}
 		return a
 	}
-
-	a.Lock()
-	defer a.Unlock()
 
 	for i, j := len(b.shape)-1, len(a.shape)-1; i >= 0; i, j = i-1, j-1 {
 		if a.shape[j] != b.shape[i] {
@@ -70,21 +60,9 @@ func (a *Arrayf) Add(b *Arrayf) *Arrayf {
 
 // AddC adds a constant to all elements of the array.
 func (a *Arrayf) AddC(b float64) *Arrayf {
-	switch {
-	case a == nil:
-		a = new(Arrayf)
-		a.err = NilError
-		if debug {
-			a.debug = "Nil pinter received by AddC()"
-		}
-
-		fallthrough
-	case a.err != nil:
+	if a == nil || a.err != nil {
 		return a
 	}
-
-	a.Lock()
-	defer a.Unlock()
 
 	for i := 0; i < len(a.data); i++ {
 		a.data[i] += b
@@ -97,14 +75,7 @@ func (a *Arrayf) AddC(b float64) *Arrayf {
 // This will modify the source array.
 func (a *Arrayf) Subtr(b *Arrayf) *Arrayf {
 	switch {
-	case a == nil:
-		a = new(Arrayf)
-		a.err = NilError
-		if debug {
-			a.debug = "Nil pointer received by Subtr()"
-		}
-		fallthrough
-	case a.err != nil:
+	case a == nil || a.err != nil:
 		return a
 	case b == nil:
 		a.err = NilError
@@ -125,9 +96,6 @@ func (a *Arrayf) Subtr(b *Arrayf) *Arrayf {
 		}
 		return a
 	}
-
-	a.Lock()
-	defer a.Unlock()
 
 	for i, j := len(b.shape)-1, len(a.shape)-1; i >= 0; i, j = i-1, j-1 {
 		if a.shape[j] != b.shape[i] {
@@ -158,20 +126,9 @@ func (a *Arrayf) Subtr(b *Arrayf) *Arrayf {
 
 // SubtrC subtracts a constant from all elements of the array.
 func (a *Arrayf) SubtrC(b float64) *Arrayf {
-	switch {
-	case a == nil:
-		a = new(Arrayf)
-		a.err = NilError
-		if debug {
-			a.debug = "Nil pointer received by SubtrC()"
-		}
-		fallthrough
-	case a.err != nil:
+	if a == nil || a.err != nil {
 		return a
 	}
-
-	a.Lock()
-	defer a.Unlock()
 
 	for i := 0; i < len(a.data); i++ {
 		a.data[i] -= b
@@ -184,14 +141,7 @@ func (a *Arrayf) SubtrC(b float64) *Arrayf {
 // This will modify the source array.
 func (a *Arrayf) Mult(b *Arrayf) *Arrayf {
 	switch {
-	case a == nil:
-		a = new(Arrayf)
-		a.err = NilError
-		if debug {
-			a.debug = "Nil pointer received by Mult()"
-		}
-		fallthrough
-	case a.err != nil:
+	case a == nil || a.err != nil:
 		return a
 	case b == nil:
 		a.err = NilError
@@ -212,9 +162,6 @@ func (a *Arrayf) Mult(b *Arrayf) *Arrayf {
 		}
 		return a
 	}
-
-	a.Lock()
-	defer a.Unlock()
 
 	for i, j := len(b.shape)-1, len(a.shape)-1; i >= 0; i, j = i-1, j-1 {
 		if a.shape[j] != b.shape[i] {
@@ -244,20 +191,9 @@ func (a *Arrayf) Mult(b *Arrayf) *Arrayf {
 
 // MultC multiplies all elements of the array by a constant.
 func (a *Arrayf) MultC(b float64) *Arrayf {
-	switch {
-	case a == nil:
-		a = new(Arrayf)
-		a.err = NilError
-		if debug {
-			a.debug = "Nil pointer received by MultC()"
-		}
-		fallthrough
-	case a.err != nil:
+	if a == nil || a.err != nil {
 		return a
 	}
-
-	a.Lock()
-	defer a.Unlock()
 
 	for i := 0; i < len(a.data); i++ {
 		a.data[i] *= b
@@ -271,15 +207,7 @@ func (a *Arrayf) MultC(b float64) *Arrayf {
 // This will modify the source array.
 func (a *Arrayf) Div(b *Arrayf) *Arrayf {
 	switch {
-	case a == nil:
-		a = new(Arrayf)
-		a.err = NilError
-		if debug {
-			a.debug = "Nil pointer received by Div()"
-		}
-
-		fallthrough
-	case a.err != nil:
+	case a == nil || a.err != nil:
 		return a
 	case b == nil:
 		a.err = NilError
@@ -342,14 +270,7 @@ func (a *Arrayf) Div(b *Arrayf) *Arrayf {
 // Division by zero will result in a math.NaN() values.
 func (a *Arrayf) DivC(b float64) *Arrayf {
 	switch {
-	case a == nil:
-		a = new(Arrayf)
-		a.err = NilError
-		if debug {
-			a.debug = "Nil pointer received by DivC()"
-		}
-		return a
-	case a.err != nil:
+	case a == nil || a.err != nil:
 		return a
 	case b == 0:
 		a.err = DivZeroError
@@ -357,9 +278,6 @@ func (a *Arrayf) DivC(b float64) *Arrayf {
 			a.debug = "Division by zero encountered in DivC()"
 		}
 	}
-
-	a.Lock()
-	defer a.Unlock()
 
 	for i := 0; i < len(a.data); i++ {
 		if b == 0 {
@@ -376,14 +294,7 @@ func (a *Arrayf) DivC(b float64) *Arrayf {
 // This will modify the source array.
 func (a *Arrayf) Pow(b *Arrayf) *Arrayf {
 	switch {
-	case a == nil:
-		a = new(Arrayf)
-		a.err = NilError
-		if debug {
-			a.debug = "Nil pointer received by Pow()"
-		}
-		fallthrough
-	case a.err != nil:
+	case a == nil || a.err != nil:
 		return a
 	case b == nil:
 		a.err = NilError
@@ -432,20 +343,9 @@ func (a *Arrayf) Pow(b *Arrayf) *Arrayf {
 // MultC divides all elements of the array by a constant.
 // Division by zero will result in a math.NaN() values.
 func (a *Arrayf) PowC(b float64) *Arrayf {
-	switch {
-	case a == nil:
-		a = new(Arrayf)
-		a.err = NilError
-		if debug {
-			a.debug = "Nil pointer received by PowC()"
-		}
-		fallthrough
-	case a.err != nil:
+	if a == nil || a.err != nil {
 		return a
 	}
-
-	a.Lock()
-	defer a.Unlock()
 
 	for i := 0; i < len(a.data); i++ {
 		a.data[i] = math.Pow(a.data[i], b)

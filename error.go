@@ -9,13 +9,15 @@ func (n *ngError) Error() string {
 }
 
 var (
-	NilError     = &ngError{"Nil pointer recieved."}
-	ShapeError   = &ngError{"Array shapes don't match and can't be broadcast."}
-	ReshapeError = &ngError{"New shape cannot change the size of the array."}
-	NegativeAxis = &ngError{"Negative axis length received."}
-	IndexError   = &ngError{"Index or Axis out of range."}
-	DivZeroError = &ngError{"Division by zero encountered."}
-	debug        bool
+	NilError      = &ngError{"Nil pointer recieved."}
+	ShapeError    = &ngError{"Array shapes don't match and can't be broadcast."}
+	ReshapeError  = &ngError{"New shape cannot change the size of the array."}
+	NegativeAxis  = &ngError{"Negative axis length received."}
+	IndexError    = &ngError{"Index or Axis out of range."}
+	DivZeroError  = &ngError{"Division by zero encountered."}
+	InvIndexError = &ngError{"Invalid or illegal index received."}
+
+	debug bool
 )
 
 // Debug sets the error reporting level for the library.
@@ -46,11 +48,7 @@ func Debug(set ...bool) bool {
 // error handling code.
 func (a *Arrayf) HasErr() bool {
 	if a == nil {
-		a = new(Arrayf)
-		a.err = NilError
-		if debug {
-			a.debug = "Nil pointer received by HasErr()"
-		}
+		return true
 	}
 	return a.err != nil
 }
@@ -62,8 +60,7 @@ func (a *Arrayf) HasErr() bool {
 // provided for that purpose.
 func (a *Arrayf) GetErr() (err error) {
 	if a == nil {
-		a = new(Arrayf)
-		a.err = NilError
+		return NilError
 	}
 	err = a.err
 	a.err, a.debug = nil, ""
@@ -77,11 +74,11 @@ func (a *Arrayf) GetErr() (err error) {
 // before the function call that causes the error.
 func (a *Arrayf) GetDebug() (err error, debugStr string) {
 	if a == nil {
-		a = new(Arrayf)
-		a.err = NilError
+		err = NilError
 		if debug {
-			a.debug = "Nil pointer received by GetDebug()"
+			debugStr = "Nil pointer received by GetDebug().  Source array was not initialized."
 		}
+		return
 	}
 	err, debugStr = a.err, a.debug
 	a.err, a.debug = nil, ""
@@ -105,6 +102,8 @@ func encodeErr(err *ngError) int8 {
 		return 5
 	case DivZeroError:
 		return 6
+	case InvIndexError:
+		return 7
 	}
 	return -1
 }
@@ -126,6 +125,8 @@ func (a *ngError) decodeErr(err int8) {
 		a = IndexError
 	case 6:
 		a = DivZeroError
+	case 7:
+		a = InvIndexError
 	default:
 		a = &ngError{"Unknown error Unmarshaled."}
 	}
@@ -139,11 +140,7 @@ func (a *ngError) decodeErr(err int8) {
 // error handling code.
 func (a *Arrayb) HasErr() bool {
 	if a == nil {
-		a = new(Arrayb)
-		a.err = NilError
-		if debug {
-			a.debug = "Nil pointer received by HasErr()"
-		}
+		return true
 	}
 	return a.err != nil
 }
@@ -155,8 +152,7 @@ func (a *Arrayb) HasErr() bool {
 // provided for that purpose.
 func (a *Arrayb) GetErr() (err error) {
 	if a == nil {
-		a = new(Arrayb)
-		a.err = NilError
+		return NilError
 	}
 	err = a.err
 	a.err, a.debug = nil, ""
@@ -170,11 +166,11 @@ func (a *Arrayb) GetErr() (err error) {
 // before the function call that causes the error.
 func (a *Arrayb) GetDebug() (err error, debugStr string) {
 	if a == nil {
-		a = new(Arrayb)
-		a.err = NilError
+		err = NilError
 		if debug {
-			a.debug = "Nil pointer received by HasErr()"
+			debugStr = "Nil pointer received in GetDebug().  Source array was not initialized."
 		}
+		return
 	}
 	err, debugStr = a.err, a.debug
 	a.err, a.debug = nil, ""

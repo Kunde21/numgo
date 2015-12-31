@@ -9,7 +9,7 @@ import (
 // across one or multiple axes.
 type MapFunc func([]float64) float64
 
-// ApplyFunc can be received by Apply to apply element-wise to an array.
+// ApplyFunc can be received by Apply to modify each element in an array.
 type ApplyFunc func(float64) float64
 
 // cleanAxis removes any duplicate axes and returns the cleaned slice.
@@ -40,11 +40,7 @@ func cleanAxis(axis ...int) []int {
 func (a *Arrayf) collapse(axis ...int) (uint64, *Arrayf) {
 	switch {
 	case a == nil:
-		a.err = NilError
-		if debug {
-			a.debug = "Nil pointer received by collapse()"
-		}
-		return 0, a
+		return 0, nil
 	case len(axis) == 0:
 		r := create(1)
 		r.data = append(r.data[:0], a.data...)
@@ -170,14 +166,7 @@ shape:
 func (a *Arrayf) MapCC(f MapFunc, axis ...int) (ret *Arrayf) {
 	axis = cleanAxis(axis...)
 	switch {
-	case a == nil:
-		a = new(Arrayf)
-		a.err = NilError
-		if debug {
-			a.debug = "Nil pointer received by MapCC()"
-		}
-		fallthrough
-	case a.err != nil:
+	case a == nil || a.err != nil:
 		return a
 	case len(axis) > len(a.shape):
 		a.err = ShapeError
@@ -221,14 +210,7 @@ func (a *Arrayf) MapCC(f MapFunc, axis ...int) (ret *Arrayf) {
 func (a *Arrayf) Map(f MapFunc, axis ...int) (ret *Arrayf) {
 	axis = cleanAxis(axis...)
 	switch {
-	case a == nil:
-		a = new(Arrayf)
-		a.err = NilError
-		if debug {
-			a.debug = "Nil pointer received by Map()"
-		}
-		fallthrough
-	case a.err != nil:
+	case a == nil || a.err != nil:
 		return a
 	case len(axis) > len(a.shape):
 		a.err = ShapeError
@@ -248,15 +230,7 @@ func (a *Arrayf) Map(f MapFunc, axis ...int) (ret *Arrayf) {
 
 // Apply applies function f to each element in the array.
 func (a *Arrayf) Apply(f ApplyFunc) (r *Arrayf) {
-	switch {
-	case a == nil:
-		a = new(Arrayf)
-		a.err = NilError
-		if debug {
-			a.debug = "Nil pointer received by Apply()"
-		}
-		fallthrough
-	case a.err != nil:
+	if a == nil || a.err != nil {
 		return a
 	}
 

@@ -1,6 +1,9 @@
 package numgo
 
-import "testing"
+import (
+	"fmt"
+	"testing"
+)
 
 func TestEquals(t *testing.T) {
 	a, b := Arange(10), Arange(10)
@@ -37,7 +40,7 @@ func TestEquals(t *testing.T) {
 		t.Log("Any expected true, got false", c)
 		t.FailNow()
 	}
-	if c.All().data[0] {
+	if c.All().E(0) {
 		t.Log("Any expected false, got true", c)
 		t.FailNow()
 	}
@@ -91,5 +94,17 @@ func TestA(t *testing.T) {
 			t.Log("First value. Expected true, got", v)
 			t.Fail()
 		}
+	}
+}
+
+func TestDebug(t *testing.T) {
+	Debug(true)
+	var nilp *Arrayf
+	nilp.SetE(12, 1, 4, 0).AddC(2).DivC(6).E(1, 4, 0)
+	if !nilp.HasErr() {
+		t.FailNow()
+		err, debug := nilp.GetDebug()
+		fmt.Println(err)   // Prints generic error: "Nil pointer received."
+		fmt.Println(debug) // Prints debug info: "Nil pointer received by SetE()."
 	}
 }

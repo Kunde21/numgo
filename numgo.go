@@ -5,11 +5,9 @@ import (
 	"fmt"
 	"math"
 	"strings"
-	"sync"
 )
 
 type Arrayf struct {
-	sync.RWMutex
 	shape   []uint64
 	strides []uint64
 	data    []float64
@@ -65,14 +63,17 @@ func create(shape ...uint64) (a *Arrayf) {
 		a.strides[i] = tmp
 		tmp *= shape[i-1]
 	}
+	//if sz == 0{
+
 	a.strides[0] = tmp
 	return
 }
 
-// FromSlice wraps a float64 slice as a 1-D Arrayf object.
+// FromSlice copies a float64 slice into a 1-D Arrayf object.
 func FromSlice(data []float64) (a *Arrayf) {
+	a = new(Arrayf)
+
 	if data == nil {
-		a = new(Arrayf)
 		a.err = NilError
 		if debug {
 			a.debug = "Nil slice pointer received by FromSlice()"
@@ -80,7 +81,6 @@ func FromSlice(data []float64) (a *Arrayf) {
 		return
 	}
 
-	a = new(Arrayf)
 	a.shape = []uint64{uint64(len(data))}
 	a.strides = []uint64{a.shape[0], 1}
 	a.data = make([]float64, len(data))
@@ -156,8 +156,8 @@ func Arange(vals ...float64) (a *Arrayf) {
 // Negative size values will generate an error and return a nil value.
 func Identity(size int) (r *Arrayf) {
 	if size < 0 {
-		r = new(Arrayf)
-		r.err = ShapeError
+		r = create(0)
+		r.err = NegativeAxis
 		if debug {
 			r.debug = fmt.Sprintf("Negative dimension received by Identity: %d", size)
 		}
@@ -175,20 +175,12 @@ func Identity(size int) (r *Arrayf) {
 func (a *Arrayf) String() (s string) {
 	switch {
 	case a == nil:
-		a = new(Arrayf)
-		a.err = NilError
-		if debug {
-			a.debug = "Nil pointer received by String()"
-		}
 		return "<nil>"
 	case a.err != nil:
-		return a.err.s
+		return "Error: " + a.err.s
 	case a.strides[0] == 0:
 		return "[]"
 	}
-
-	a.RLock()
-	defer a.RUnlock()
 
 	stride := a.shape[len(a.shape)-1]
 
@@ -226,21 +218,9 @@ func (a *Arrayf) String() (s string) {
 // This must not change the size of the array.
 // Incorrect dimensions will return a nil pointer
 func (a *Arrayf) Reshape(shape ...int) *Arrayf {
-	switch {
-	case a == nil:
-		a = new(Arrayf)
-		a.err = NilError
-		if debug {
-			a.debug = "Nil pointer received by Reshape()"
-		}
-
-		return a
-	case a.err != nil:
+	if a == nil || a.err != nil {
 		return a
 	}
-
-	a.Lock()
-	defer a.Unlock()
 
 	var sz uint64 = 1
 	sh := make([]uint64, len(shape))
@@ -298,9 +278,6 @@ func (a *Arrayf) encode() (inf, nan []int64, err int8) {
 // Custom Unmarshaler is needed to encode/send unexported values.
 func (a *Arrayf) MarshalJSON() ([]byte, error) {
 	if a == nil {
-		if debug {
-			a.debug = "Negative dimension received by MarshalJSON"
-		}
 		return nil, NilError
 	}
 	t := a.C()
@@ -344,7 +321,7 @@ func (a *Arrayf) decode(i, n []int64, err int8) {
 func (a *Arrayf) UnmarshalJSON(b []byte) error {
 
 	if a == nil {
-		a = new(Arrayf)
+		return NilError
 	}
 
 	tmpA := new(struct {

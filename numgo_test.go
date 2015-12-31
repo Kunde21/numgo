@@ -76,14 +76,14 @@ func TestSubArray(t *testing.T) {
 	a := Arange(100).Reshape(2, 5, 10)
 	b := Arange(50).Reshape(5, 10)
 	c := a.SubArr(0)
-	if !(*c.Equals(b).All().E(0)) {
+	if !c.Equals(b).All().E(0) {
 		t.Log("Subarray incorrect. Expected\n", b, "\nReceived\n", c)
 		t.Fail()
 	}
 
 	b = Arange(50, 100).Reshape(5, 10)
 	c = a.SubArr(1)
-	if !(*c.Equals(b).All().E(0)) {
+	if !c.Equals(b).All().E(0) {
 		t.Log("Subarray incorrect. Expected\n", b, "\nReceived\n", c)
 		t.Fail()
 	}

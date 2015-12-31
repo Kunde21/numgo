@@ -4,11 +4,9 @@ import (
 	"encoding/json"
 	"fmt"
 	"strings"
-	"sync"
 )
 
 type Arrayb struct {
-	sync.RWMutex
 	shape   []uint64
 	strides []uint64
 	data    []bool
@@ -16,8 +14,8 @@ type Arrayb struct {
 	debug   string
 }
 
-// Create creates an Arrayf object with dimensions given in order from outer-most to inner-most
-// All values will default to zero
+// Createb creates an Arrayb object with dimensions given in order from outer-most to inner-most
+// All values will default to false
 func Createb(shape ...int) (a *Arrayb) {
 	a = new(Arrayb)
 	var sz uint64 = 1
@@ -70,8 +68,8 @@ func createb(shape ...uint64) (a *Arrayb) {
 	return
 }
 
-// Full creates an Arrayf object with dimensions givin in order from outer-most to inner-most
-// All elements will be set to 'val' in the retuen
+// Full creates an Arrayb object with dimensions givin in order from outer-most to inner-most
+// All elements will be set to 'val' in the returned array.
 func Fullb(val bool, shape ...int) (a *Arrayb) {
 	a = Createb(shape...)
 	if a.err != nil {
@@ -100,23 +98,14 @@ func fullb(val bool, shape ...uint64) (a *Arrayb) {
 func (a *Arrayb) String() (s string) {
 	switch {
 	case a == nil:
-		a = new(Arrayb)
-		a.err = NilError
-		if debug {
-			a.debug = "Nil pointer received by String()"
-		}
-		return ""
+		return "<nil>"
 	case a.err != nil:
 		return a.err.s
 	case a.strides[0] == 0:
 		return "[]"
 	}
 
-	a.RLock()
-	defer a.RUnlock()
-
 	stride := a.strides[len(a.strides)-2]
-
 	for i, k := uint64(0), 0; i+stride < uint64(len(a.data)); i, k = i+stride, k+1 {
 
 		t := ""
@@ -150,20 +139,9 @@ func (a *Arrayb) String() (s string) {
 // This must not change the size of the array.
 // Incorrect dimensions will return a nil pointer
 func (a *Arrayb) Reshape(shape ...int) *Arrayb {
-	switch {
-	case a == nil:
-		a = new(Arrayb)
-		a.err = NilError
-		if debug {
-			a.debug = "Nil pointer received by Reshape()"
-		}
-		fallthrough
-	case a.err != nil:
+	if a == nil || a.err != nil {
 		return a
 	}
-
-	a.Lock()
-	defer a.Unlock()
 
 	var sz uint64 = 1
 	sh := make([]uint64, len(shape))
@@ -201,15 +179,7 @@ func (a *Arrayb) Reshape(shape ...int) *Arrayb {
 
 // C will return a deep copy of the source array.
 func (a *Arrayb) C() (b *Arrayb) {
-	switch {
-	case a == nil:
-		b = new(Arrayb)
-		b.err = NilError
-		if debug {
-			a.debug = "Nil pointer received by C()"
-		}
-		return b
-	case a.err != nil:
+	if a == nil || a.err != nil {
 		return a
 	}
 
@@ -220,26 +190,19 @@ func (a *Arrayb) C() (b *Arrayb) {
 	return
 }
 
-// E returns a pointer to a copy of the element at the given index.
-// Any errors will return a nil value and record the error for the
+// E returns a copy of the element at the given index.
+// Any errors will return a false value and record the error for the
 // HasErr() and GetErr() functions.
-func (a *Arrayb) E(index ...int) *bool {
+func (a *Arrayb) E(index ...int) bool {
 	switch {
-	case a == nil:
-		a = new(Arrayb)
-		a.err = NilError
-		if debug {
-			a.debug = "Nil pointer received by E()"
-		}
-		fallthrough
-	case a.err != nil:
-		return nil
+	case a == nil || a.err != nil:
+		return false
 	case len(a.shape) != len(index):
 		a.err = ShapeError
 		if debug {
 			a.debug = fmt.Sprintf("Indexes E(%v) do not match array shape %v", index, a.shape)
 		}
-		return nil
+		return false
 	}
 
 	idx := uint64(0)
@@ -249,26 +212,18 @@ func (a *Arrayb) E(index ...int) *bool {
 			if debug {
 				a.debug = fmt.Sprintf("Index in E(%v) does not exist in array with shape %v", index, a.shape)
 			}
-			return nil
+			return false
 		}
 		idx += uint64(v) * a.strides[i+1]
 	}
-	b := a.data[idx]
-	return &b
+	return a.data[idx]
 }
 
 // Eslice returns the element group at one axis above the leaf elements.
 // Data is returned as a copy  in a float slice.
 func (a *Arrayb) SliceElement(index ...int) (ret []bool) {
 	switch {
-	case a == nil:
-		a = new(Arrayb)
-		a.err = NilError
-		if debug {
-			a.debug = "Nil pointer received by Flatten()"
-		}
-		fallthrough
-	case a.err != nil:
+	case a == nil || a.err != nil:
 		return nil
 	case len(a.shape)-1 != len(index):
 		a.err = ShapeError
@@ -298,14 +253,7 @@ func (a *Arrayb) SliceElement(index ...int) (ret []bool) {
 // Intermediate slicing of axes is not available at this point.
 func (a *Arrayb) SubArr(index ...int) (ret *Arrayb) {
 	switch {
-	case a == nil:
-		a = new(Arrayb)
-		a.err = NilError
-		if debug {
-			a.debug = "Nil pointer received by SubArr()"
-		}
-		fallthrough
-	case a.err != nil:
+	case a == nil || a.err != nil:
 		return nil
 	case len(a.shape) < len(index):
 		a.err = ShapeError
@@ -336,14 +284,7 @@ func (a *Arrayb) SubArr(index ...int) (ret *Arrayb) {
 // There should be one index per axis.  Generates a ShapeError if incorrect index.
 func (a *Arrayb) SetE(val bool, index ...int) *Arrayb {
 	switch {
-	case a == nil:
-		a = new(Arrayb)
-		a.err = NilError
-		if debug {
-			a.debug = "Nil pointer received by SetE()"
-		}
-		return a
-	case a.err != nil:
+	case a == nil || a.err != nil:
 		return a
 	case len(a.shape) != len(index):
 		a.err = ShapeError
@@ -372,14 +313,7 @@ func (a *Arrayb) SetE(val bool, index ...int) *Arrayb {
 // Source Array is returned, for function-chaining design.
 func (a *Arrayb) SetSliceElement(vals []bool, index ...int) *Arrayb {
 	switch {
-	case a == nil:
-		a = new(Arrayb)
-		a.err = NilError
-		if debug {
-			a.debug = "Nil pointer received by SetSliceElement()"
-		}
-		return a
-	case a.err != nil:
+	case a == nil || a.err != nil:
 		return a
 	case len(a.shape)-1 != len(index):
 		if debug {
@@ -414,19 +348,13 @@ func (a *Arrayb) SetSliceElement(vals []bool, index ...int) *Arrayb {
 // Values will be broadcast up multiple axes if the shapes match.
 func (a *Arrayb) SetSubArr(vals *Arrayb, index ...int) *Arrayb {
 	switch {
-	case a == nil:
-		a = new(Arrayb)
-		if debug {
-			a.debug = "Nil pointer received by SetE"
-		}
-		fallthrough
+	case a == nil || a.err != nil:
+		return a
 	case vals == nil:
 		a.err = NilError
 		if debug {
 			a.debug = "Input array value received by SetE is a Nil pointer."
 		}
-		fallthrough
-	case a.err != nil:
 		return a
 	case vals.err != nil:
 		a.err = vals.err
@@ -486,21 +414,11 @@ func (a *Arrayb) SetSubArr(vals *Arrayb, index ...int) *Arrayb {
 // Element location in the underlying slice will not be adjusted to the new shape.
 func (a *Arrayb) Resize(shape ...int) *Arrayb {
 	switch {
-	case a == nil:
-		a = new(Arrayb)
-		a.err = NilError
-		if debug {
-			a.debug = "Nil pointer received by Resize."
-		}
-		fallthrough
-	case a.err != nil:
+	case a == nil || a.err != nil:
 		return a
 	case len(shape) == 0:
 		return createb(0)
 	}
-
-	a.Lock()
-	defer a.Unlock()
 
 	var sz uint64 = 1
 	a.shape = make([]uint64, len(shape))
@@ -538,14 +456,7 @@ func (a *Arrayb) Resize(shape ...int) *Arrayb {
 // All axes must be the same except the appending axis.
 func (a *Arrayb) Append(val *Arrayb, axis int) *Arrayb {
 	switch {
-	case a == nil:
-		a = new(Arrayb)
-		a.err = NilError
-		if debug {
-			a.debug = "Nil pointer received by Append"
-		}
-		fallthrough
-	case a.err != nil:
+	case a == nil || a.err != nil:
 		return a
 	case axis >= len(a.shape) || axis < 0:
 		a.err = IndexError
@@ -565,11 +476,6 @@ func (a *Arrayb) Append(val *Arrayb, axis int) *Arrayb {
 		}
 		return a
 	}
-
-	a.Lock()
-	val.RLock()
-	defer a.Unlock()
-	defer val.Unlock()
 
 	for k, v := range a.shape {
 		if v != val.shape[k] && k != axis {
@@ -604,11 +510,6 @@ func (a *Arrayb) Append(val *Arrayb, axis int) *Arrayb {
 // Custom Unmarshaler is needed to encode/send unexported values.
 func (a *Arrayb) MarshalJSON() ([]byte, error) {
 	if a == nil {
-		a = createb(0)
-		a.err = NilError
-		if debug {
-			a.debug = "Nil pointer received by MarshalJSON()"
-		}
 		return nil, NilError
 	}
 	return json.Marshal(struct {
@@ -627,8 +528,6 @@ func (a *Arrayb) MarshalJSON() ([]byte, error) {
 func (a *Arrayb) UnmarshalJSON(b []byte) error {
 
 	if a == nil {
-		a = new(Arrayb)
-		a.err = NilError
 		return NilError
 	}
 

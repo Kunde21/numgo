@@ -11,14 +11,7 @@ import (
 func (a *Arrayf) Sum(axis ...int) (r *Arrayf) {
 	axis = cleanAxis(axis...)
 	switch {
-	case a == nil:
-		a = new(Arrayf)
-		a.err = NilError
-		if debug {
-			a.debug = "Nil pointer received by Sum()"
-		}
-		fallthrough
-	case a.err != nil:
+	case a == nil || a.err != nil:
 		return a
 	case len(axis) > len(a.shape):
 		a.err = ShapeError
@@ -27,17 +20,12 @@ func (a *Arrayf) Sum(axis ...int) (r *Arrayf) {
 		}
 		return a
 	case len(axis) == 0:
-		a.RLock()
-		defer a.RUnlock()
 		tot := float64(0)
 		for _, v := range a.data {
 			tot += v
 		}
 		return Full(tot, 1)
 	}
-
-	a.RLock()
-	defer a.RUnlock()
 
 	//Validate input
 	for _, v := range axis {
@@ -105,14 +93,7 @@ func (a *Arrayf) Sum(axis ...int) (r *Arrayf) {
 func (a *Arrayf) NaNSum(axis ...int) *Arrayf {
 	axis = cleanAxis(axis...)
 	switch {
-	case a == nil:
-		a = new(Arrayf)
-		a.err = NilError
-		if debug {
-			a.debug = "Nil pointer received by NaNSum()"
-		}
-		fallthrough
-	case a.err != nil:
+	case a == nil || a.err != nil:
 		return a
 	case len(axis) > len(a.shape):
 		a.err = ShapeError
@@ -154,14 +135,7 @@ func (a *Arrayf) NaNSum(axis ...int) *Arrayf {
 func (a *Arrayf) Count(axis ...int) *Arrayf {
 	axis = cleanAxis(axis...)
 	switch {
-	case a == nil:
-		a = new(Arrayf)
-		a.err = NilError
-		if debug {
-			a.debug = "Nil pointer received by Count()"
-		}
-		fallthrough
-	case a.err != nil:
+	case a == nil || a.err != nil:
 		return a
 	case len(axis) > len(a.shape):
 		a.err = ShapeError
@@ -208,14 +182,7 @@ func (a *Arrayf) Count(axis ...int) *Arrayf {
 func (a *Arrayf) NaNCount(axis ...int) *Arrayf {
 	axis = cleanAxis(axis...)
 	switch {
-	case a == nil:
-		a = new(Arrayf)
-		a.err = NilError
-		if debug {
-			a.debug = "Nil pointer received by NaNCount()"
-		}
-		fallthrough
-	case a.err != nil:
+	case a == nil || a.err != nil:
 		return a
 	case len(axis) > len(a.shape):
 		a.err = ShapeError
@@ -251,14 +218,7 @@ func (a *Arrayf) NaNCount(axis ...int) *Arrayf {
 func (a *Arrayf) Mean(axis ...int) *Arrayf {
 	axis = cleanAxis(axis...)
 	switch {
-	case a == nil:
-		a = new(Arrayf)
-		a.err = NilError
-		if debug {
-			a.debug = "Nil pointer received by Mean()"
-		}
-		fallthrough
-	case a.err != nil:
+	case a == nil || a.err != nil:
 		return a
 	case len(axis) > len(a.shape):
 		a.err = ShapeError
@@ -287,14 +247,7 @@ func (a *Arrayf) Mean(axis ...int) *Arrayf {
 func (a *Arrayf) NaNMean(axis ...int) *Arrayf {
 	axis = cleanAxis(axis...)
 	switch {
-	case a == nil:
-		a = new(Arrayf)
-		a.err = NilError
-		if debug {
-			a.debug = "Nil pointer received by Mean()"
-		}
-		fallthrough
-	case a.err != nil:
+	case a == nil || a.err != nil:
 		return a
 	case len(axis) > len(a.shape):
 		a.err = ShapeError
