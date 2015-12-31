@@ -72,13 +72,13 @@ Debugging can be enabled by calling `numgo.Debug(true)`.  This will give detaile
 
 ```go
 	numgo.Debug(true)
-	var nilp *Arrayf
+	var nilp *Arrayf		// Forgot to create the array.
 	
 	nilp.SetE(12, 1,4,0).AddC(2).DivC(6).E(1,4,0)
 	if nilp.HasErr(){
 		err, debug := nilp.GetDebug()
-		fmt.Println(err)		//Prints generic error: "Nil pointer received."
-		fmt.Println(debug)		//Prints debug info: "Nil pointer received by SetE()."
+		fmt.Println(err)		// Prints generic error: "Nil pointer received."
+		fmt.Println(debug)		// Prints debug info: "Nil pointer received by SetE()."
 	}
 ```
 
