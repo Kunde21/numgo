@@ -166,7 +166,7 @@ func BenchmarkCollapse(b *testing.B) {
 	b.ReportAllocs()
 	b.ResetTimer()
 	for i := 0; i < b.N; i++ {
-		a.collapse(1, 3, 5, 7)
+		a.collapse(5, 3, 7, 8)
 	}
 }
 

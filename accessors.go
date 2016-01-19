@@ -7,7 +7,14 @@ import (
 
 // Flatten reshapes the data to a 1-D array.
 func (a *Arrayf) Flatten() *Arrayf {
-	if a == nil || a.err != nil {
+	switch {
+	case a == nil:
+		a.err = NilError
+		if debug {
+			a.debug = "Nil pointer received at Flatten()"
+		}
+		fallthrough
+	case a.err != nil:
 		return a
 	}
 	a.shape[0] = a.strides[0]
@@ -17,14 +24,19 @@ func (a *Arrayf) Flatten() *Arrayf {
 
 // C will return a deep copy of the source array.
 func (a *Arrayf) C() (b *Arrayf) {
-	if a == nil || a.err != nil {
+	switch {
+	case a == nil:
+		a.err = NilError
+		if debug {
+			a.debug = "Nil pointer received at C()"
+		}
+		fallthrough
+	case a.err != nil:
 		return a
 	}
 
 	b = create(a.shape...)
-	for i, v := range a.data {
-		b.data[i] = v
-	}
+	copy(b.data, a.data)
 	return
 }
 
