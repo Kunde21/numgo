@@ -78,7 +78,7 @@ func newArrayB(shape ...uint64) (a *Arrayb) {
 // Full creates an Arrayb object with dimensions givin in order from outer-most to inner-most
 // All elements will be set to 'val' in the returned array.
 func Fullb(val bool, shape ...int) (a *Arrayb) {
-	a = NewArrayB(shape...)
+	a = NewArrayB(nil, shape...)
 	if a.err != nil {
 		return a
 	}
