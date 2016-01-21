@@ -16,7 +16,7 @@ func TestEquals(t *testing.T) {
 	}{
 		{a, a.C(), true, true, nil},
 		{a, a.C().AddC(1), false, false, nil},
-		{a.C().Reshape(2, 5), b.C().Reshape(2, 5), true, true, nil},
+		{a.C().Reshape(2, 5), a.C().Reshape(2, 5), true, true, nil},
 		{a, Arange(0, 20, 2), true, false, nil},
 		{a, Arange(27, 7, -2), true, false, nil},
 	}
@@ -26,12 +26,12 @@ func TestEquals(t *testing.T) {
 		c = v.a.Equals(v.b)
 		if d := c.Any().At(0); d != v.any {
 			t.Logf("Test %d failed.  Any expected %v got %v\n", i, v.any, d)
-			t.Log(a.data, b.data, c.data)
+			t.Log(v.a.data, v.b.data, c.data)
 			t.Fail()
 		}
 		if d := c.All().At(0); d != v.all {
 			t.Logf("Test %d failed.  All expected %v got %v\n", i, v.all, d)
-			t.Log(a.data, b.data, c.data)
+			t.Log(v.a.data, v.b.data, c.data)
 			t.Fail()
 		}
 	}
