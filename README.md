@@ -1,4 +1,4 @@
-# numgo [![GoDoc](https://godoc.org/github.com/Kunde21/numgo?status.svg)](https://godoc.org/github.com/Kunde21/numgo) [![Build Status](https://travis-ci.org/Kunde21/numgo.svg?branch=master)](https://travis-ci.org/Kunde21/numgo) [![Coverage Status](https://coveralls.io/repos/github/Kunde21/numgo/badge.svg?branch=master)](https://coveralls.io/github/Kunde21/numgo?branch=master)
+# numgo [![GoDoc](https://godoc.org/github.com/Kunde21/numgo?status.svg)](https://godoc.org/github.com/Kunde21/numgo) [![Build Status](https://travis-ci.org/Kunde21/numgo.svg?branch=master)](https://travis-ci.org/Kunde21/numgo) [![codecov.io](https://codecov.io/github/Kunde21/numgo/coverage.svg?branch=master)](https://codecov.io/github/Kunde21/numgo?branch=master)
 
 An n-dimensional array package implemented in Go.  
 
