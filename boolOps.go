@@ -6,62 +6,164 @@ import (
 )
 
 // Equals performs boolean '==' element-wise comparison
-// Currently uses '1' and '0' in place of boolean
 func (a *Array64) Equals(b *Array64) (r *Arrayb) {
-	r = new(Arrayb)
+	if debug {
+		r = compValid(a, b, "Equals()")
+	} else {
+		r = compValid(a, b, "")
+	}
+	if r != nil {
+		return r
+	}
+
+	r = comp(a, b, func(i, j float64) bool {
+		if i == j {
+			return true
+		}
+		return false
+	})
+	return
+}
+
+// Less performs boolean '<' element-wise comparison
+func (a *Array64) Less(b *Array64) (r *Arrayb) {
+	if debug {
+		r = compValid(a, b, "Less()")
+	} else {
+		r = compValid(a, b, "")
+	}
+	if r != nil {
+		return r
+	}
+
+	r = comp(a, b, func(i, j float64) bool {
+		if i < j {
+			return true
+		}
+		return false
+	})
+	return
+}
+
+// LessEq performs boolean '<=' element-wise comparison
+func (a *Array64) LessEq(b *Array64) (r *Arrayb) {
+	if debug {
+		r = compValid(a, b, "LessEq()")
+	} else {
+		r = compValid(a, b, "")
+	}
+	if r != nil {
+		return r
+	}
+
+	r = comp(a, b, func(i, j float64) bool {
+		if i <= j {
+			return true
+		}
+		return false
+	})
+	return
+}
+
+// Greater performs boolean '<' element-wise comparison
+func (a *Array64) Greater(b *Array64) (r *Arrayb) {
+	if debug {
+		r = compValid(a, b, "Greater()")
+	} else {
+		r = compValid(a, b, "")
+	}
+	if r != nil {
+		return r
+	}
+
+	r = comp(a, b, func(i, j float64) bool {
+		if i > j {
+			return true
+		}
+		return false
+	})
+	return
+}
+
+// GreaterEq performs boolean '<=' element-wise comparison
+func (a *Array64) GreaterEq(b *Array64) (r *Arrayb) {
+	if debug {
+		r = compValid(a, b, "GreaterEq()")
+	} else {
+		r = compValid(a, b, "")
+	}
+	if r != nil {
+		return r
+	}
+
+	r = comp(a, b, func(i, j float64) bool {
+		if i >= j {
+			return true
+		}
+		return false
+	})
+	return
+}
+
+func compValid(a, b *Array64, mthd string) (r *Arrayb) {
+
 	switch {
 	case a == nil:
-		r.err = NilError
+		r = &Arrayb{err: NilError}
 		if debug {
-			r.debug = "Nil pointer received by Equals()"
+			r.debug = fmt.Sprintf("Nil pointer received by %s", mthd)
 		}
 		return r
 	case b == nil:
-		r.err = NilError
+		r = &Arrayb{err: NilError}
 		if debug {
-			r.debug = "Array received by Equals() is a Nil Pointer."
+			r.debug = fmt.Sprintf("Array received by %s is a Nil Pointer.", mthd)
 		}
 		return r
 	case a.err != nil:
-		r.err = a.err
+		r = &Arrayb{err: a.err}
 		if debug {
-			r.debug = "Error in Equals() arrays"
+			r.debug = fmt.Sprintf("Error in %s arrays", mthd)
 		}
 		return r
 	case b.err != nil:
-		r.err = b.err
+		r = &Arrayb{err: b.err}
 		if debug {
-			r.debug = "Error in Equals() arrays"
+			r.debug = fmt.Sprintf("Error in %s arrays", mthd)
 		}
 		return r
+
 	case len(a.shape) < len(b.shape):
-		r.err = ShapeError
+		r = &Arrayb{err: ShapeError}
 		if debug {
-			r.debug = fmt.Sprintf("Array received by Equals() can not be broadcast.  Shape: %v  Val shape: %v", a.shape, b.shape)
+			r.debug = fmt.Sprintf("Array received by %s can not be broadcast.  Shape: %v  Val shape: %v", mthd, a.shape, b.shape)
 		}
 		return r
 	}
 
 	for i, j := len(b.shape)-1, len(a.shape)-1; i >= 0; i, j = i-1, j-1 {
 		if a.shape[j] != b.shape[i] {
-			r.err = ShapeError
+			r = &Arrayb{err: ShapeError}
 			if debug {
-				a.debug = fmt.Sprintf("Array received by Equals() can not be broadcast.  Shape: %v  Val shape: %v", a.shape, b.shape)
+				a.debug = fmt.Sprintf("Array received by %s can not be broadcast.  Shape: %v  Val shape: %v", mthd, a.shape, b.shape)
 			}
 			return r
 		}
 	}
 
-	r = fullb(true, b.shape...)
+	return nil
+}
+
+// Validation and error checks must be complete before calling comp
+func comp(a, b *Array64, f func(i, j float64) bool) (r *Arrayb) {
+	r = newArrayB(b.shape...)
 	compChan := make(chan struct{})
 	mul := len(a.data) / len(b.data)
 
 	for k := 0; k < mul; k++ {
 		go func(m int) {
 			for i, v := range b.data {
-				if a.data[i+m] != v && r.data[i] {
-					r.data[i] = false
-				}
+				r.data[i] = f(a.data[i+m], v)
 			}
 			compChan <- struct{}{}
 		}(k * len(b.data))
@@ -71,7 +173,6 @@ func (a *Array64) Equals(b *Array64) (r *Arrayb) {
 		<-compChan
 	}
 	close(compChan)
-
 	return
 }
 
