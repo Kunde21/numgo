@@ -25,23 +25,22 @@ Any formula can be created and mapped onto one or more axes within the array:
 ```go
 	// Create a FoldFunc
 	countNaNFn := func(input []float64) float64 {
-		   var i float64 :=0
-		       for _,v := range input {
-		       	       if math.IsNaN(v) {
-							i++
-									}
-										}
-											return i
-											}
+	   var i float64 :=0
+	       for _,v := range input {
+	       	       if math.IsNaN(v) {
+				i++
+			}
+		}
+		return i
+	}
 
-											// Pass it into the Fold method and give it any number of axes to fold over
+	// Pass it into the Fold method and give it any number of axes to fold over
 
-											 // Returns an n-dimensional array object 
-											  // with the count of NaN values on 2nd and 4th axes. (0-based axis count)
-											  array.Fold(countNaNFn, 2,4) 
-											  
-											  // No axes operates over all data on all axes
-											  array.Fold(countNanfn)
+	// Returns an n-dimensional array object 
+	// with the count of NaN values on 2nd and 4th axes. (0-based axis count)
+	array.Fold(countNaNFn, 2,4) 
+	// No axes operates over all data on all axes
+	array.Fold(countNanfn)
 ```
 
 ## Function chaining
@@ -56,14 +55,14 @@ numgo is designed to allow chaining of functions, to allow different actions on 
 	// Non-allocating style
 	if ng.HasErr() {
 	   log.Println(ng.GetErr())  // GetErr() clears the error flag
-	   }
+	 }
 	   
-	   // Allocation style
-	   if err = ng.GetErr(); err != nil {  
-	      log.Println(err)
-	      }
-	      // ng.GetErr() will always return nil here, 
-	      // so avoid stacking this type of error handling 
+	 // Allocation style
+	if err = ng.GetErr(); err != nil {  
+		log.Println(err)
+	}
+	// ng.GetErr() will always return nil here, 
+	// so avoid stacking this type of error handling 
 ```
 
 ## Debugging option
@@ -76,14 +75,12 @@ Debugging can be enabled by calling `numgo.Debug(true)`.  This will give detaile
 	
 	nilp.Set(12, 1,4,0).AddC(2).DivC(6).At(1,4,0)
 	if nilp.HasErr(){
-	   err, debug := nilp.GetDebug()
-	   	
-			// Prints generic error: "Nil pointer received."
-			   fmt.Println(err)
-				
-					// Prints debug info: "Nil pointer received by GetDebug().  Source array was not initialized."
-					   fmt.Println(debug)
-					   }
+		err, debug := nilp.GetDebug()
+		// Prints generic error: "Nil pointer received."
+		fmt.Println(err)
+		// Prints debug info: "Nil pointer received by GetDebug().  Source array was not initialized."
+		fmt.Println(debug)
+	}
 ```
 
 ## Contributions
