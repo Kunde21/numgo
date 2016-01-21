@@ -7,7 +7,7 @@ import (
 
 // Equals performs boolean '==' element-wise comparison
 // Currently uses '1' and '0' in place of boolean
-func (a *Arrayf) Equals(b *Arrayf) (r *Arrayb) {
+func (a *Array64) Equals(b *Array64) (r *Arrayb) {
 	r = new(Arrayb)
 	switch {
 	case a == nil:
@@ -241,7 +241,7 @@ func (a *Arrayb) All(axis ...int) *Arrayb {
 }
 
 // Nonzero counts the number of non-zero elements are in the array
-func (a *Arrayf) Nonzero() (c *uint64) {
+func (a *Array64) Nonzero() (c *uint64) {
 	if a == nil || a.err != nil {
 		return nil
 	}

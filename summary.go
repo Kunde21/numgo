@@ -8,7 +8,7 @@ import (
 
 // Sum calculates the sum result array along a given axes.
 // Empty call gives the grand sum of all elements.
-func (a *Arrayf) Sum(axis ...int) (r *Arrayf) {
+func (a *Array64) Sum(axis ...int) (r *Array64) {
 	axis = cleanAxis(axis...)
 	switch {
 	case a == nil || a.err != nil:
@@ -90,7 +90,7 @@ func (a *Arrayf) Sum(axis ...int) (r *Arrayf) {
 // If all element values along the axis are NaN, NaN is in the return element.
 //
 // Empty call gives the grand sum of all elements.
-func (a *Arrayf) NaNSum(axis ...int) *Arrayf {
+func (a *Array64) NaNSum(axis ...int) *Array64 {
 	axis = cleanAxis(axis...)
 	switch {
 	case a == nil || a.err != nil:
@@ -126,13 +126,13 @@ func (a *Arrayf) NaNSum(axis ...int) *Arrayf {
 		return math.NaN()
 	}
 
-	return a.Map(ns, axis...)
+	return a.Fold(ns, axis...)
 
 }
 
 // Count gives the number of elements along a set of axis.
 // Value in the element is not tested, all elements are counted.
-func (a *Arrayf) Count(axis ...int) *Arrayf {
+func (a *Array64) Count(axis ...int) *Array64 {
 	axis = cleanAxis(axis...)
 	switch {
 	case a == nil || a.err != nil:
@@ -179,7 +179,7 @@ func (a *Arrayf) Count(axis ...int) *Arrayf {
 
 // NaNCount calculates the number of values along a given axes.
 // Empty call gives the total number of elements.
-func (a *Arrayf) NaNCount(axis ...int) *Arrayf {
+func (a *Array64) NaNCount(axis ...int) *Array64 {
 	axis = cleanAxis(axis...)
 	switch {
 	case a == nil || a.err != nil:
@@ -210,12 +210,12 @@ func (a *Arrayf) NaNCount(axis ...int) *Arrayf {
 		return r
 	}
 
-	return a.Map(nc, axis...)
+	return a.Fold(nc, axis...)
 }
 
 // Mean calculates the mean across the given axes.
 // NaN values in the dataa will result in NaN result elements.
-func (a *Arrayf) Mean(axis ...int) *Arrayf {
+func (a *Array64) Mean(axis ...int) *Array64 {
 	axis = cleanAxis(axis...)
 	switch {
 	case a == nil || a.err != nil:
@@ -244,7 +244,7 @@ func (a *Arrayf) Mean(axis ...int) *Arrayf {
 
 // NaNMean calculates the mean across the given axes.
 // NaN values are ignored in this calculation.
-func (a *Arrayf) NaNMean(axis ...int) *Arrayf {
+func (a *Array64) NaNMean(axis ...int) *Array64 {
 	axis = cleanAxis(axis...)
 	switch {
 	case a == nil || a.err != nil:

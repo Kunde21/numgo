@@ -40,7 +40,7 @@ func TestEquals(t *testing.T) {
 		t.Log("Any expected true, got false", c)
 		t.FailNow()
 	}
-	if c.All().E(0) {
+	if c.All().At(0) {
 		t.Log("Any expected false, got true", c)
 		t.FailNow()
 	}
@@ -58,7 +58,7 @@ func TestEquals(t *testing.T) {
 
 func TestA(t *testing.T) {
 	sz := []int{2, 3, 4, 5}
-	a := Create(sz...)
+	a := NewArray64(nil, sz...)
 	b := a.Equals(Arange(5 * 4 * 3 * 2).Reshape(sz...))
 	for i, v := range b.shape {
 		if int(v) != sz[i] {
@@ -88,7 +88,7 @@ func TestA(t *testing.T) {
 		}
 	}
 
-	b = a.Equals(Create(2, 3, 4, 5)).Any(0, 3)
+	b = a.Equals(NewArray64(nil, 2, 3, 4, 5)).Any(0, 3)
 	for _, v := range b.data {
 		if !v {
 			t.Log("First value. Expected true, got", v)
@@ -99,8 +99,8 @@ func TestA(t *testing.T) {
 
 func TestDebug(t *testing.T) {
 	Debug(true)
-	var nilp *Arrayf
-	nilp.SetE(12, 1, 4, 0).AddC(2).DivC(6).E(1, 4, 0)
+	var nilp *Array64
+	nilp.Set(12, 1, 4, 0).AddC(2).DivC(6).At(1, 4, 0)
 	if !nilp.HasErr() {
 		t.FailNow()
 		err, debug := nilp.GetDebug()

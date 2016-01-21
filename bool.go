@@ -14,9 +14,13 @@ type Arrayb struct {
 	debug   string
 }
 
-// Createb creates an Arrayb object with dimensions given in order from outer-most to inner-most
+// NewArrayB creates an Arrayb object with dimensions given in order from outer-most to inner-most
 // All values will default to false
-func Createb(shape ...int) (a *Arrayb) {
+func NewArrayB(data []bool, shape ...int) (a *Arrayb) {
+	if data != nil && len(shape) == 0 {
+		shape = append(shape, len(data))
+	}
+
 	a = new(Arrayb)
 	var sz uint64 = 1
 	sh := make([]uint64, len(shape))
@@ -34,6 +38,9 @@ func Createb(shape ...int) (a *Arrayb) {
 
 	a.shape = sh
 	a.data = make([]bool, sz)
+	if data != nil {
+		copy(a.data, data)
+	}
 
 	a.strides = make([]uint64, len(sh)+1)
 	tmp := uint64(1)
@@ -46,7 +53,7 @@ func Createb(shape ...int) (a *Arrayb) {
 }
 
 // Internal function to create using the shape of another array
-func createb(shape ...uint64) (a *Arrayb) {
+func newArrayB(shape ...uint64) (a *Arrayb) {
 	a = new(Arrayb)
 	var sz uint64 = 1
 	sh := make([]uint64, len(shape))
@@ -71,7 +78,7 @@ func createb(shape ...uint64) (a *Arrayb) {
 // Full creates an Arrayb object with dimensions givin in order from outer-most to inner-most
 // All elements will be set to 'val' in the returned array.
 func Fullb(val bool, shape ...int) (a *Arrayb) {
-	a = Createb(shape...)
+	a = NewArrayB(shape...)
 	if a.err != nil {
 		return a
 	}
@@ -83,7 +90,7 @@ func Fullb(val bool, shape ...int) (a *Arrayb) {
 }
 
 func fullb(val bool, shape ...uint64) (a *Arrayb) {
-	a = createb(shape...)
+	a = newArrayB(shape...)
 	if a.err != nil {
 		return a
 	}
@@ -183,17 +190,17 @@ func (a *Arrayb) C() (b *Arrayb) {
 		return a
 	}
 
-	b = createb(a.shape...)
+	b = newArrayB(a.shape...)
 	for i, v := range a.data {
 		b.data[i] = v
 	}
 	return
 }
 
-// E returns a copy of the element at the given index.
+// At returns a copy of the element at the given index.
 // Any errors will return a false value and record the error for the
 // HasErr() and GetErr() functions.
-func (a *Arrayb) E(index ...int) bool {
+func (a *Arrayb) At(index ...int) bool {
 	switch {
 	case a == nil || a.err != nil:
 		return false
@@ -219,7 +226,7 @@ func (a *Arrayb) E(index ...int) bool {
 	return a.data[idx]
 }
 
-// Eslice returns the element group at one axis above the leaf elements.
+// SliceElement returns the element group at one axis above the leaf elements.
 // Data is returned as a copy  in a float slice.
 func (a *Arrayb) SliceElement(index ...int) (ret []bool) {
 	switch {
@@ -274,15 +281,15 @@ func (a *Arrayb) SubArr(index ...int) (ret *Arrayb) {
 		idx += uint64(v) * a.strides[i+1]
 	}
 
-	ret = createb(a.shape[len(index):]...)
+	ret = newArrayB(a.shape[len(index):]...)
 	copy(ret.data, a.data[idx:idx+a.strides[len(index)]])
 
 	return
 }
 
-// SetE sets the element at the given index.
+// Set sets the element at the given index.
 // There should be one index per axis.  Generates a ShapeError if incorrect index.
-func (a *Arrayb) SetE(val bool, index ...int) *Arrayb {
+func (a *Arrayb) Set(val bool, index ...int) *Arrayb {
 	switch {
 	case a == nil || a.err != nil:
 		return a
@@ -417,7 +424,7 @@ func (a *Arrayb) Resize(shape ...int) *Arrayb {
 	case a == nil || a.err != nil:
 		return a
 	case len(shape) == 0:
-		return createb(0)
+		return newArrayB(0)
 	}
 
 	var sz uint64 = 1

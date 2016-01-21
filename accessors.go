@@ -6,7 +6,7 @@ import (
 )
 
 // Flatten reshapes the data to a 1-D array.
-func (a *Arrayf) Flatten() *Arrayf {
+func (a *Array64) Flatten() *Array64 {
 	switch {
 	case a == nil:
 		a.err = NilError
@@ -23,7 +23,7 @@ func (a *Arrayf) Flatten() *Arrayf {
 }
 
 // C will return a deep copy of the source array.
-func (a *Arrayf) C() (b *Arrayf) {
+func (a *Array64) C() (b *Array64) {
 	switch {
 	case a == nil:
 		a.err = NilError
@@ -35,14 +35,14 @@ func (a *Arrayf) C() (b *Arrayf) {
 		return a
 	}
 
-	b = create(a.shape...)
+	b = newArray64(a.shape...)
 	copy(b.data, a.data)
 	return
 }
 
-// E returns the element at the given index.
+// At returns the element at the given index.
 // There should be one index per axis.  Generates a ShapeError if incorrect index.
-func (a *Arrayf) E(index ...int) float64 {
+func (a *Array64) At(index ...int) float64 {
 	switch {
 	case a == nil || a.err != nil:
 		return math.NaN()
@@ -70,7 +70,7 @@ func (a *Arrayf) E(index ...int) float64 {
 
 // SliceElement returns the element group at one axis above the leaf elements.
 // Data is returned as a copy  in a float slice.
-func (a *Arrayf) SliceElement(index ...int) (ret []float64) {
+func (a *Array64) SliceElement(index ...int) (ret []float64) {
 	switch {
 	case a == nil || a.err != nil:
 		return nil
@@ -96,7 +96,7 @@ func (a *Arrayf) SliceElement(index ...int) (ret []float64) {
 }
 
 // SubArr slices the array at a given index.
-func (a *Arrayf) SubArr(index ...int) (ret *Arrayf) {
+func (a *Array64) SubArr(index ...int) (ret *Array64) {
 	switch {
 	case a == nil || a.err != nil:
 		return a
@@ -120,15 +120,15 @@ func (a *Arrayf) SubArr(index ...int) (ret *Arrayf) {
 		idx += uint64(v) * a.strides[i+1]
 	}
 
-	ret = create(a.shape[len(index):]...)
+	ret = newArray64(a.shape[len(index):]...)
 	copy(ret.data, a.data[idx:idx+a.strides[len(index)]])
 
 	return
 }
 
-// SetE sets the element at the given index.
+// Set sets the element at the given index.
 // There should be one index per axis.  Generates a ShapeError if incorrect index.
-func (a *Arrayf) SetE(val float64, index ...int) *Arrayf {
+func (a *Array64) Set(val float64, index ...int) *Array64 {
 	switch {
 	case a == nil || a.err != nil:
 		return a
@@ -157,7 +157,7 @@ func (a *Arrayf) SetE(val float64, index ...int) *Arrayf {
 
 // SetSliceElement sets the element group at one axis above the leaf elements.
 // Source Array is returned, for function-chaining design.
-func (a *Arrayf) SetSliceElement(vals []float64, index ...int) *Arrayf {
+func (a *Array64) SetSliceElement(vals []float64, index ...int) *Array64 {
 	switch {
 	case a == nil || a.err != nil:
 		return a
@@ -192,7 +192,7 @@ func (a *Arrayf) SetSliceElement(vals []float64, index ...int) *Arrayf {
 
 // SetSubArr sets the array below a given index to the values in vals.
 // Values will be broadcast up multiple axes if the shapes match.
-func (a *Arrayf) SetSubArr(vals *Arrayf, index ...int) *Arrayf {
+func (a *Array64) SetSubArr(vals *Array64, index ...int) *Array64 {
 	switch {
 	case a == nil || vals == nil:
 		a.err = NilError
@@ -258,12 +258,12 @@ func (a *Arrayf) SetSubArr(vals *Arrayf, index ...int) *Arrayf {
 //
 // Make a copy C() if the original array needs to remain unchanged.
 // Element location in the underlying slice will not be adjusted to the new shape.
-func (a *Arrayf) Resize(shape ...int) *Arrayf {
+func (a *Array64) Resize(shape ...int) *Array64 {
 	switch {
 	case a == nil || a.err != nil:
 		return a
 	case len(shape) == 0:
-		return create(0)
+		return newArray64(0)
 	}
 
 	var sz uint64 = 1
@@ -300,7 +300,7 @@ func (a *Arrayf) Resize(shape ...int) *Arrayf {
 //
 // Source array will be changed, so use C() if the original data is needed.
 // All axes must be the same except the appending axis.
-func (a *Arrayf) Append(val *Arrayf, axis int) *Arrayf {
+func (a *Array64) Append(val *Array64, axis int) *Array64 {
 	switch {
 	case a == nil || a.err != nil:
 		return a

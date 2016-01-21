@@ -5,12 +5,12 @@ import (
 	"sort"
 )
 
-// MapFunc can be received by Map and MapCC to apply as a summary function
+// FoldFunc can be received by Fold and FoldCC to apply as a summary function
 // across one or multiple axes.
-type MapFunc func([]float64) float64
+type FoldFunc func([]float64) float64
 
-// ApplyFunc can be received by Apply to modify each element in an array.
-type ApplyFunc func(float64) float64
+// MapFunc can be received by Map to modify each element in an array.
+type MapFunc func(float64) float64
 
 // cleanAxis removes any duplicate axes and returns the cleaned slice.
 // only the first instance of an axis is retained.
@@ -37,12 +37,12 @@ func cleanAxis(axis ...int) []int {
 
 // collapse will reorganize data by putting element dataset in continuous sections of data slice.
 // Returned Arrayf must be condensed with a summary calculation to create a valid array object.
-func (a *Arrayf) collapse(axis ...int) (uint64, *Arrayf) {
+func (a *Array64) collapse(axis ...int) (uint64, *Array64) {
 	switch {
 	case a == nil:
 		return 0, nil
 	case len(axis) == 0:
-		r := create(1)
+		r := newArray64(1)
 		r.data = append(r.data[:0], a.data...)
 		return a.strides[0], r
 	}
@@ -144,7 +144,7 @@ shape:
 	<-compChan
 
 	// Create return object.  Data is invalid format until reform is called.
-	b := new(Arrayf)
+	b := new(Array64)
 	b.shape = newShape
 	b.strides = make([]uint64, len(b.shape)+1)
 	b.data = tmp
@@ -159,11 +159,11 @@ shape:
 	return span, b
 }
 
-// MapCC applies function f along the given axes concurrently. Each call to f will launch a goroutine.
+// FoldCC applies function f along the given axes concurrently. Each call to f will launch a goroutine.
 // In order to leverage this concurrency, MapCC should only be used for complex and CPU-heavy functions.
 //
-// Simple functions should use Map(f, axes...), as it's more performant.
-func (a *Arrayf) MapCC(f MapFunc, axis ...int) (ret *Arrayf) {
+// Simple functions should use Fold(f, axes...), as it's more performant on small functions.
+func (a *Array64) FoldCC(f FoldFunc, axis ...int) (ret *Array64) {
 	axis = cleanAxis(axis...)
 	switch {
 	case a == nil || a.err != nil:
@@ -204,10 +204,10 @@ func (a *Arrayf) MapCC(f MapFunc, axis ...int) (ret *Arrayf) {
 	return ret
 }
 
-// Map applies function f along the given axes.
+// Fold applies function f along the given axes.
 // Slice containing all data to be consolidated into an element will be passed to f.
 // Return value will be the resulting element's value.
-func (a *Arrayf) Map(f MapFunc, axis ...int) (ret *Arrayf) {
+func (a *Array64) Fold(f FoldFunc, axis ...int) (ret *Array64) {
 	axis = cleanAxis(axis...)
 	switch {
 	case a == nil || a.err != nil:
@@ -228,13 +228,13 @@ func (a *Arrayf) Map(f MapFunc, axis ...int) (ret *Arrayf) {
 	return ret
 }
 
-// Apply applies function f to each element in the array.
-func (a *Arrayf) Apply(f ApplyFunc) (r *Arrayf) {
+// Map applies function f to each element in the array.
+func (a *Array64) Map(f MapFunc) (r *Array64) {
 	if a == nil || a.err != nil {
 		return a
 	}
 
-	r = create(a.shape...)
+	r = newArray64(a.shape...)
 	for i := uint64(0); i < a.shape[0]; i++ {
 		r.data[i] = f(a.data[i])
 	}

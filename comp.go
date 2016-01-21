@@ -6,25 +6,25 @@ import (
 )
 
 // Max will return the maximum along the given axes.
-func (a *Arrayf) Max(axis ...int) (r *Arrayf) {
+func (a *Array64) Max(axis ...int) (r *Array64) {
 	max := func(d []float64) (r float64) {
 		sort.Sort(sort.Reverse(sort.Float64Slice(d)))
 		return d[0]
 	}
 
-	r = a.Map(max, axis...)
+	r = a.Fold(max, axis...)
 
 	return r
 }
 
 // Min will return the minimum along the given axes.
-func (a *Arrayf) Min(axis ...int) (r *Arrayf) {
+func (a *Array64) Min(axis ...int) (r *Array64) {
 	min := func(d []float64) (r float64) {
 		sort.Float64s(d)
 		return d[0]
 	}
 
-	r = a.Map(min, axis...)
+	r = a.Fold(min, axis...)
 
 	return r
 }
@@ -32,7 +32,7 @@ func (a *Arrayf) Min(axis ...int) (r *Arrayf) {
 // MaxSet will return the element-wise maximum of arrays.
 //
 // All arrays must be the non-nil and the same shape.
-func (a *Arrayf) MaxSet(arrSet ...*Arrayf) (b *Arrayf) {
+func (a *Array64) MaxSet(arrSet ...*Array64) (b *Array64) {
 	switch {
 	case a == nil || a.err != nil:
 		return a
@@ -58,7 +58,7 @@ func (a *Arrayf) MaxSet(arrSet ...*Arrayf) (b *Arrayf) {
 		}
 	}
 
-	b = create(a.shape...)
+	b = newArray64(a.shape...)
 
 	for i, v := range a.data {
 		b.data[i] = v
@@ -75,7 +75,7 @@ func (a *Arrayf) MaxSet(arrSet ...*Arrayf) (b *Arrayf) {
 // MinSet will return the element-wise maximum of arrays.
 //
 // All arrays must be the non-nil and the same shape.
-func (a *Arrayf) MinSet(arrSet ...*Arrayf) (b *Arrayf) {
+func (a *Array64) MinSet(arrSet ...*Array64) (b *Array64) {
 	if a == nil || a.err != nil {
 		return a
 	}
@@ -98,7 +98,7 @@ func (a *Arrayf) MinSet(arrSet ...*Arrayf) (b *Arrayf) {
 		}
 	}
 
-	b = create(a.shape...)
+	b = newArray64(a.shape...)
 
 	for i, v := range a.data {
 		b.data[i] = v

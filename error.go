@@ -1,5 +1,7 @@
 package numgo
 
+import "fmt"
+
 type ngError struct {
 	s string
 }
@@ -29,10 +31,7 @@ var (
 // This will add overhead to error reporting and handling, so
 // use it for development and debugging purposes.
 //
-// Performance and memory will be better when using GetErr() and Debug = false.
-// Debug will turn debugging on or off for the library.
-// Only the first value will be used for setting the debug flag.
-// An empty call will return the current value.
+// An empty call will return the current debug setting.
 func Debug(set ...bool) bool {
 	if len(set) > 0 {
 		debug = set[0]
@@ -40,13 +39,13 @@ func Debug(set ...bool) bool {
 	return debug
 }
 
-// HasErr tests for the existence of an error on the Arrayf object.
+// HasErr tests for the existence of an error on the Array64 object.
 //
 // Errors will be maintained through a chain of function calls,
 // so only the first error will be returned when GetErr() is called.
 // Use HasErr() as a gate for the GetErr() or GetDebug() choice in
 // error handling code.
-func (a *Arrayf) HasErr() bool {
+func (a *Array64) HasErr() bool {
 	if a == nil {
 		return true
 	}
@@ -58,7 +57,7 @@ func (a *Arrayf) HasErr() bool {
 // This will only return an error value once per error instance.  Do not use
 // it in the if statment to test for the existence of an error.  HasErr() is
 // provided for that purpose.
-func (a *Arrayf) GetErr() (err error) {
+func (a *Array64) GetErr() (err error) {
 	if a == nil {
 		return NilError
 	}
@@ -72,7 +71,7 @@ func (a *Arrayf) GetErr() (err error) {
 //
 // This debug information will only be generated and returned if numgo.Debug is set to true
 // before the function call that causes the error.
-func (a *Arrayf) GetDebug() (err error, debugStr string) {
+func (a *Array64) GetDebug() (err error, debugStr string) {
 	if a == nil {
 		err = NilError
 		if debug {
@@ -128,7 +127,7 @@ func (a *ngError) decodeErr(err int8) {
 	case 7:
 		a = InvIndexError
 	default:
-		a = &ngError{"Unknown error Unmarshaled."}
+		a = &ngError{fmt.Sprintf("Unknown error Unmarshaled: %d", err)}
 	}
 }
 

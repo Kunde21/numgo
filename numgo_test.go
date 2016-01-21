@@ -4,7 +4,7 @@ import "testing"
 
 func TestCreate(t *testing.T) {
 	shp := []int{2, 3, 4}
-	a := Create(shp...)
+	a := NewArray64(nil, shp...)
 	if len(a.data) != 24 {
 		t.Logf("Length %d, expected %d", len(a.data), 24)
 		t.FailNow()
@@ -32,7 +32,7 @@ func TestCreate(t *testing.T) {
 
 func TestShapes(t *testing.T) {
 	shp := []int{3, 3, 4, 7}
-	a := Create(shp...)
+	a := NewArray64(nil, shp...)
 	for i, v := range a.shape {
 		if uint64(shp[i]) != v {
 			t.Log(a.shape, "!=", shp)
@@ -76,14 +76,14 @@ func TestSubArray(t *testing.T) {
 	a := Arange(100).Reshape(2, 5, 10)
 	b := Arange(50).Reshape(5, 10)
 	c := a.SubArr(0)
-	if !c.Equals(b).All().E(0) {
+	if !c.Equals(b).All().At(0) {
 		t.Log("Subarray incorrect. Expected\n", b, "\nReceived\n", c)
 		t.Fail()
 	}
 
 	b = Arange(50, 100).Reshape(5, 10)
 	c = a.SubArr(1)
-	if !c.Equals(b).All().E(0) {
+	if !c.Equals(b).All().At(0) {
 		t.Log("Subarray incorrect. Expected\n", b, "\nReceived\n", c)
 		t.Fail()
 	}

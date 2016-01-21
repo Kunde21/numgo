@@ -8,7 +8,7 @@ import (
 // Add performs element-wise addition
 // Arrays must be the same size or able to broadcast.
 // This will modify the source array.
-func (a *Arrayf) Add(b *Arrayf) *Arrayf {
+func (a *Array64) Add(b *Array64) *Array64 {
 	switch {
 	case a == nil || a.err != nil:
 		return a
@@ -59,7 +59,7 @@ func (a *Arrayf) Add(b *Arrayf) *Arrayf {
 }
 
 // AddC adds a constant to all elements of the array.
-func (a *Arrayf) AddC(b float64) *Arrayf {
+func (a *Array64) AddC(b float64) *Array64 {
 	if a == nil || a.err != nil {
 		return a
 	}
@@ -73,7 +73,7 @@ func (a *Arrayf) AddC(b float64) *Arrayf {
 // Subtr performs element-wise subtraction.
 // Arrays must be the same size or albe to broadcast.
 // This will modify the source array.
-func (a *Arrayf) Subtr(b *Arrayf) *Arrayf {
+func (a *Array64) Subtr(b *Array64) *Array64 {
 	switch {
 	case a == nil || a.err != nil:
 		return a
@@ -125,7 +125,7 @@ func (a *Arrayf) Subtr(b *Arrayf) *Arrayf {
 }
 
 // SubtrC subtracts a constant from all elements of the array.
-func (a *Arrayf) SubtrC(b float64) *Arrayf {
+func (a *Array64) SubtrC(b float64) *Array64 {
 	if a == nil || a.err != nil {
 		return a
 	}
@@ -139,7 +139,7 @@ func (a *Arrayf) SubtrC(b float64) *Arrayf {
 // Mult performs element-wise multiplication.
 // Arrays must be the same size or able to broadcast.
 // This will modify the source array.
-func (a *Arrayf) Mult(b *Arrayf) *Arrayf {
+func (a *Array64) Mult(b *Array64) *Array64 {
 	switch {
 	case a == nil || a.err != nil:
 		return a
@@ -190,7 +190,7 @@ func (a *Arrayf) Mult(b *Arrayf) *Arrayf {
 }
 
 // MultC multiplies all elements of the array by a constant.
-func (a *Arrayf) MultC(b float64) *Arrayf {
+func (a *Array64) MultC(b float64) *Array64 {
 	if a == nil || a.err != nil {
 		return a
 	}
@@ -205,7 +205,7 @@ func (a *Arrayf) MultC(b float64) *Arrayf {
 // Arrays must be the same size or able to broadcast.
 // Division by zero will result in a math.NaN() values.
 // This will modify the source array.
-func (a *Arrayf) Div(b *Arrayf) *Arrayf {
+func (a *Array64) Div(b *Array64) *Array64 {
 	switch {
 	case a == nil || a.err != nil:
 		return a
@@ -268,7 +268,7 @@ func (a *Arrayf) Div(b *Arrayf) *Arrayf {
 
 // MultC divides all elements of the array by a constant.
 // Division by zero will result in a math.NaN() values.
-func (a *Arrayf) DivC(b float64) *Arrayf {
+func (a *Array64) DivC(b float64) *Array64 {
 	switch {
 	case a == nil || a.err != nil:
 		return a
@@ -292,7 +292,7 @@ func (a *Arrayf) DivC(b float64) *Arrayf {
 // Pow raises elements of a to the corresponding power in b.
 // Arrays must be the same size or able to broadcast.
 // This will modify the source array.
-func (a *Arrayf) Pow(b *Arrayf) *Arrayf {
+func (a *Array64) Pow(b *Array64) *Array64 {
 	switch {
 	case a == nil || a.err != nil:
 		return a
@@ -342,7 +342,7 @@ func (a *Arrayf) Pow(b *Arrayf) *Arrayf {
 
 // MultC divides all elements of the array by a constant.
 // Division by zero will result in a math.NaN() values.
-func (a *Arrayf) PowC(b float64) *Arrayf {
+func (a *Array64) PowC(b float64) *Array64 {
 	if a == nil || a.err != nil {
 		return a
 	}
