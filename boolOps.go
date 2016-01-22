@@ -157,22 +157,29 @@ func compValid(a, b *Array64, mthd string) (r *Arrayb) {
 // Validation and error checks must be complete before calling comp
 func comp(a, b *Array64, f func(i, j float64) bool) (r *Arrayb) {
 	r = newArrayB(b.shape...)
-	compChan := make(chan struct{})
-	mul := len(a.data) / len(b.data)
 
-	for k := 0; k < mul; k++ {
-		go func(m int) {
-			for i, v := range b.data {
-				r.data[i] = f(a.data[i+m], v)
-			}
-			compChan <- struct{}{}
-		}(k * len(b.data))
+	for i := range r.data {
+		r.data[i] = f(a.data[i], b.data[i])
 	}
 
-	for k := 0; k < mul; k++ {
-		<-compChan
-	}
-	close(compChan)
+	/*
+		compChan := make(chan struct{})
+		mul := len(a.data) / len(b.data)
+
+		for k := 0; k < mul; k++ {
+			go func(m int) {
+				for i, v := range b.data {
+					r.data[i] = f(a.data[i+m], v)
+				}
+				compChan <- struct{}{}
+			}(k * len(b.data))
+		}
+
+		for k := 0; k < mul; k++ {
+			<-compChan
+		}
+		close(compChan)
+	*/
 	return
 }
 

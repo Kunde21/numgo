@@ -51,6 +51,7 @@ func NewArray64(data []float64, shape ...int) (a *Array64) {
 		tmp *= sh[i-1]
 	}
 	a.strides[0] = tmp
+	a.err = nil
 	return
 }
 
@@ -74,6 +75,7 @@ func newArray64(shape ...uint64) (a *Array64) {
 	//if sz == 0{
 
 	a.strides[0] = tmp
+	a.err = nil
 	return
 }
 

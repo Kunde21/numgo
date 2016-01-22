@@ -49,6 +49,7 @@ func NewArrayB(data []bool, shape ...int) (a *Arrayb) {
 		tmp *= sh[i-1]
 	}
 	a.strides[0] = tmp
+	a.err = nil
 	return
 }
 
@@ -72,6 +73,7 @@ func newArrayB(shape ...uint64) (a *Arrayb) {
 		tmp *= sh[i-1]
 	}
 	a.strides[0] = tmp
+	a.err = nil
 	return
 }
 
