@@ -115,7 +115,7 @@ func (a *Arrayb) String() (s string) {
 	}
 
 	stride := a.strides[len(a.strides)-2]
-	for i, k := uint64(0), 0; i+stride < uint64(len(a.data)); i, k = i+stride, k+1 {
+	for i, k := uint64(0), 0; i+stride <= uint64(len(a.data)); i, k = i+stride, k+1 {
 
 		t := ""
 		for j, v := range a.strides {
@@ -126,6 +126,7 @@ func (a *Arrayb) String() (s string) {
 
 		s += strings.Repeat(" ", len(a.shape)-len(t)-1) + t
 		s += fmt.Sprint(a.data[i : i+stride])
+
 		t = ""
 		for j, v := range a.strides {
 			if (i+stride)%v == 0 && j < len(a.strides)-2 {
