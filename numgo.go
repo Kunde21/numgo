@@ -11,7 +11,7 @@ type Array64 struct {
 	shape   []uint64
 	strides []uint64
 	data    []float64
-	err     *ngError
+	err     error
 	debug   string
 }
 
@@ -168,7 +168,7 @@ func (a *Array64) String() (s string) {
 	case a == nil:
 		return "<nil>"
 	case a.err != nil:
-		return "Error: " + a.err.s
+		return "Error: " + a.err.(*ngError).s
 	case a.strides[0] == 0:
 		return "[]"
 	}
@@ -304,7 +304,7 @@ func (a *Array64) decode(i, n []int64, err int8) {
 			a.data[-v] = nInf
 		}
 	}
-	a.err.decodeErr(err)
+	a.err = decodeErr(err)
 }
 
 // UnmarshalJSON fulfills the json.Unmarshaler interface for decoding data.

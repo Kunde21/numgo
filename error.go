@@ -85,8 +85,9 @@ func (a *Array64) GetDebug() (err error, debugStr string) {
 }
 
 // encodeErr is a supporting function for MarshalJSON
-func encodeErr(err *ngError) int8 {
-	switch err {
+func encodeErr(err error) int8 {
+	e := err.(*ngError)
+	switch e {
 	case nil:
 		return 0
 	case NilError:
@@ -108,7 +109,7 @@ func encodeErr(err *ngError) int8 {
 }
 
 // decodeErr is a supporting method for UnmarshalJSON
-func (a *ngError) decodeErr(err int8) {
+func decodeErr(err int8) (a *ngError) {
 	switch err {
 	case 0:
 		a = nil
@@ -129,6 +130,7 @@ func (a *ngError) decodeErr(err int8) {
 	default:
 		a = &ngError{fmt.Sprintf("Unknown error Unmarshaled: %d", err)}
 	}
+	return
 }
 
 // HasErr tests for the existence of an error on the Arrayb object.

@@ -10,7 +10,7 @@ type Arrayb struct {
 	shape   []uint64
 	strides []uint64
 	data    []bool
-	err     *ngError
+	err     error
 	debug   string
 }
 
@@ -109,7 +109,7 @@ func (a *Arrayb) String() (s string) {
 	case a == nil:
 		return "<nil>"
 	case a.err != nil:
-		return a.err.s
+		return a.err.(*ngError).s
 	case a.strides[0] == 0:
 		return "[]"
 	}
@@ -553,7 +553,7 @@ func (a *Arrayb) UnmarshalJSON(b []byte) error {
 
 	a.shape = tmpA.Shape
 	a.data = tmpA.Data
-	a.err.decodeErr(tmpA.Err)
+	a.err = decodeErr(tmpA.Err)
 
 	a.strides = make([]uint64, len(a.shape)+1)
 	tmp := uint64(1)

@@ -1,15 +1,21 @@
 package numgo
 
-import (
-	"fmt"
-	"sort"
-)
+import "fmt"
 
 // Max will return the maximum along the given axes.
 func (a *Array64) Max(axis ...int) (r *Array64) {
+	if valAxis(a, axis, "Max") {
+		return a
+	}
+
 	max := func(d []float64) (r float64) {
-		sort.Sort(sort.Reverse(sort.Float64Slice(d)))
-		return d[0]
+		r = d[0]
+		for _, v := range d {
+			if v > r {
+				r = v
+			}
+		}
+		return r
 	}
 
 	r = a.Fold(max, axis...)
@@ -17,11 +23,45 @@ func (a *Array64) Max(axis ...int) (r *Array64) {
 	return r
 }
 
+func valAxis(a *Array64, axis []int, mthd string) bool {
+	axis = cleanAxis(axis...)
+	switch {
+	case a == nil || a.err != nil:
+		return true
+	case len(axis) > len(a.shape):
+		a.err = ShapeError
+		if debug {
+			a.debug = fmt.Sprintf("Too many axes received by %s().  Shape: %v  Axes: %v", mthd, a.shape, axis)
+		}
+		return true
+	}
+	for _, v := range axis {
+		if v < 0 || v > len(a.shape) {
+			a.err = IndexError
+			if debug {
+				a.debug = fmt.Sprintf("Axis out of range received by %s().  Shape: %v  Axes: %v", mthd, a.shape, axis)
+			}
+			return true
+		}
+	}
+	return false
+
+}
+
 // Min will return the minimum along the given axes.
 func (a *Array64) Min(axis ...int) (r *Array64) {
+	if valAxis(a, axis, "Max") {
+		return a
+	}
+
 	min := func(d []float64) (r float64) {
-		sort.Float64s(d)
-		return d[0]
+		r = d[0]
+		for _, v := range d {
+			if v < r {
+				r = v
+			}
+		}
+		return r
 	}
 
 	r = a.Fold(min, axis...)
