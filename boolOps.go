@@ -7,11 +7,7 @@ import (
 
 // Equals performs boolean '==' element-wise comparison
 func (a *Array64) Equals(b *Array64) (r *Arrayb) {
-	if debug {
-		r = compValid(a, b, "Equals()")
-	} else {
-		r = compValid(a, b, "")
-	}
+	r = compValid(a, b, "Equals()")
 	if r != nil {
 		return r
 	}
@@ -27,11 +23,7 @@ func (a *Array64) Equals(b *Array64) (r *Arrayb) {
 
 // Less performs boolean '<' element-wise comparison
 func (a *Array64) Less(b *Array64) (r *Arrayb) {
-	if debug {
-		r = compValid(a, b, "Less()")
-	} else {
-		r = compValid(a, b, "")
-	}
+	r = compValid(a, b, "Less()")
 	if r != nil {
 		return r
 	}
@@ -47,11 +39,7 @@ func (a *Array64) Less(b *Array64) (r *Arrayb) {
 
 // LessEq performs boolean '<=' element-wise comparison
 func (a *Array64) LessEq(b *Array64) (r *Arrayb) {
-	if debug {
-		r = compValid(a, b, "LessEq()")
-	} else {
-		r = compValid(a, b, "")
-	}
+	r = compValid(a, b, "LessEq()")
 	if r != nil {
 		return r
 	}
@@ -67,11 +55,7 @@ func (a *Array64) LessEq(b *Array64) (r *Arrayb) {
 
 // Greater performs boolean '<' element-wise comparison
 func (a *Array64) Greater(b *Array64) (r *Arrayb) {
-	if debug {
-		r = compValid(a, b, "Greater()")
-	} else {
-		r = compValid(a, b, "")
-	}
+	r = compValid(a, b, "Greater()")
 	if r != nil {
 		return r
 	}
@@ -87,11 +71,7 @@ func (a *Array64) Greater(b *Array64) (r *Arrayb) {
 
 // GreaterEq performs boolean '<=' element-wise comparison
 func (a *Array64) GreaterEq(b *Array64) (r *Arrayb) {
-	if debug {
-		r = compValid(a, b, "GreaterEq()")
-	} else {
-		r = compValid(a, b, "")
-	}
+	r = compValid(a, b, "GreaterEq()")
 	if r != nil {
 		return r
 	}
@@ -103,6 +83,7 @@ func (a *Array64) GreaterEq(b *Array64) (r *Arrayb) {
 		return false
 	})
 	return
+
 }
 
 func compValid(a, b *Array64, mthd string) (r *Arrayb) {
@@ -162,24 +143,6 @@ func comp(a, b *Array64, f func(i, j float64) bool) (r *Arrayb) {
 		r.data[i] = f(a.data[i], b.data[i])
 	}
 
-	/*
-		compChan := make(chan struct{})
-		mul := len(a.data) / len(b.data)
-
-		for k := 0; k < mul; k++ {
-			go func(m int) {
-				for i, v := range b.data {
-					r.data[i] = f(a.data[i+m], v)
-				}
-				compChan <- struct{}{}
-			}(k * len(b.data))
-		}
-
-		for k := 0; k < mul; k++ {
-			<-compChan
-		}
-		close(compChan)
-	*/
 	return
 }
 
