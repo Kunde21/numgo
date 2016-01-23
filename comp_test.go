@@ -45,6 +45,7 @@ func TestMin(t *testing.T) {
 		{a.C(), NewArray64([]float64{0, 1, 10, 11}, 2, 2), []int{1}, nil},
 		{a.C(), Arange(0, 20, 2).Reshape(2, 5), []int{2}, nil},
 		{a.C(), NewArray64([]float64{0, 10}), []int{1, 2}, nil},
+		{Arange(20, -1), NewArray64([]float64{0}), []int{}, nil},
 		{nil, nil, []int{}, NilError},
 		{a.C(), nil, []int{1, 2, 3, 4}, ShapeError},
 		{a.C(), nil, []int{4}, IndexError},
