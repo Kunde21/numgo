@@ -22,6 +22,22 @@ func (a *Array64) Equals(b *Array64) (r *Arrayb) {
 	return
 }
 
+// NotEq performs boolean '1=' element-wise comparison
+func (a *Array64) NotEq(b *Array64) (r *Arrayb) {
+	r = compValid(a, b, "NotEq()")
+	if r != nil {
+		return r
+	}
+
+	r = comp(a, b, func(i, j float64) bool {
+		if i != j {
+			return true
+		}
+		return false
+	})
+	return
+}
+
 // Less performs boolean '<' element-wise comparison
 func (a *Array64) Less(b *Array64) (r *Arrayb) {
 	r = compValid(a, b, "Less()")

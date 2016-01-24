@@ -16,12 +16,17 @@ func TestEquals(t *testing.T) {
 	tests := []struct {
 		a, b     *Array64
 		any, all bool
+		err      error
 	}{
-		{a, a.C(), true, true},
-		{a, a.C().AddC(1), false, false},
-		{a.C().Reshape(2, 5), a.C().Reshape(2, 5), true, true},
-		{a, Arange(0, 20, 2), true, false},
-		{a, Arange(27, 7, -2), true, false},
+		{a, a.C(), true, true, nil},
+		{a, a.C().AddC(1), false, false, nil},
+		{a.C().Reshape(2, 5), a.C().Reshape(2, 5), true, true, nil},
+		{a, Arange(0, 20, 2), true, false, nil},
+		{a, Arange(27, 7, -2), true, false, nil},
+		{nil, a, false, false, NilError},
+		{a, nil, false, false, NilError},
+		{a.C().Reshape(2, 5), a, false, false, ShapeError},
+		{a.C().Reshape(2, 5), a.C().Reshape(5, 2), false, false, ShapeError},
 	}
 
 	var c *Arrayb
@@ -37,6 +42,50 @@ func TestEquals(t *testing.T) {
 			t.Log(v.a.data, v.b.data, c.data)
 			t.Fail()
 		}
+		if e, d, s := c.GetDebug(); e != v.err {
+			t.Logf("Test %d Error failed.  Expected %#v got %#v\n", i, v.err, e)
+			t.Log("Debug:", d, "\n", s, "\n", v.a, "\n", v.b)
+		}
+	}
+}
+
+func TestNotEq(t *testing.T) {
+
+	a := Arange(10)
+
+	tests := []struct {
+		a, b     *Array64
+		any, all bool
+		err      error
+	}{
+		{a, a.C(), false, false, nil},
+		{a, a.C().AddC(1), true, true, nil},
+		{a.C().Reshape(2, 5), a.C().Reshape(2, 5), false, false, nil},
+		{a, Arange(0, 20, 2), true, false, nil},
+		{a, Arange(27, 7, -2), true, false, nil},
+		{nil, a, false, false, NilError},
+		{a, nil, false, false, NilError},
+		{a.C().Reshape(2, 5), a, false, false, ShapeError},
+		{a.C().Reshape(2, 5), a.C().Reshape(5, 2), false, false, ShapeError},
+	}
+
+	var c *Arrayb
+	for i, v := range tests {
+		c = v.a.NotEq(v.b)
+		if d := c.Any().At(0); d != v.any {
+			t.Logf("Test %d failed.  Any expected %v got %v\n", i, v.any, d)
+			t.Log(v.a.data, v.b.data, c.data)
+			t.Fail()
+		}
+		if d := c.All().At(0); d != v.all {
+			t.Logf("Test %d failed.  All expected %v got %v\n", i, v.all, d)
+			t.Log(v.a.data, v.b.data, c.data)
+			t.Fail()
+		}
+		if e, d, s := c.GetDebug(); e != v.err {
+			t.Logf("Test %d Error failed.  Expected %#v got %#v\n", i, v.err, e)
+			t.Log("Debug:", d, "\n", s, "\n", v.a, "\n", v.b)
+		}
 	}
 }
 
@@ -47,12 +96,17 @@ func TestLess(t *testing.T) {
 	tests := []struct {
 		a, b     *Array64
 		any, all bool
+		err      error
 	}{
-		{a, a.C(), false, false},
-		{a, a.C().AddC(1), true, true},
-		{a.C().Reshape(2, 5), a.C().Reshape(2, 5), false, false},
-		{a, Arange(0, 20, 2), true, false},
-		{a, Arange(27, 7, -2), true, false},
+		{a, a.C(), false, false, nil},
+		{a, a.C().AddC(1), true, true, nil},
+		{a.C().Reshape(2, 5), a.C().Reshape(2, 5), false, false, nil},
+		{a, Arange(0, 20, 2), true, false, nil},
+		{a, Arange(27, 7, -2), true, false, nil},
+		{nil, a, false, false, NilError},
+		{a, nil, false, false, NilError},
+		{a.C().Reshape(2, 5), a, false, false, ShapeError},
+		{a.C().Reshape(2, 5), a.C().Reshape(5, 2), false, false, ShapeError},
 	}
 
 	var c *Arrayb
@@ -68,6 +122,10 @@ func TestLess(t *testing.T) {
 			t.Log(v.a.data, v.b.data, c.data)
 			t.Fail()
 		}
+		if e, d, s := c.GetDebug(); e != v.err {
+			t.Logf("Test %d Error failed.  Expected %#v got %#v\n", i, v.err, e)
+			t.Log("Debug:", d, "\n", s, "\n", v.a, "\n", v.b)
+		}
 	}
 }
 
@@ -78,12 +136,18 @@ func TestLessEq(t *testing.T) {
 	tests := []struct {
 		a, b     *Array64
 		any, all bool
+		err      error
 	}{
-		{a, a.C(), true, true},
-		{a, a.C().AddC(1), true, true},
-		{a.C().Reshape(2, 5), a.C().Reshape(2, 5), true, true},
-		{a, Arange(0, 20, 2), true, true},
-		{a, Arange(27, 7, -2), true, true},
+		{a, a.C(), true, true, nil},
+		{a, a.C().AddC(1), true, true, nil},
+		{a.C().Reshape(2, 5), a.C().Reshape(2, 5), true, true, nil},
+		{a, Arange(0, 20, 2), true, true, nil},
+		{a, Arange(27, 7, -2), true, true, nil},
+		{a, Arange(-10, 20, 3), true, false, nil},
+		{nil, a, false, false, NilError},
+		{a, nil, false, false, NilError},
+		{a.C().Reshape(2, 5), a, false, false, ShapeError},
+		{a.C().Reshape(2, 5), a.C().Reshape(5, 2), false, false, ShapeError},
 	}
 
 	var c *Arrayb
@@ -91,13 +155,17 @@ func TestLessEq(t *testing.T) {
 		c = v.a.LessEq(v.b)
 		if d := c.Any().At(0); d != v.any {
 			t.Logf("Test %d failed.  Any expected %v got %v\n", i, v.any, d)
-			t.Log(v.a.data, v.b.data, c.data)
+			t.Log(v.a.data, "\n", v.b.data, "\n", c.data)
 			t.Fail()
 		}
 		if d := c.All().At(0); d != v.all {
 			t.Logf("Test %d failed.  All expected %v got %v\n", i, v.all, d)
 			t.Log(v.a.data, v.b.data, c.data)
 			t.Fail()
+		}
+		if e, d, s := c.GetDebug(); e != v.err {
+			t.Logf("Test %d Error failed.  Expected %#v got %#v\n", i, v.err, e)
+			t.Log("Debug:", d, "\n", s, "\n", v.a, "\n", v.b)
 		}
 	}
 }
@@ -109,12 +177,17 @@ func TestGreater(t *testing.T) {
 	tests := []struct {
 		a, b     *Array64
 		any, all bool
+		err      error
 	}{
-		{a, a.C(), false, false},
-		{a, a.C().AddC(-1), true, true},
-		{a.C().Reshape(2, 5), a.C().Reshape(2, 5), false, false},
-		{a, Arange(0, 20, 2), false, false},
-		{a, Arange(27, 7, -2), false, false},
+		{a, a.C(), false, false, nil},
+		{a, a.C().AddC(-1), true, true, nil},
+		{a.C().Reshape(2, 5), a.C().Reshape(2, 5), false, false, nil},
+		{a, Arange(0, 20, 2), false, false, nil},
+		{a, Arange(27, 7, -2), false, false, nil},
+		{nil, a, false, false, NilError},
+		{a, nil, false, false, NilError},
+		{a.C().Reshape(2, 5), a, false, false, ShapeError},
+		{a.C().Reshape(2, 5), a.C().Reshape(5, 2), false, false, ShapeError},
 	}
 
 	var c *Arrayb
@@ -130,6 +203,10 @@ func TestGreater(t *testing.T) {
 			t.Log(v.a.data, v.b.data, c.data)
 			t.Fail()
 		}
+		if e, d, s := c.GetDebug(); e != v.err {
+			t.Logf("Test %d Error failed.  Expected %#v got %#v\n", i, v.err, e)
+			t.Log("Debug:", d, "\n", s, "\n", v.a, "\n", v.b)
+		}
 	}
 }
 
@@ -140,12 +217,17 @@ func TestGreaterEq(t *testing.T) {
 	tests := []struct {
 		a, b     *Array64
 		any, all bool
+		err      error
 	}{
-		{a, a.C(), true, true},
-		{a, a.C().AddC(-1), true, true},
-		{a.C().Reshape(2, 5), a.C().Reshape(2, 5), true, true},
-		{a, Arange(0, 20, 2), true, false},
-		{a, Arange(27, 7, -2), true, false},
+		{a, a.C(), true, true, nil},
+		{a, a.C().AddC(-1), true, true, nil},
+		{a.C().Reshape(2, 5), a.C().Reshape(2, 5), true, true, nil},
+		{a, Arange(0, 20, 2), true, false, nil},
+		{a, Arange(27, 7, -2), true, false, nil},
+		{nil, a, false, false, NilError},
+		{a, nil, false, false, NilError},
+		{a.C().Reshape(2, 5), a, false, false, ShapeError},
+		{a.C().Reshape(2, 5), a.C().Reshape(5, 2), false, false, ShapeError},
 	}
 
 	var c *Arrayb
@@ -160,6 +242,10 @@ func TestGreaterEq(t *testing.T) {
 			t.Logf("Test %d failed.  All expected %v got %v\n", i, v.all, d)
 			t.Log(v.a.data, v.b.data, c.data)
 			t.Fail()
+		}
+		if e, d, s := c.GetDebug(); e != v.err {
+			t.Logf("Test %d Error failed.  Expected %#v got %#v\n", i, v.err, e)
+			t.Log("Debug:", d, "\n", s, "\n", v.a, "\n", v.b)
 		}
 	}
 }
@@ -181,6 +267,7 @@ func TestCompValid(t *testing.T) {
 		{a.C(), &Array64{err: DivZeroError}, true, DivZeroError},
 		{&Array64{err: DivZeroError}, a.C(), true, DivZeroError},
 		{a.C().Reshape(5, 2), a.C().Reshape(2, 5), true, ShapeError},
+		{a.C().Reshape(5, 5), a, true, ReshapeError},
 	}
 
 	var c *Arrayb
@@ -203,6 +290,11 @@ func TestCompValid(t *testing.T) {
 
 func TestAny(t *testing.T) {
 	a := newArrayB(10).Reshape(2, 5)
+
+	_ = []struct {
+		a, b *Arrayb
+		ax   []int
+	}{}
 
 	for i := 0; i < 50; i++ {
 		idx := rand.Intn(len(a.data))
