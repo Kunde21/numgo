@@ -9,7 +9,7 @@ import (
 // Sum calculates the sum result array along a given axes.
 // Empty call gives the grand sum of all elements.
 func (a *Array64) Sum(axis ...int) (r *Array64) {
-	axis = cleanAxis(axis...)
+	axis = cleanAxis(axis)
 	switch {
 	case a == nil || a.err != nil:
 		return a
@@ -91,7 +91,7 @@ func (a *Array64) Sum(axis ...int) (r *Array64) {
 //
 // Empty call gives the grand sum of all elements.
 func (a *Array64) NaNSum(axis ...int) *Array64 {
-	axis = cleanAxis(axis...)
+	axis = cleanAxis(axis)
 	switch {
 	case a == nil || a.err != nil:
 		return a
@@ -133,7 +133,7 @@ func (a *Array64) NaNSum(axis ...int) *Array64 {
 // Count gives the number of elements along a set of axis.
 // Value in the element is not tested, all elements are counted.
 func (a *Array64) Count(axis ...int) *Array64 {
-	axis = cleanAxis(axis...)
+	axis = cleanAxis(axis)
 	switch {
 	case a == nil || a.err != nil:
 		return a
@@ -180,7 +180,7 @@ func (a *Array64) Count(axis ...int) *Array64 {
 // NaNCount calculates the number of values along a given axes.
 // Empty call gives the total number of elements.
 func (a *Array64) NaNCount(axis ...int) *Array64 {
-	axis = cleanAxis(axis...)
+	axis = cleanAxis(axis)
 	switch {
 	case a == nil || a.err != nil:
 		return a
@@ -216,7 +216,7 @@ func (a *Array64) NaNCount(axis ...int) *Array64 {
 // Mean calculates the mean across the given axes.
 // NaN values in the dataa will result in NaN result elements.
 func (a *Array64) Mean(axis ...int) *Array64 {
-	axis = cleanAxis(axis...)
+	axis = cleanAxis(axis)
 	switch {
 	case a == nil || a.err != nil:
 		return a
@@ -245,7 +245,7 @@ func (a *Array64) Mean(axis ...int) *Array64 {
 // NaNMean calculates the mean across the given axes.
 // NaN values are ignored in this calculation.
 func (a *Array64) NaNMean(axis ...int) *Array64 {
-	axis = cleanAxis(axis...)
+	axis = cleanAxis(axis)
 	switch {
 	case a == nil || a.err != nil:
 		return a

@@ -11,8 +11,6 @@ func (a *Array64) Flatten() *Array64 {
 	if a == nil || a.err != nil {
 		return a
 	}
-	a.shape[0] = a.strides[0]
-	a.shape = a.shape[:1]
 	return a.Reshape(int(a.strides[0]))
 }
 

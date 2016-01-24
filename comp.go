@@ -7,7 +7,7 @@ import (
 
 // Max will return the maximum along the given axes.
 func (a *Array64) Max(axis ...int) (r *Array64) {
-	if valAxis(a, axis, "Max") {
+	if a.valAxis(axis, "Max") {
 		return a
 	}
 
@@ -26,8 +26,8 @@ func (a *Array64) Max(axis ...int) (r *Array64) {
 	return r
 }
 
-func valAxis(a *Array64, axis []int, mthd string) bool {
-	axis = cleanAxis(axis...)
+func (a *Array64) valAxis(axis []int, mthd string) bool {
+	axis = cleanAxis(axis)
 	switch {
 	case a == nil || a.err != nil:
 		return true
@@ -40,7 +40,7 @@ func valAxis(a *Array64, axis []int, mthd string) bool {
 		return true
 	}
 	for _, v := range axis {
-		if v < 0 || v > len(a.shape) {
+		if v < 0 || v >= len(a.shape) {
 			a.err = IndexError
 			if debug {
 				a.debug = fmt.Sprintf("Axis out of range received by %s().  Shape: %v  Axes: %v", mthd, a.shape, axis)
@@ -55,7 +55,7 @@ func valAxis(a *Array64, axis []int, mthd string) bool {
 
 // Min will return the minimum along the given axes.
 func (a *Array64) Min(axis ...int) (r *Array64) {
-	if valAxis(a, axis, "Max") {
+	if a.valAxis(axis, "Max") {
 		return a
 	}
 
@@ -78,7 +78,7 @@ func (a *Array64) Min(axis ...int) (r *Array64) {
 //
 // All arrays must be the non-nil and the same shape.
 func MaxSet(arrSet ...*Array64) (b *Array64) {
-	if b = valSet(arrSet, "MaxSet"); b != nil {
+	if b = b.valSet(arrSet, "MaxSet"); b != nil {
 		return b
 	}
 
@@ -98,7 +98,7 @@ func MaxSet(arrSet ...*Array64) (b *Array64) {
 //
 // All arrays must be the non-nil and the same shape.
 func MinSet(arrSet ...*Array64) (b *Array64) {
-	if b = valSet(arrSet, "MaxSet"); b != nil {
+	if b = b.valSet(arrSet, "MaxSet"); b != nil {
 		return b
 	}
 
@@ -114,7 +114,7 @@ func MinSet(arrSet ...*Array64) (b *Array64) {
 	return
 }
 
-func valSet(arrSet []*Array64, mthd string) (b *Array64) {
+func (a *Array64) valSet(arrSet []*Array64, mthd string) (b *Array64) {
 
 	if len(arrSet) == 0 {
 		b = &Array64{err: NilError}
@@ -125,7 +125,7 @@ func valSet(arrSet []*Array64, mthd string) (b *Array64) {
 		return b
 	}
 
-	a := arrSet[0]
+	a = arrSet[0]
 	for _, v := range arrSet {
 		if v == nil {
 			b = &Array64{err: NilError}

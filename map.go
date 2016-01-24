@@ -15,7 +15,7 @@ type MapFunc func(float64) float64
 
 // cleanAxis removes any duplicate axes and returns the cleaned slice.
 // only the first instance of an axis is retained.
-func cleanAxis(axis ...int) []int {
+func cleanAxis(axis []int) []int {
 	if len(axis) < 2 {
 		return axis
 	}
@@ -38,16 +38,12 @@ func cleanAxis(axis ...int) []int {
 
 // collapse will reorganize data by putting element dataset in continuous sections of data slice.
 // Returned Arrayf must be condensed with a summary calculation to create a valid array object.
-func (a *Array64) collapse(axis ...int) (uint64, *Array64) {
-	switch {
-	case a == nil:
-		return 0, nil
-	case len(axis) == 0:
+func (a *Array64) collapse(axis []int) (uint64, *Array64) {
+	if len(axis) == 0 {
 		r := newArray64(1)
 		r.data = append(r.data[:0], a.data...)
 		return a.strides[0], r
 	}
-	axis = cleanAxis(axis...)
 
 	span := uint64(1) // Span = size of "element" Mx = slicing
 	mx := a.strides[len(a.strides)-1]
@@ -165,16 +161,7 @@ shape:
 //
 // Simple functions should use Fold(f, axes...), as it's more performant on small functions.
 func (a *Array64) FoldCC(f FoldFunc, axis ...int) (ret *Array64) {
-	axis = cleanAxis(axis...)
-	switch {
-	case a == nil || a.err != nil:
-		return a
-	case len(axis) > len(a.shape):
-		a.err = ShapeError
-		if debug {
-			a.debug = fmt.Sprintf("Too many axes received by FoldCC().  Shape: %v  Axes: %v", a.shape, axis)
-			a.stack = string(stackBuf[:runtime.Stack(stackBuf, false)])
-		}
+	if a.valAxis(axis, "FoldCC") {
 		return a
 	}
 
@@ -183,26 +170,41 @@ func (a *Array64) FoldCC(f FoldFunc, axis ...int) (ret *Array64) {
 		value float64
 	}
 
-	span, ret := a.collapse(axis...)
+	rfunc := func(c chan rt, i uint64) {
+		if r := recover(); r != nil {
+			ret = a
+			ret.err = FoldMapError
+			ret.debug = fmt.Sprint(r)
+			if debug {
+				ret.stack = string(stackBuf[:runtime.Stack(stackBuf, false)])
+			}
+			c <- rt{i, 0}
+		}
+	}
+
+	span, ret := a.collapse(axis)
 
 	retChan, compChan := make(chan rt), make(chan struct{})
 	defer close(retChan)
 	defer close(compChan)
 	go func() {
+		d := make([]float64, ret.strides[0])
 		for i := uint64(0); i+span <= a.strides[0]; i += span {
 			c := <-retChan
-			ret.data[c.index] = c.value
+			d[c.index] = c.value
 		}
+		ret.data = d
 		compChan <- struct{}{}
 	}()
 
 	for i := uint64(0); i+span <= a.strides[0]; i += span {
 		go func(i uint64) {
+			defer rfunc(retChan, i/span)
 			retChan <- rt{i / span, f(ret.data[i : i+span])}
 		}(i)
 	}
 	<-compChan
-	ret.data = ret.data[:a.strides[0]]
+	ret.data = ret.data[:ret.strides[0]]
 	return ret
 }
 
@@ -210,20 +212,22 @@ func (a *Array64) FoldCC(f FoldFunc, axis ...int) (ret *Array64) {
 // Slice containing all data to be consolidated into an element will be passed to f.
 // Return value will be the resulting element's value.
 func (a *Array64) Fold(f FoldFunc, axis ...int) (ret *Array64) {
-	axis = cleanAxis(axis...)
-	switch {
-	case a == nil || a.err != nil:
-		return a
-	case len(axis) > len(a.shape):
-		a.err = ShapeError
-		if debug {
-			a.debug = fmt.Sprintf("Too many axes received by Fold().  Shape: %v  Axes: %v", a.shape, axis)
-			a.stack = string(stackBuf[:runtime.Stack(stackBuf, false)])
-		}
+	if a.valAxis(axis, "Fold") {
 		return a
 	}
 
-	span, ret := a.collapse(axis...)
+	defer func() {
+		if r := recover(); r != nil {
+			ret = a
+			ret.err = FoldMapError
+			ret.debug = fmt.Sprint(r)
+			if debug {
+				ret.stack = string(stackBuf[:runtime.Stack(stackBuf, false)])
+			}
+		}
+	}()
+
+	span, ret := a.collapse(axis)
 	for i := uint64(0); i+span <= a.strides[0]; i += span {
 		ret.data[i/span] = f(ret.data[i : i+span])
 	}
@@ -232,14 +236,25 @@ func (a *Array64) Fold(f FoldFunc, axis ...int) (ret *Array64) {
 }
 
 // Map applies function f to each element in the array.
-func (a *Array64) Map(f MapFunc) (r *Array64) {
+func (a *Array64) Map(f MapFunc) (ret *Array64) {
 	if a == nil || a.err != nil {
 		return a
 	}
 
-	r = newArray64(a.shape...)
-	for i := uint64(0); i < a.shape[0]; i++ {
-		r.data[i] = f(a.data[i])
+	defer func() {
+		if r := recover(); r != nil {
+			ret = a
+			ret.err = FoldMapError
+			ret.debug = fmt.Sprint(r)
+			if debug {
+				ret.stack = string(stackBuf[:runtime.Stack(stackBuf, false)])
+			}
+		}
+	}()
+
+	ret = newArray64(a.shape...)
+	for i := uint64(0); i < a.strides[0]; i++ {
+		ret.data[i] = f(a.data[i])
 	}
 	return
 }

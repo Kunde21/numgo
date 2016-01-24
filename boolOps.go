@@ -303,7 +303,7 @@ func (a *Arrayb) All(axis ...int) *Arrayb {
 }
 
 func (a *Arrayb) valAxis(axis []int, mthd string) bool {
-	axis = cleanAxis(axis...)
+	axis = cleanAxis(axis)
 	switch {
 	case a == nil || a.err != nil:
 		return true

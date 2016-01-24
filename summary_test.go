@@ -108,27 +108,6 @@ func TestFoldMean(t *testing.T) {
 	}
 }
 
-func TestClean(t *testing.T) {
-	for i, v := range cleanAxis(0, 1, 2, 3, 4) {
-		if i != v {
-			t.Log("Clean axis failed at ", i, "Received", v)
-			t.Fail()
-		}
-	}
-	for i, v := range cleanAxis(0, 1, 2, 2, 3, 4) {
-		if i != v {
-			t.Log("Clean axis failed at ", i, "Received", v)
-			t.Fail()
-		}
-	}
-	for i, v := range cleanAxis(0, 1, 2, 2, 3, 4, 4) {
-		if i != v {
-			t.Log("Clean axis failed at ", i, "Received", v)
-			t.Fail()
-		}
-	}
-}
-
 func TestCollapse(t *testing.T) {
 	a := Arange(2*3*4*5).Reshape(2, 3, 4, 5)
 	sm := func(d []float64) (r float64) {
@@ -170,7 +149,7 @@ func BenchmarkCollapse(b *testing.B) {
 	b.ReportAllocs()
 	b.ResetTimer()
 	for i := 0; i < b.N; i++ {
-		a.collapse(5, 3, 7, 8)
+		a.collapse([]int{5, 3, 7, 8})
 	}
 }
 

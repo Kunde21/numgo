@@ -14,13 +14,14 @@ func (n *ngError) Error() string {
 }
 
 var (
-	NilError      = &ngError{"Nil pointer recieved."}
-	ShapeError    = &ngError{"Array shapes don't match and can't be broadcast."}
-	ReshapeError  = &ngError{"New shape cannot change the size of the array."}
-	NegativeAxis  = &ngError{"Negative axis length received."}
-	IndexError    = &ngError{"Index or Axis out of range."}
-	DivZeroError  = &ngError{"Division by zero encountered."}
-	InvIndexError = &ngError{"Invalid or illegal index received."}
+	NilError      = &ngError{"NilError: Nil pointer recieved."}
+	ShapeError    = &ngError{"ShapeError: Array shapes don't match and can't be broadcast."}
+	ReshapeError  = &ngError{"ReshapeError: New shape cannot change the size of the array."}
+	NegativeAxis  = &ngError{"NegativeAxis: Negative axis length received."}
+	IndexError    = &ngError{"IndexError: Index or Axis out of range."}
+	DivZeroError  = &ngError{"DivZeroError: Division by zero encountered."}
+	InvIndexError = &ngError{"InvIndexError: Invalid or illegal index received."}
+	FoldMapError  = &ngError{"FoldMapError: Fold/Map function panic encountered."}
 
 	debug    bool
 	stackBuf []byte
@@ -109,6 +110,8 @@ func encodeErr(err error) int8 {
 		return 6
 	case InvIndexError:
 		return 7
+	case FoldMapError:
+		return 8
 	}
 	return -1
 }
@@ -132,6 +135,8 @@ func decodeErr(err int8) (a *ngError) {
 		a = DivZeroError
 	case 7:
 		a = InvIndexError
+	case 8:
+		a = FoldMapError
 	default:
 		a = &ngError{fmt.Sprintf("Unknown error Unmarshaled: %d", err)}
 	}
