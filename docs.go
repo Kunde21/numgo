@@ -20,7 +20,7 @@ Array64 objects can be created from a slice or as an empty array.  Arange and Id
  arange := numgo.Arange(100)           // Simple 1-D array filled with incrementing numbers
  arange.Reshape(2,5,10)                // Changes the shape from 1-D to 3-D
  arange.Mean(2)                        // Mean across axis 2, returning a 2-D (2x5) array
- arange.Sum()                          // An empty call operates over all data on all axes (Grand Total)
+ arange.Sum()                          // An empty call operates on all data (Grand Total)
 
 
 Fold and Map operations
@@ -82,15 +82,33 @@ Debugging can be enabled by calling numgo.Debug(true). This will give detailed e
 
  nilp.Set(12, 1,4,0).AddC(2).DivC(6).At(1,4,0)
  if nilp.HasErr(){
-     err, debug := nilp.GetDebug()
+     err, debug, trace := nilp.GetDebug()
 
      // Prints generic error: "Nil pointer received."
      fmt.Println(err)
 
-     // Prints debug info: "Nil pointer received by GetDebug().  Source array was not initialized."
+     // Prints debug info:
+     // "Nil pointer received by GetDebug().  Source array was not initialized."
      fmt.Println(debug)
+
+     // Prints stack trace for the call to GetDebug()
+     fmt.Println(trace)
  }
 
+ resz := NewArray64(nil, 2, 5)   // 2-D (2x5) array of zeros
 
+ // Reshape would change the capacity of the array, which should use Resize
+ resz.AddC(10).DivC(2).Reshape(3,3).Mean(1)
+
+ if resz.HasErr() {
+    	err, debug, trace := resz.GetDebug()
+	// Prints generic error: "New shape cannot change the size of the array."
+	fmt.Println(err)
+	// Prints debug info:
+        // "Reshape() cannot change data size.  Dimensions: [2,5] reshape: [3,3]"
+	fmt.Println(debug)
+	// Prints stack trace for the call to Reshape()
+	fmt.Println(trace)
+ }
 */
 package numgo

@@ -67,7 +67,7 @@ numgo is designed to allow chaining of functions, to allow different actions on 
 
 ## Debugging option
 
-Debugging can be enabled by calling `numgo.Debug(true)`.  This will give detailed error strings by using `GetDebug()` instead of `GetErr()`.  This makes debugging chained method calls much easier.
+Debugging can be enabled by calling `numgo.Debug(true)`.  This will give detailed error strings and stack traces by using `GetDebug()` instead of `GetErr()`.  This makes debugging chained method calls much easier.
 
 ```go
 	numgo.Debug(true)
@@ -75,12 +75,30 @@ Debugging can be enabled by calling `numgo.Debug(true)`.  This will give detaile
 	
 	nilp.Set(12, 1,4,0).AddC(2).DivC(6).At(1,4,0)
 	if nilp.HasErr(){
-		err, debug := nilp.GetDebug()
+		err, debug, trace := nilp.GetDebug()
 		// Prints generic error: "Nil pointer received."
 		fmt.Println(err)
 		// Prints debug info: "Nil pointer received by GetDebug().  Source array was not initialized."
 		fmt.Println(debug)
+		// Prints stack trace for the call to GetDebug()
+		fmt.Println(trace)
 	}
+
+	resz := NewArray64(nil, 2, 5)   // 2-D (2x5) array of zeros
+	
+	// Reshape would change the capacity of the array, which should use Resize
+	resz.AddC(10).DivC(2).Reshape(3,3).Mean(1)  
+
+	if resz.HasErr() {
+	   	err, debug, trace := resz.GetDebug()
+		// Prints generic error: "New shape cannot change the size of the array."
+		fmt.Println(err)
+		// Prints debug info: "Reshape() cannot change data size.  Dimensions: [2,5] reshape: [3,3]"
+		fmt.Println(debug)
+		// Prints stack trace for the call to Reshape()
+		fmt.Println(trace)
+	}
+
 ```
 
 ## Contributions
