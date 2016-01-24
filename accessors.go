@@ -340,7 +340,7 @@ func (a *Array64) Append(val *Array64, axis int) *Array64 {
 	a.data = append(a.data, val.data...)
 
 	as, vs := a.strides[axis], val.strides[axis+1]
-	for i, j := a.strides[0]-as, val.strides[0]-vs; i >= 0; i, j = i-as, j-vs {
+	for i, j := a.strides[0]-as, val.strides[0]-vs; i < a.strides[0]; i, j = i-as, j-vs {
 		copy(a.data[i+j+as:i+j+as+vs], val.data[j:j+vs])
 		copy(a.data[i+j:i+j+as], a.data[i:i+as])
 	}

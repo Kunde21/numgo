@@ -499,7 +499,7 @@ func TestBoolValAxis(t *testing.T) {
 
 	var c *Arrayb
 	for i, v := range tests {
-		v.a.valAxis(v.ax, "")
+		v.a.valAxis(&v.ax, "")
 		e := v.a.HasErr()
 		if e != v.e {
 			t.Logf("HasErr failed in test %d.  Expected %v got %v\n", i, v.e, c.HasErr())

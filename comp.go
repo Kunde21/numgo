@@ -7,7 +7,7 @@ import (
 
 // Max will return the maximum along the given axes.
 func (a *Array64) Max(axis ...int) (r *Array64) {
-	if a.valAxis(axis, "Max") {
+	if a.valAxis(&axis, "Max") {
 		return a
 	}
 
@@ -26,36 +26,9 @@ func (a *Array64) Max(axis ...int) (r *Array64) {
 	return r
 }
 
-func (a *Array64) valAxis(axis []int, mthd string) bool {
-	axis = cleanAxis(axis)
-	switch {
-	case a == nil || a.err != nil:
-		return true
-	case len(axis) > len(a.shape):
-		a.err = ShapeError
-		if debug {
-			a.debug = fmt.Sprintf("Too many axes received by %s().  Shape: %v  Axes: %v", mthd, a.shape, axis)
-			a.stack = string(stackBuf[:runtime.Stack(stackBuf, false)])
-		}
-		return true
-	}
-	for _, v := range axis {
-		if v < 0 || v >= len(a.shape) {
-			a.err = IndexError
-			if debug {
-				a.debug = fmt.Sprintf("Axis out of range received by %s().  Shape: %v  Axes: %v", mthd, a.shape, axis)
-				a.stack = string(stackBuf[:runtime.Stack(stackBuf, false)])
-			}
-			return true
-		}
-	}
-	return false
-
-}
-
 // Min will return the minimum along the given axes.
 func (a *Array64) Min(axis ...int) (r *Array64) {
-	if a.valAxis(axis, "Max") {
+	if a.valAxis(&axis, "Max") {
 		return a
 	}
 

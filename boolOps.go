@@ -171,7 +171,7 @@ func (a *Array64) comp(b *Array64, f func(i, j float64) bool) (r *Arrayb) {
 
 // Any will return true if any element is non-zero, false otherwise.
 func (a *Arrayb) Any(axis ...int) *Arrayb {
-	if a.valAxis(axis, "All") {
+	if a.valAxis(&axis, "All") {
 		return a
 	}
 
@@ -238,7 +238,7 @@ func (a *Arrayb) Any(axis ...int) *Arrayb {
 // All will return true if all elements are non-zero, false otherwise.
 func (a *Arrayb) All(axis ...int) *Arrayb {
 
-	if a.valAxis(axis, "All") {
+	if a.valAxis(&axis, "All") {
 		return a
 	}
 
@@ -302,12 +302,12 @@ func (a *Arrayb) All(axis ...int) *Arrayb {
 	return a
 }
 
-func (a *Arrayb) valAxis(axis []int, mthd string) bool {
+func (a *Arrayb) valAxis(axis *[]int, mthd string) bool {
 	axis = cleanAxis(axis)
 	switch {
 	case a == nil || a.err != nil:
 		return true
-	case len(axis) > len(a.shape):
+	case len(*axis) > len(a.shape):
 		a.err = ShapeError
 		if debug {
 			a.debug = fmt.Sprintf("Too many axes received by %s().  Shape: %v  Axes: %v", mthd, a.shape, axis)
@@ -315,7 +315,7 @@ func (a *Arrayb) valAxis(axis []int, mthd string) bool {
 		}
 		return true
 	}
-	for _, v := range axis {
+	for _, v := range *axis {
 		if v < 0 || v >= len(a.shape) {
 			a.err = IndexError
 			if debug {

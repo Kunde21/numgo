@@ -15,18 +15,19 @@ type MapFunc func(float64) float64
 
 // cleanAxis removes any duplicate axes and returns the cleaned slice.
 // only the first instance of an axis is retained.
-func cleanAxis(axis []int) []int {
-	if len(axis) < 2 {
+func cleanAxis(axis *[]int) *[]int {
+
+	if len(*axis) < 2 {
 		return axis
 	}
-	length := len(axis) - 1
+	length := len(*axis) - 1
 	for i := 0; i < length; i++ {
 		for j := i + 1; j <= length; j++ {
-			if axis[i] == axis[j] {
+			if (*axis)[i] == (*axis)[j] {
 				if j == length {
-					axis = axis[:j]
+					*axis = (*axis)[:j]
 				} else {
-					axis = append(axis[:j], axis[j+1:]...)
+					*axis = append((*axis)[:j], (*axis)[j+1:]...)
 				}
 				length--
 				j--
@@ -34,6 +35,33 @@ func cleanAxis(axis []int) []int {
 		}
 	}
 	return axis
+}
+
+func (a *Array64) valAxis(axis *[]int, mthd string) bool {
+	axis = cleanAxis(axis)
+	switch {
+	case a == nil || a.err != nil:
+		return true
+	case len(*axis) > len(a.shape):
+		a.err = ShapeError
+		if debug {
+			a.debug = fmt.Sprintf("Too many axes received by %s().  Shape: %v  Axes: %v", mthd, a.shape, axis)
+			a.stack = string(stackBuf[:runtime.Stack(stackBuf, false)])
+		}
+		return true
+	}
+	for _, v := range *axis {
+		if v < 0 || v >= len(a.shape) {
+			a.err = IndexError
+			if debug {
+				a.debug = fmt.Sprintf("Axis out of range received by %s().  Shape: %v  Axes: %v", mthd, a.shape, axis)
+				a.stack = string(stackBuf[:runtime.Stack(stackBuf, false)])
+			}
+			return true
+		}
+	}
+	return false
+
 }
 
 // collapse will reorganize data by putting element dataset in continuous sections of data slice.
@@ -161,7 +189,7 @@ shape:
 //
 // Simple functions should use Fold(f, axes...), as it's more performant on small functions.
 func (a *Array64) FoldCC(f FoldFunc, axis ...int) (ret *Array64) {
-	if a.valAxis(axis, "FoldCC") {
+	if a.valAxis(&axis, "FoldCC") {
 		return a
 	}
 
@@ -212,7 +240,7 @@ func (a *Array64) FoldCC(f FoldFunc, axis ...int) (ret *Array64) {
 // Slice containing all data to be consolidated into an element will be passed to f.
 // Return value will be the resulting element's value.
 func (a *Array64) Fold(f FoldFunc, axis ...int) (ret *Array64) {
-	if a.valAxis(axis, "Fold") {
+	if a.valAxis(&axis, "Fold") {
 		return a
 	}
 

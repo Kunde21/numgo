@@ -1,7 +1,6 @@
 package numgo
 
 import (
-	"fmt"
 	"math"
 	"sort"
 )
@@ -9,15 +8,8 @@ import (
 // Sum calculates the sum result array along a given axes.
 // Empty call gives the grand sum of all elements.
 func (a *Array64) Sum(axis ...int) (r *Array64) {
-	axis = cleanAxis(axis)
 	switch {
-	case a == nil || a.err != nil:
-		return a
-	case len(axis) > len(a.shape):
-		a.err = ShapeError
-		if debug {
-			a.debug = fmt.Sprintf("Too many axes received by Sum().  Shape: %v  Axes: %v", a.shape, axis)
-		}
+	case a.valAxis(&axis, "Sum"):
 		return a
 	case len(axis) == 0:
 		tot := float64(0)
@@ -25,17 +17,6 @@ func (a *Array64) Sum(axis ...int) (r *Array64) {
 			tot += v
 		}
 		return Full(tot, 1)
-	}
-
-	//Validate input
-	for _, v := range axis {
-		if v < 0 || v > len(a.shape) {
-			a.err = IndexError
-			if debug {
-				a.debug = fmt.Sprintf("Axis out of range received by Sum().  Shape: %v  Axes: %v", a.shape, axis)
-			}
-			return a
-		}
 	}
 
 	sort.IntSlice(axis).Sort()
@@ -69,7 +50,6 @@ func (a *Array64) Sum(axis ...int) (r *Array64) {
 		for ; j < uint64(len(t))/maj; j++ {
 			copy(t[j*min:(j+1)*min], t[j*maj:j*maj+min])
 		}
-
 		t = append(t[:0], t[0:j*min]...)
 	}
 	a.data = t
@@ -91,25 +71,8 @@ func (a *Array64) Sum(axis ...int) (r *Array64) {
 //
 // Empty call gives the grand sum of all elements.
 func (a *Array64) NaNSum(axis ...int) *Array64 {
-	axis = cleanAxis(axis)
-	switch {
-	case a == nil || a.err != nil:
+	if a.valAxis(&axis, "NaNSum") {
 		return a
-	case len(axis) > len(a.shape):
-		a.err = ShapeError
-		if debug {
-			a.debug = fmt.Sprintf("Too many axes received by NaNSum().  Shape: %v  Axes: %v", a.shape, axis)
-		}
-		return a
-	}
-	for _, v := range axis {
-		if v < 0 || v > len(a.shape) {
-			a.err = IndexError
-			if debug {
-				a.debug = fmt.Sprintf("Axis out of range received by Sum().  Shape: %v  Axes: %v", a.shape, axis)
-			}
-			return a
-		}
 	}
 
 	ns := func(d []float64) (r float64) {
@@ -133,28 +96,11 @@ func (a *Array64) NaNSum(axis ...int) *Array64 {
 // Count gives the number of elements along a set of axis.
 // Value in the element is not tested, all elements are counted.
 func (a *Array64) Count(axis ...int) *Array64 {
-	axis = cleanAxis(axis)
 	switch {
-	case a == nil || a.err != nil:
-		return a
-	case len(axis) > len(a.shape):
-		a.err = ShapeError
-		if debug {
-			a.debug = fmt.Sprintf("Too many axes received by Count().  Shape: %v  Axes: %v", a.shape, axis)
-		}
+	case a.valAxis(&axis, "Count"):
 		return a
 	case len(axis) == 0:
 		return full(float64(a.strides[0]), 1)
-	}
-
-	for _, v := range axis {
-		if v < 0 || v > len(a.shape) {
-			a.err = IndexError
-			if debug {
-				a.debug = fmt.Sprintf("Axis out of range received by Sum().  Shape: %v  Axes: %v", a.shape, axis)
-			}
-			return a
-		}
 	}
 
 	tAxis := make([]uint64, len(a.shape)-len(axis))
@@ -180,25 +126,8 @@ func (a *Array64) Count(axis ...int) *Array64 {
 // NaNCount calculates the number of values along a given axes.
 // Empty call gives the total number of elements.
 func (a *Array64) NaNCount(axis ...int) *Array64 {
-	axis = cleanAxis(axis)
-	switch {
-	case a == nil || a.err != nil:
+	if a.valAxis(&axis, "NaNCount") {
 		return a
-	case len(axis) > len(a.shape):
-		a.err = ShapeError
-		if debug {
-			a.debug = fmt.Sprintf("Too many axes received by Count().  Shape: %v  Axes: %v", a.shape, axis)
-		}
-		return a
-	}
-	for _, v := range axis {
-		if v < 0 || v > len(a.shape) {
-			a.err = IndexError
-			if debug {
-				a.debug = fmt.Sprintf("Axis out of range received by Sum().  Shape: %v  Axes: %v", a.shape, axis)
-			}
-			return a
-		}
 	}
 
 	nc := func(d []float64) (r float64) {
@@ -216,72 +145,37 @@ func (a *Array64) NaNCount(axis ...int) *Array64 {
 // Mean calculates the mean across the given axes.
 // NaN values in the dataa will result in NaN result elements.
 func (a *Array64) Mean(axis ...int) *Array64 {
-	axis = cleanAxis(axis)
 	switch {
-	case a == nil || a.err != nil:
+	case a.valAxis(&axis, "Mean"):
 		return a
-	case len(axis) > len(a.shape):
-		a.err = ShapeError
-		if debug {
-			a.debug = fmt.Sprintf("Too many axes received by Mean().  Shape: %v  Axes: %v", a.shape, axis)
-		}
-		return a
-	case len(axis) == 0:
-		return a.C()
 	}
 
-	for _, v := range axis {
-		if v < 0 || v > len(a.shape) {
-			a.err = IndexError
-			if debug {
-				a.debug = fmt.Sprintf("Axis out of range received by Mean().  Shape: %v  Axes: %v", a.shape, axis)
-			}
-			return a
-		}
-	}
 	return a.C().Sum(axis...).DivC(a.Count(axis...).data[0])
 }
 
 // NaNMean calculates the mean across the given axes.
 // NaN values are ignored in this calculation.
 func (a *Array64) NaNMean(axis ...int) *Array64 {
-	axis = cleanAxis(axis)
 	switch {
-	case a == nil || a.err != nil:
+	case a.valAxis(&axis, "Sum"):
 		return a
-	case len(axis) > len(a.shape):
-		a.err = ShapeError
-		if debug {
-			a.debug = fmt.Sprintf("Too many axes received by Mean().  Shape: %v  Axes: %v", a.shape, axis)
-		}
-		return a
-	case len(axis) == 0:
-		return a.C()
-	}
-
-	for _, v := range axis {
-		if v < 0 || v > len(a.shape) {
-			a.err = IndexError
-			if debug {
-				a.debug = fmt.Sprintf("Axis out of range received by Mean().  Shape: %v  Axes: %v", a.shape, axis)
-			}
-			return a
-		}
 	}
 	return a.NaNSum(axis...).Div(a.NaNCount(axis...))
 }
 
 // Nonzero counts the number of non-zero elements are in the array
-func (a *Array64) Nonzero() (c *uint64) {
-	if a == nil || a.err != nil {
-		return nil
+func (a *Array64) Nonzero(axis ...int) *Array64 {
+	if a.valAxis(&axis, "Sum") {
+		return a
 	}
 
-	*c = 0
-	for _, v := range a.data {
-		if v != float64(0) {
-			(*c)++
+	cnz := func(d []float64) (r float64) {
+		for _, v := range d {
+			if v != 0 {
+				r++
+			}
 		}
+		return
 	}
-	return
+	return a.Fold(cnz, axis...)
 }

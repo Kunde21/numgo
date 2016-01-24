@@ -15,7 +15,7 @@ func TestcleanAxis(t *testing.T) {
 	}
 
 	for i, v := range tests {
-		clean := cleanAxis(v.a)
+		clean := *(cleanAxis(&v.a))
 		for j, k := range clean {
 			if k != v.b[j] {
 				t.Logf("Test %d failed.  Expected %v received %v\n", i, v.b, clean)
