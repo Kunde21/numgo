@@ -2,6 +2,7 @@ package numgo
 
 import (
 	"fmt"
+	"runtime"
 	"sort"
 )
 
@@ -171,7 +172,8 @@ func (a *Array64) FoldCC(f FoldFunc, axis ...int) (ret *Array64) {
 	case len(axis) > len(a.shape):
 		a.err = ShapeError
 		if debug {
-			a.debug = fmt.Sprintf("Too many axes received by MapCC().  Shape: %v  Axes: %v", a.shape, axis)
+			a.debug = fmt.Sprintf("Too many axes received by FoldCC().  Shape: %v  Axes: %v", a.shape, axis)
+			a.stack = string(stackBuf[:runtime.Stack(stackBuf, false)])
 		}
 		return a
 	}
@@ -215,7 +217,8 @@ func (a *Array64) Fold(f FoldFunc, axis ...int) (ret *Array64) {
 	case len(axis) > len(a.shape):
 		a.err = ShapeError
 		if debug {
-			a.debug = fmt.Sprintf("Too many axes received by Map().  Shape: %v  Axes: %v", a.shape, axis)
+			a.debug = fmt.Sprintf("Too many axes received by Fold().  Shape: %v  Axes: %v", a.shape, axis)
+			a.stack = string(stackBuf[:runtime.Stack(stackBuf, false)])
 		}
 		return a
 	}

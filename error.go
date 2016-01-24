@@ -1,6 +1,9 @@
 package numgo
 
-import "fmt"
+import (
+	"fmt"
+	"runtime"
+)
 
 type ngError struct {
 	s string
@@ -19,7 +22,8 @@ var (
 	DivZeroError  = &ngError{"Division by zero encountered."}
 	InvIndexError = &ngError{"Invalid or illegal index received."}
 
-	debug bool
+	debug    bool
+	stackBuf []byte
 )
 
 // Debug sets the error reporting level for the library.
@@ -27,14 +31,14 @@ var (
 // and use GetDebug() in place of GetErr().
 //
 // Debugging information includes the function call that generated
-// the error and the values involved in that function call.
+// the error, stack trace at the point the error was generated,
+// and the values involved in that function call.
 // This will add overhead to error reporting and handling, so
 // use it for development and debugging purposes.
-//
-// An empty call will return the current debug setting.
-func Debug(set ...bool) bool {
-	if len(set) > 0 {
-		debug = set[0]
+func Debug(set bool) bool {
+	debug = set
+	if debug && len(stackBuf) == 0 {
+		stackBuf = make([]byte, 4096)
 	}
 	return debug
 }
@@ -62,7 +66,7 @@ func (a *Array64) GetErr() (err error) {
 		return NilError
 	}
 	err = a.err
-	a.err, a.debug = nil, ""
+	a.err, a.debug, a.stack = nil, "", ""
 	return
 }
 
@@ -71,16 +75,17 @@ func (a *Array64) GetErr() (err error) {
 //
 // This debug information will only be generated and returned if numgo.Debug is set to true
 // before the function call that causes the error.
-func (a *Array64) GetDebug() (err error, debugStr string) {
+func (a *Array64) GetDebug() (err error, debugStr, stackTrace string) {
 	if a == nil {
 		err = NilError
 		if debug {
 			debugStr = "Nil pointer received by GetDebug().  Source array was not initialized."
+			stackTrace = string(stackBuf[:runtime.Stack(stackBuf, false)])
 		}
 		return
 	}
-	err, debugStr = a.err, a.debug
-	a.err, a.debug = nil, ""
+	err, debugStr, stackTrace = a.err, a.debug, a.stack
+	a.err, a.debug, a.stack = nil, "", ""
 	return
 }
 
@@ -165,15 +170,17 @@ func (a *Arrayb) GetErr() (err error) {
 //
 // This debug information will only be generated and returned if numgo.Debug is set to true
 // before the function call that causes the error.
-func (a *Arrayb) GetDebug() (err error, debugStr string) {
+func (a *Arrayb) GetDebug() (err error, debugStr, stackTrace string) {
 	if a == nil {
 		err = NilError
 		if debug {
 			debugStr = "Nil pointer received in GetDebug().  Source array was not initialized."
+			stackTrace = string(stackBuf[:runtime.Stack(stackBuf, false)])
 		}
 		return
 	}
-	err, debugStr = a.err, a.debug
-	a.err, a.debug = nil, ""
+	err, debugStr, stackTrace = a.err, a.debug, a.stack
+	a.err, a.debug, a.stack = nil, "", ""
+
 	return
 }

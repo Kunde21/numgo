@@ -2,6 +2,10 @@ package numgo
 
 import "testing"
 
+func init() {
+	debug = true
+}
+
 func TestMax(t *testing.T) {
 	a := Arange(20).Reshape(2, 5, 2)
 
@@ -55,8 +59,11 @@ func TestMin(t *testing.T) {
 			t.Logf("Test %d Failed:\n %v == %v : %v\n", i, v.a.Min(v.ax...), v.b, c.All().At(0))
 			t.Fail()
 		}
-		if e := v.a.GetErr(); e != v.err {
+		if e, d, s := v.a.GetDebug(); e != v.err {
 			t.Logf("Test %d Error Failed: Expected %#v got %#v\n", i, v.err, e)
+			t.Log("Debug:", d)
+			t.Log(s)
+			t.Log(v.a)
 			t.Fail()
 		}
 	}

@@ -5,6 +5,10 @@ import (
 	"testing"
 )
 
+func init() {
+	debug = true
+}
+
 func TestSum(t *testing.T) {
 	sz := []int{7, 3, 4, 5, 6}
 	a := Arange(10).Reshape(2, 5).Sum(0)

@@ -3,6 +3,7 @@ package numgo
 import (
 	"fmt"
 	"math"
+	"runtime"
 )
 
 // Add performs element-wise addition
@@ -16,18 +17,21 @@ func (a *Array64) Add(b *Array64) *Array64 {
 		a.err = NilError
 		if debug {
 			a.debug = "Array received by Add() is a Nil pointer."
+			a.stack = string(stackBuf[:runtime.Stack(stackBuf, false)])
 		}
 		fallthrough
 	case b.err != nil:
 		a.err = b.err
 		if debug {
 			a.debug = "Array received by Add() is in error."
+			a.stack = string(stackBuf[:runtime.Stack(stackBuf, false)])
 		}
 		return a
 	case len(a.shape) < len(b.shape):
 		a.err = ShapeError
 		if debug {
 			a.debug = fmt.Sprintf("Array received by Add() can not be broadcast.  Shape: %v  Val shape: %v", a.shape, b.shape)
+			a.stack = string(stackBuf[:runtime.Stack(stackBuf, false)])
 		}
 		return a
 	}
@@ -37,6 +41,7 @@ func (a *Array64) Add(b *Array64) *Array64 {
 			a.err = ShapeError
 			if debug {
 				a.debug = fmt.Sprintf("Array received by Add() can not be broadcast.  Shape: %v  Val shape: %v", a.shape, b.shape)
+				a.stack = string(stackBuf[:runtime.Stack(stackBuf, false)])
 			}
 			return a
 		}
@@ -81,18 +86,21 @@ func (a *Array64) Subtr(b *Array64) *Array64 {
 		a.err = NilError
 		if debug {
 			a.debug = "Array received by Subtr() is a Nil pointer."
+			a.stack = string(stackBuf[:runtime.Stack(stackBuf, false)])
 		}
 		fallthrough
 	case b.err != nil:
 		a.err = b.err
 		if debug {
 			a.debug = "Array received by Subtr() is in error."
+			a.stack = string(stackBuf[:runtime.Stack(stackBuf, false)])
 		}
 		return a
 	case len(a.shape) < len(b.shape):
 		a.err = ShapeError
 		if debug {
 			a.debug = fmt.Sprintf("Array received by Subtr() can not be broadcast.  Shape: %v  Val shape: %v", a.shape, b.shape)
+			a.stack = string(stackBuf[:runtime.Stack(stackBuf, false)])
 		}
 		return a
 	}
@@ -102,6 +110,7 @@ func (a *Array64) Subtr(b *Array64) *Array64 {
 			a.err = ShapeError
 			if debug {
 				a.debug = fmt.Sprintf("Array received by Subtr() can not be broadcast.  Shape: %v  Val shape: %v", a.shape, b.shape)
+				a.stack = string(stackBuf[:runtime.Stack(stackBuf, false)])
 			}
 			return a
 		}
@@ -147,18 +156,21 @@ func (a *Array64) Mult(b *Array64) *Array64 {
 		a.err = NilError
 		if debug {
 			a.debug = "Array received by Mult() is a Nil pointer."
+			a.stack = string(stackBuf[:runtime.Stack(stackBuf, false)])
 		}
 		fallthrough
 	case b.err != nil:
 		a.err = b.err
 		if debug {
 			a.debug = "Array received by Mult() is in error."
+			a.stack = string(stackBuf[:runtime.Stack(stackBuf, false)])
 		}
 		return a
 	case len(a.shape) < len(b.shape):
 		a.err = ShapeError
 		if debug {
 			a.debug = fmt.Sprintf("Array received by Mult() can not be broadcast.  Shape: %v  Val shape: %v", a.shape, b.shape)
+			a.stack = string(stackBuf[:runtime.Stack(stackBuf, false)])
 		}
 		return a
 	}
@@ -168,6 +180,7 @@ func (a *Array64) Mult(b *Array64) *Array64 {
 			a.err = ShapeError
 			if debug {
 				a.debug = fmt.Sprintf("Array received by Mult() can not be broadcast.  Shape: %v  Val shape: %v", a.shape, b.shape)
+				a.stack = string(stackBuf[:runtime.Stack(stackBuf, false)])
 			}
 			return a
 		}
@@ -213,6 +226,7 @@ func (a *Array64) Div(b *Array64) *Array64 {
 		a.err = NilError
 		if debug {
 			a.debug = "Array received by Div() is a Nil pointer."
+			a.stack = string(stackBuf[:runtime.Stack(stackBuf, false)])
 		}
 
 		fallthrough
@@ -220,12 +234,14 @@ func (a *Array64) Div(b *Array64) *Array64 {
 		a.err = b.err
 		if debug {
 			a.debug = "Array received by Div() is in error."
+			a.stack = string(stackBuf[:runtime.Stack(stackBuf, false)])
 		}
 		return a
 	case len(a.shape) < len(b.shape):
 		a.err = ShapeError
 		if debug {
 			a.debug = fmt.Sprintf("Array received by Div() can not be broadcast.  Shape: %v  Val shape: %v", a.shape, b.shape)
+			a.stack = string(stackBuf[:runtime.Stack(stackBuf, false)])
 		}
 		return a
 	}
@@ -233,6 +249,7 @@ func (a *Array64) Div(b *Array64) *Array64 {
 		if a.shape[j] != b.shape[i] {
 			if debug {
 				a.debug = fmt.Sprintf("Array received by Div() can not be broadcast.  Shape: %v  Val shape: %v", a.shape, b.shape)
+				a.stack = string(stackBuf[:runtime.Stack(stackBuf, false)])
 			}
 			return a
 		}
@@ -249,6 +266,7 @@ func (a *Array64) Div(b *Array64) *Array64 {
 						a.err = DivZeroError
 						if debug {
 							a.debug = "Division by zero encountered in Div()"
+							a.stack = string(stackBuf[:runtime.Stack(stackBuf, false)])
 						}
 					}
 				} else {
@@ -276,6 +294,7 @@ func (a *Array64) DivC(b float64) *Array64 {
 		a.err = DivZeroError
 		if debug {
 			a.debug = "Division by zero encountered in DivC()"
+			a.stack = string(stackBuf[:runtime.Stack(stackBuf, false)])
 		}
 	}
 
@@ -300,17 +319,20 @@ func (a *Array64) Pow(b *Array64) *Array64 {
 		a.err = NilError
 		if debug {
 			a.debug = "Array received by Pow() is a Nil pointer."
+			a.stack = string(stackBuf[:runtime.Stack(stackBuf, false)])
 		}
 		return a
 	case b.err != nil:
 		a.err = b.err
 		if debug {
 			a.debug = "Array received by Pow() is in error."
+			a.stack = string(stackBuf[:runtime.Stack(stackBuf, false)])
 		}
 	case len(a.shape) < len(b.shape):
 		a.err = ShapeError
 		if debug {
 			a.debug = fmt.Sprintf("Array received by Pow() can not be broadcast.  Shape: %v  Val shape: %v", a.shape, b.shape)
+			a.stack = string(stackBuf[:runtime.Stack(stackBuf, false)])
 		}
 		return a
 	}
@@ -319,6 +341,7 @@ func (a *Array64) Pow(b *Array64) *Array64 {
 			a.err = ShapeError
 			if debug {
 				a.debug = fmt.Sprintf("Array received by Pow() can not be broadcast.  Shape: %v  Val shape: %v", a.shape, b.shape)
+				a.stack = string(stackBuf[:runtime.Stack(stackBuf, false)])
 			}
 			return a
 		}

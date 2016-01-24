@@ -2,6 +2,10 @@ package numgo
 
 import "testing"
 
+func init() {
+	debug = true
+}
+
 func TestCreate(t *testing.T) {
 	shp := []int{2, 3, 4}
 	a := NewArray64(nil, shp...)

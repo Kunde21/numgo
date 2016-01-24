@@ -4,15 +4,16 @@ import (
 	"encoding/json"
 	"fmt"
 	"math"
+	"runtime"
 	"strings"
 )
 
 type Array64 struct {
-	shape   []uint64
-	strides []uint64
-	data    []float64
-	err     error
-	debug   string
+	shape        []uint64
+	strides      []uint64
+	data         []float64
+	err          error
+	debug, stack string
 }
 
 // NewArray64 creates an Array64 object with dimensions given in order from outer-most to inner-most
@@ -31,6 +32,7 @@ func NewArray64(data []float64, shape ...int) (a *Array64) {
 			a.err = NegativeAxis
 			if debug {
 				a.debug = fmt.Sprintf("Negative axis length received by Create: %v", shape)
+				a.stack = string(stackBuf[:runtime.Stack(stackBuf, false)])
 			}
 			return
 		}
@@ -128,6 +130,7 @@ func Arange(vals ...float64) (a *Array64) {
 			a.err = ShapeError
 			if debug {
 				a.debug = fmt.Sprintf("Arange received illegal values %v", vals)
+				a.stack = string(stackBuf[:runtime.Stack(stackBuf, false)])
 			}
 			return
 		}
@@ -151,6 +154,7 @@ func Identity(size int) (r *Array64) {
 		r.err = NegativeAxis
 		if debug {
 			r.debug = fmt.Sprintf("Negative dimension received by Identity: %d", size)
+			r.stack = string(stackBuf[:runtime.Stack(stackBuf, false)])
 		}
 		return
 	}
@@ -171,6 +175,8 @@ func (a *Array64) String() (s string) {
 		return "Error: " + a.err.(*ngError).s
 	case a.strides[0] == 0:
 		return "[]"
+	case len(a.shape) == 1:
+		return fmt.Sprint(a.data)
 	}
 
 	stride := a.shape[len(a.shape)-1]
@@ -220,6 +226,7 @@ func (a *Array64) Reshape(shape ...int) *Array64 {
 			a.err = NegativeAxis
 			if debug {
 				a.debug = fmt.Sprintf("Negative dimension received by Reshape(): %v", shape)
+				a.stack = string(stackBuf[:runtime.Stack(stackBuf, false)])
 			}
 			return a
 		}
@@ -231,6 +238,7 @@ func (a *Array64) Reshape(shape ...int) *Array64 {
 		a.err = ReshapeError
 		if debug {
 			a.debug = fmt.Sprintf("Reshape() can not change data size.  Dimensions: %v reshape: %v", a.shape, shape)
+			a.stack = string(stackBuf[:runtime.Stack(stackBuf, false)])
 		}
 		return a
 	}

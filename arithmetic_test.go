@@ -5,6 +5,10 @@ import (
 	"testing"
 )
 
+func init() {
+	debug = true
+}
+
 func TestAdd(t *testing.T) {
 	a, b := Arange(20), Arange(20)
 	a.Add(b)

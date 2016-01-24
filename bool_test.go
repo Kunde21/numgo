@@ -1,10 +1,13 @@
 package numgo
 
 import (
-	"fmt"
 	"math/rand"
 	"testing"
 )
+
+func init() {
+	debug = true
+}
 
 func TestEquals(t *testing.T) {
 
@@ -188,8 +191,11 @@ func TestCompValid(t *testing.T) {
 			t.Logf("HasErr failed in test %d.  Expected %v got %v\n", i, v.e, c.HasErr())
 			t.Fail()
 		}
-		if er := c.GetErr(); e && er != v.err {
-			t.Logf("Error failed in test %d.  Expected %v got %v\n", i, v.err, er)
+		if e, d, s := c.GetDebug(); e != v.err {
+			t.Logf("Test %d Error Failed: Expected %#v got %#v\n", i, v.err, e)
+			t.Log("Debug:", d)
+			t.Log(s)
+			t.Log(v.a)
 			t.Fail()
 		}
 	}
@@ -278,8 +284,18 @@ func TestDebug(t *testing.T) {
 	nilp.Set(12, 1, 4, 0).AddC(2).DivC(6).At(1, 4, 0)
 	if !nilp.HasErr() {
 		t.FailNow()
-		err, debug := nilp.GetDebug()
-		fmt.Println(err)   // Prints generic error: "Nil pointer received."
-		fmt.Println(debug) // Prints debug info: "Nil pointer received by SetE()."
+		err, debug, stack := nilp.GetDebug()
+		t.Log(err)   // Prints generic error: "Nil pointer received."
+		t.Log(debug) // Prints debug info: "Nil pointer received by SetE()."
+		t.Log(stack)
+		t.Fail()
 	}
+	nilp = MinSet(Arange(10).Reshape(2, 5), Arange(10))
+	if err, debug, stack := nilp.GetDebug(); err != ShapeError {
+		t.Log(err)
+		t.Log(debug)
+		t.Log(stack)
+		t.Fail()
+	}
+
 }

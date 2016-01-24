@@ -3,15 +3,16 @@ package numgo
 import (
 	"encoding/json"
 	"fmt"
+	"runtime"
 	"strings"
 )
 
 type Arrayb struct {
-	shape   []uint64
-	strides []uint64
-	data    []bool
-	err     error
-	debug   string
+	shape        []uint64
+	strides      []uint64
+	data         []bool
+	err          error
+	debug, stack string
 }
 
 // NewArrayB creates an Arrayb object with dimensions given in order from outer-most to inner-most
@@ -29,6 +30,7 @@ func NewArrayB(data []bool, shape ...int) (a *Arrayb) {
 			a.err = NegativeAxis
 			if debug {
 				a.debug = fmt.Sprintf("Negative axis length received by Createb.  Shape: %v", shape)
+				a.stack = string(stackBuf[:runtime.Stack(stackBuf, false)])
 			}
 			return
 		}
@@ -160,6 +162,7 @@ func (a *Arrayb) Reshape(shape ...int) *Arrayb {
 			a.err = NegativeAxis
 			if debug {
 				a.debug = fmt.Sprintf("Negative axis length received by Reshape().  Shape: %v", shape)
+				a.stack = string(stackBuf[:runtime.Stack(stackBuf, false)])
 			}
 			return a
 		}
@@ -171,6 +174,7 @@ func (a *Arrayb) Reshape(shape ...int) *Arrayb {
 		a.err = ReshapeError
 		if debug {
 			a.debug = fmt.Sprintf("Reshape() can not change data size.  Dimensions: %v reshape: %v", a.shape, shape)
+			a.stack = string(stackBuf[:runtime.Stack(stackBuf, false)])
 		}
 		return a
 	}
@@ -211,6 +215,7 @@ func (a *Arrayb) At(index ...int) bool {
 		a.err = ShapeError
 		if debug {
 			a.debug = fmt.Sprintf("Indexes E(%v) do not match array shape %v", index, a.shape)
+			a.stack = string(stackBuf[:runtime.Stack(stackBuf, false)])
 		}
 		return false
 	}
@@ -221,6 +226,7 @@ func (a *Arrayb) At(index ...int) bool {
 			a.err = IndexError
 			if debug {
 				a.debug = fmt.Sprintf("Index in E(%v) does not exist in array with shape %v", index, a.shape)
+				a.stack = string(stackBuf[:runtime.Stack(stackBuf, false)])
 			}
 			return false
 		}
@@ -239,6 +245,7 @@ func (a *Arrayb) SliceElement(index ...int) (ret []bool) {
 		a.err = ShapeError
 		if debug {
 			a.debug = fmt.Sprintf("Incorrect number of indicies received by SliceElement().  Shape: %v  Index: %v", a.shape, index)
+			a.stack = string(stackBuf[:runtime.Stack(stackBuf, false)])
 		}
 		return nil
 	}
@@ -249,6 +256,7 @@ func (a *Arrayb) SliceElement(index ...int) (ret []bool) {
 			a.err = ShapeError
 			if debug {
 				a.debug = fmt.Sprintf("Index received by SliceElement() does not exist shape: %v index: %v", a.shape, index)
+				a.stack = string(stackBuf[:runtime.Stack(stackBuf, false)])
 			}
 			return nil
 		}
@@ -269,6 +277,7 @@ func (a *Arrayb) SubArr(index ...int) (ret *Arrayb) {
 		a.err = ShapeError
 		if debug {
 			a.debug = fmt.Sprintf("Too many indicies received by SubArr().  Shape: %v Indicies: %v", a.shape, index)
+			a.stack = string(stackBuf[:runtime.Stack(stackBuf, false)])
 		}
 		return a
 	}
@@ -278,6 +287,7 @@ func (a *Arrayb) SubArr(index ...int) (ret *Arrayb) {
 		if uint64(v) > a.shape[i] || v < 0 {
 			if debug {
 				a.debug = fmt.Sprintf("Index received by SubArr() does not exist shape: %v index: %v", a.shape, index)
+				a.stack = string(stackBuf[:runtime.Stack(stackBuf, false)])
 			}
 			return
 		}
@@ -300,6 +310,7 @@ func (a *Arrayb) Set(val bool, index ...int) *Arrayb {
 		a.err = ShapeError
 		if debug {
 			a.debug = fmt.Sprintf("Incorrect number of indicies received by SetE().  Shape: %v Index: %v", a.shape, index)
+			a.stack = string(stackBuf[:runtime.Stack(stackBuf, false)])
 		}
 		return a
 	}
@@ -310,6 +321,7 @@ func (a *Arrayb) Set(val bool, index ...int) *Arrayb {
 			a.err = IndexError
 			if debug {
 				a.debug = fmt.Sprintf("Index received by SetE() does not exist shape: %v index: %v", a.shape, index)
+				a.stack = string(stackBuf[:runtime.Stack(stackBuf, false)])
 			}
 			return a
 		}
@@ -328,12 +340,14 @@ func (a *Arrayb) SetSliceElement(vals []bool, index ...int) *Arrayb {
 	case len(a.shape)-1 != len(index):
 		if debug {
 			a.debug = fmt.Sprintf("Incorrect number of indicies received by SetSliceElement().  Shape: %v  Index: %v", a.shape, index)
+			a.stack = string(stackBuf[:runtime.Stack(stackBuf, false)])
 		}
 		fallthrough
 	case uint64(len(vals)) != a.shape[len(a.shape)-1]:
 		a.err = ShapeError
 		if debug {
 			a.debug = fmt.Sprintf("Incorrect slice length received by SetSliceElement().  Shape: %v  Index: %v", a.shape, len(index))
+			a.stack = string(stackBuf[:runtime.Stack(stackBuf, false)])
 		}
 		return a
 	}
@@ -343,6 +357,7 @@ func (a *Arrayb) SetSliceElement(vals []bool, index ...int) *Arrayb {
 			a.err = IndexError
 			if debug {
 				a.debug = fmt.Sprintf("Index received by SetSliceElement() does not exist shape: %v index: %v", a.shape, index)
+				a.stack = string(stackBuf[:runtime.Stack(stackBuf, false)])
 			}
 
 			return a
@@ -364,17 +379,20 @@ func (a *Arrayb) SetSubArr(vals *Arrayb, index ...int) *Arrayb {
 		a.err = NilError
 		if debug {
 			a.debug = "Input array value received by SetE is a Nil pointer."
+			a.stack = string(stackBuf[:runtime.Stack(stackBuf, false)])
 		}
 		return a
 	case vals.err != nil:
 		a.err = vals.err
 		if debug {
 			a.debug = "Array received by SetSubArr() is in error."
+			a.stack = string(stackBuf[:runtime.Stack(stackBuf, false)])
 		}
 	case len(vals.shape)+len(index) > len(a.shape):
 		a.err = ShapeError
 		if debug {
 			a.debug = fmt.Sprintf("Array received by SetSubArr() cant be broadcast.  Shape: %v  Vals shape: %v index: %v", a.shape, vals.shape, index)
+			a.stack = string(stackBuf[:runtime.Stack(stackBuf, false)])
 		}
 		return a
 	}
@@ -384,6 +402,7 @@ func (a *Arrayb) SetSubArr(vals *Arrayb, index ...int) *Arrayb {
 			a.err = ShapeError
 			if debug {
 				a.debug = fmt.Sprintf("Shape of array recieved by SetSubArr() doesn't match receiver.  Shape: %v  Vals Shape: %v", a.shape, vals.shape)
+				a.stack = string(stackBuf[:runtime.Stack(stackBuf, false)])
 			}
 			return a
 		}
@@ -395,6 +414,7 @@ func (a *Arrayb) SetSubArr(vals *Arrayb, index ...int) *Arrayb {
 			a.err = IndexError
 			if debug {
 				a.debug = fmt.Sprintf("Index received by SetSubArr() out of range.  Shape: %v  Index: %v", a.shape, index)
+				a.stack = string(stackBuf[:runtime.Stack(stackBuf, false)])
 			}
 			return a
 		}
@@ -437,6 +457,7 @@ func (a *Arrayb) Resize(shape ...int) *Arrayb {
 			a.err = NegativeAxis
 			if debug {
 				a.debug = fmt.Sprintf("Negative axis length received by Resize.  Shape: %v", shape)
+				a.stack = string(stackBuf[:runtime.Stack(stackBuf, false)])
 			}
 			return a
 		}
@@ -472,17 +493,20 @@ func (a *Arrayb) Append(val *Arrayb, axis int) *Arrayb {
 		a.err = IndexError
 		if debug {
 			a.debug = fmt.Sprintf("Axis received by Append() out of range.  Shape: %v  Axis: %v", a.shape, axis)
+			a.stack = string(stackBuf[:runtime.Stack(stackBuf, false)])
 		}
 		return a
 	case val.err != nil:
 		a.err = val.err
 		if debug {
 			a.debug = "Array received by Append() is in error."
+			a.stack = string(stackBuf[:runtime.Stack(stackBuf, false)])
 		}
 	case len(a.shape) != len(val.shape):
 		a.err = ShapeError
 		if debug {
 			a.debug = fmt.Sprintf("Array received by Append() can not be matched.  Shape: %v  Val shape: %v", a.shape, val.shape)
+			a.stack = string(stackBuf[:runtime.Stack(stackBuf, false)])
 		}
 		return a
 	}
@@ -492,6 +516,7 @@ func (a *Arrayb) Append(val *Arrayb, axis int) *Arrayb {
 			a.err = ShapeError
 			if debug {
 				a.debug = fmt.Sprintf("Array received by Append() can not be matched.  Shape: %v  Val shape: %v", a.shape, val.shape)
+				a.stack = string(stackBuf[:runtime.Stack(stackBuf, false)])
 			}
 			return a
 		}

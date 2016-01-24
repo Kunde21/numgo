@@ -1,6 +1,9 @@
 package numgo
 
-import "fmt"
+import (
+	"fmt"
+	"runtime"
+)
 
 // Max will return the maximum along the given axes.
 func (a *Array64) Max(axis ...int) (r *Array64) {
@@ -32,6 +35,7 @@ func valAxis(a *Array64, axis []int, mthd string) bool {
 		a.err = ShapeError
 		if debug {
 			a.debug = fmt.Sprintf("Too many axes received by %s().  Shape: %v  Axes: %v", mthd, a.shape, axis)
+			a.stack = string(stackBuf[:runtime.Stack(stackBuf, false)])
 		}
 		return true
 	}
@@ -40,6 +44,7 @@ func valAxis(a *Array64, axis []int, mthd string) bool {
 			a.err = IndexError
 			if debug {
 				a.debug = fmt.Sprintf("Axis out of range received by %s().  Shape: %v  Axes: %v", mthd, a.shape, axis)
+				a.stack = string(stackBuf[:runtime.Stack(stackBuf, false)])
 			}
 			return true
 		}
@@ -115,6 +120,7 @@ func valSet(arrSet []*Array64, mthd string) (b *Array64) {
 		b = &Array64{err: NilError}
 		if debug {
 			b.debug = mthd + "() called with no arrays"
+			b.stack = string(stackBuf[:runtime.Stack(stackBuf, false)])
 		}
 		return b
 	}
@@ -125,6 +131,7 @@ func valSet(arrSet []*Array64, mthd string) (b *Array64) {
 			b = &Array64{err: NilError}
 			if debug {
 				b.debug = mthd + "() received a Nil pointer array as an argument."
+				b.stack = string(stackBuf[:runtime.Stack(stackBuf, false)])
 			}
 			return b
 		}
@@ -132,6 +139,7 @@ func valSet(arrSet []*Array64, mthd string) (b *Array64) {
 			b = &Array64{err: v.err}
 			if debug {
 				b.debug = "Error in data passed to " + mthd + "()."
+				b.stack = string(stackBuf[:runtime.Stack(stackBuf, false)])
 			}
 			return b
 		}
@@ -141,6 +149,7 @@ func valSet(arrSet []*Array64, mthd string) (b *Array64) {
 				b = &Array64{err: ShapeError}
 				if debug {
 					b.debug = fmt.Sprintf("Array received by %s() does not match shape.  Shape: %v  Val shape: %v", mthd, a.shape, v.shape)
+					b.stack = string(stackBuf[:runtime.Stack(stackBuf, false)])
 				}
 				return b
 			}

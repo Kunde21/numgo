@@ -2,6 +2,7 @@ package numgo
 
 import (
 	"fmt"
+	"runtime"
 	"sort"
 )
 
@@ -93,24 +94,28 @@ func compValid(a, b *Array64, mthd string) (r *Arrayb) {
 		r = &Arrayb{err: NilError}
 		if debug {
 			r.debug = fmt.Sprintf("Nil pointer received by %s", mthd)
+			r.stack = string(stackBuf[:runtime.Stack(stackBuf, false)])
 		}
 		return r
 	case b == nil:
 		r = &Arrayb{err: NilError}
 		if debug {
 			r.debug = fmt.Sprintf("Array received by %s is a Nil Pointer.", mthd)
+			r.stack = string(stackBuf[:runtime.Stack(stackBuf, false)])
 		}
 		return r
 	case a.err != nil:
 		r = &Arrayb{err: a.err}
 		if debug {
 			r.debug = fmt.Sprintf("Error in %s arrays", mthd)
+			r.stack = string(stackBuf[:runtime.Stack(stackBuf, false)])
 		}
 		return r
 	case b.err != nil:
 		r = &Arrayb{err: b.err}
 		if debug {
 			r.debug = fmt.Sprintf("Error in %s arrays", mthd)
+			r.stack = string(stackBuf[:runtime.Stack(stackBuf, false)])
 		}
 		return r
 
@@ -118,6 +123,7 @@ func compValid(a, b *Array64, mthd string) (r *Arrayb) {
 		r = &Arrayb{err: ShapeError}
 		if debug {
 			r.debug = fmt.Sprintf("Array received by %s can not be broadcast.  Shape: %v  Val shape: %v", mthd, a.shape, b.shape)
+			r.stack = string(stackBuf[:runtime.Stack(stackBuf, false)])
 		}
 		return r
 	}
@@ -126,7 +132,8 @@ func compValid(a, b *Array64, mthd string) (r *Arrayb) {
 		if a.shape[j] != b.shape[i] {
 			r = &Arrayb{err: ShapeError}
 			if debug {
-				a.debug = fmt.Sprintf("Array received by %s can not be broadcast.  Shape: %v  Val shape: %v", mthd, a.shape, b.shape)
+				r.debug = fmt.Sprintf("Array received by %s can not be broadcast.  Shape: %v  Val shape: %v", mthd, a.shape, b.shape)
+				r.stack = string(stackBuf[:runtime.Stack(stackBuf, false)])
 			}
 			return r
 		}
@@ -148,14 +155,7 @@ func comp(a, b *Array64, f func(i, j float64) bool) (r *Arrayb) {
 
 // Any will return true if any element is non-zero, false otherwise.
 func (a *Arrayb) Any(axis ...int) *Arrayb {
-	switch {
-	case a == nil || a.err != nil:
-		return a
-	case len(a.shape) < len(axis):
-		a.err = ShapeError
-		if debug {
-			a.debug = fmt.Sprintf("Too many axes received by Any().  Shape: %v  Axes: %v", a.shape, axis)
-		}
+	if valAxisb(a, axis, "All") {
 		return a
 	}
 
@@ -166,17 +166,6 @@ func (a *Arrayb) Any(axis ...int) *Arrayb {
 			}
 		}
 		return Fullb(false, 1)
-	}
-
-	//Validate input
-	for _, v := range axis {
-		if v < 0 || v > len(a.shape) {
-			a.err = IndexError
-			if debug {
-				a.debug = fmt.Sprintf("Illegal axis received by Any().  Shape: %v  Axes: %v", a.shape, axis)
-			}
-			return a
-		}
 	}
 
 	sort.IntSlice(axis).Sort()
@@ -232,14 +221,8 @@ func (a *Arrayb) Any(axis ...int) *Arrayb {
 
 // Any will return true if all elements are non-zero, false otherwise.
 func (a *Arrayb) All(axis ...int) *Arrayb {
-	switch {
-	case a == nil || a.err != nil:
-		return a
-	case len(a.shape) < len(axis):
-		a.err = ShapeError
-		if debug {
-			a.debug = fmt.Sprintf("Too many axes received by All().  Shape: %v  Axes: %v", a.shape, axis)
-		}
+
+	if valAxisb(a, axis, "All") {
 		return a
 	}
 
@@ -250,14 +233,6 @@ func (a *Arrayb) All(axis ...int) *Arrayb {
 			}
 		}
 		return Fullb(true, 1)
-	}
-
-	//Validate input
-	for _, v := range axis {
-		if v < 0 || v > len(a.shape) {
-			a.err = IndexError
-			return a
-		}
 	}
 
 	sort.IntSlice(axis).Sort()
@@ -324,4 +299,31 @@ func (a *Array64) Nonzero() (c *uint64) {
 		}
 	}
 	return
+}
+
+func valAxisb(a *Arrayb, axis []int, mthd string) bool {
+	axis = cleanAxis(axis...)
+	switch {
+	case a == nil || a.err != nil:
+		return true
+	case len(axis) > len(a.shape):
+		a.err = ShapeError
+		if debug {
+			a.debug = fmt.Sprintf("Too many axes received by %s().  Shape: %v  Axes: %v", mthd, a.shape, axis)
+			a.stack = string(stackBuf[:runtime.Stack(stackBuf, false)])
+		}
+		return true
+	}
+	for _, v := range axis {
+		if v < 0 || v > len(a.shape) {
+			a.err = IndexError
+			if debug {
+				a.debug = fmt.Sprintf("Axis out of range received by %s().  Shape: %v  Axes: %v", mthd, a.shape, axis)
+				a.stack = string(stackBuf[:runtime.Stack(stackBuf, false)])
+			}
+			return true
+		}
+	}
+	return false
+
 }
