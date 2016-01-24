@@ -466,7 +466,7 @@ func (a *Arrayb) Resize(shape ...int) *Arrayb {
 	}
 
 	if sz > a.strides[0] {
-		a.data = append(a.data, make([]bool, a.strides[0]-sz)...)
+		a.data = append(a.data, make([]bool, sz-a.strides[0])...)
 	} else {
 		a.data = a.data[:sz]
 	}

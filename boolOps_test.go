@@ -45,6 +45,7 @@ func TestEquals(t *testing.T) {
 		if e, d, s := c.GetDebug(); e != v.err {
 			t.Logf("Test %d Error failed.  Expected %#v got %#v\n", i, v.err, e)
 			t.Log("Debug:", d, "\n", s, "\n", v.a, "\n", v.b)
+			t.Fail()
 		}
 	}
 }
@@ -85,6 +86,7 @@ func TestNotEq(t *testing.T) {
 		if e, d, s := c.GetDebug(); e != v.err {
 			t.Logf("Test %d Error failed.  Expected %#v got %#v\n", i, v.err, e)
 			t.Log("Debug:", d, "\n", s, "\n", v.a, "\n", v.b)
+			t.Fail()
 		}
 	}
 }
@@ -125,6 +127,7 @@ func TestLess(t *testing.T) {
 		if e, d, s := c.GetDebug(); e != v.err {
 			t.Logf("Test %d Error failed.  Expected %#v got %#v\n", i, v.err, e)
 			t.Log("Debug:", d, "\n", s, "\n", v.a, "\n", v.b)
+			t.Fail()
 		}
 	}
 }
@@ -166,6 +169,7 @@ func TestLessEq(t *testing.T) {
 		if e, d, s := c.GetDebug(); e != v.err {
 			t.Logf("Test %d Error failed.  Expected %#v got %#v\n", i, v.err, e)
 			t.Log("Debug:", d, "\n", s, "\n", v.a, "\n", v.b)
+			t.Fail()
 		}
 	}
 }
@@ -206,6 +210,7 @@ func TestGreater(t *testing.T) {
 		if e, d, s := c.GetDebug(); e != v.err {
 			t.Logf("Test %d Error failed.  Expected %#v got %#v\n", i, v.err, e)
 			t.Log("Debug:", d, "\n", s, "\n", v.a, "\n", v.b)
+			t.Fail()
 		}
 	}
 }
@@ -246,6 +251,7 @@ func TestGreaterEq(t *testing.T) {
 		if e, d, s := c.GetDebug(); e != v.err {
 			t.Logf("Test %d Error failed.  Expected %#v got %#v\n", i, v.err, e)
 			t.Log("Debug:", d, "\n", s, "\n", v.a, "\n", v.b)
+			t.Fail()
 		}
 	}
 }
@@ -291,10 +297,31 @@ func TestCompValid(t *testing.T) {
 func TestAny(t *testing.T) {
 	a := newArrayB(10).Reshape(2, 5)
 
-	_ = []struct {
+	tests := []struct {
 		a, b *Arrayb
 		ax   []int
-	}{}
+		err  error
+	}{
+		{a.C().Set(true, 0, 1), NewArrayB([]bool{true, false}), []int{1}, nil},
+		{a.C().Set(true, 1, 4), NewArrayB([]bool{false, true}), []int{1}, nil},
+		{a.C(), NewArrayB(nil, 5), []int{0}, nil},
+		{nil, nil, []int{}, NilError},
+	}
+
+	var c *Arrayb
+	for i, v := range tests {
+		c = v.a.Any(v.ax...)
+		if d := c.Equals(v.b); !d.All().At(0) && !c.HasErr() {
+			t.Logf("Test %d failed.  Any expected %v got %v\n", i, v.b, d)
+			t.Log(v.a, "\n", v.ax)
+			t.Fail()
+		}
+		if e, d, s := c.GetDebug(); e != v.err {
+			t.Logf("Test %d Error failed.  Expected %#v got %#v\n", i, v.err, e)
+			t.Log("Debug:", d, "\n", s, "\n", v.a, "\n", v.b)
+			t.Fail()
+		}
+	}
 
 	for i := 0; i < 50; i++ {
 		idx := rand.Intn(len(a.data))
@@ -302,8 +329,8 @@ func TestAny(t *testing.T) {
 		b := a.C().Any(1)
 		if b.At(0) == b.At(1) {
 			t.Logf("Any #%d failed.  Index %d gave %v, %v\n", i, idx, b.At(0), b.At(1))
-			t.Log(a.data, a.shape)
-			t.Log(b.data)
+			t.Log(a)
+			t.Log(b)
 			t.Fail()
 		}
 		a.data[idx] = false
@@ -328,66 +355,162 @@ func TestAll(t *testing.T) {
 
 }
 
-func TestA(t *testing.T) {
-	sz := []int{2, 3, 4, 5}
-	a := NewArray64(nil, sz...)
-	b := a.Equals(Arange(5 * 4 * 3 * 2).Reshape(sz...))
+func TestBoolEquals(t *testing.T) {
 
-	for i, v := range b.shape {
-		if int(v) != sz[i] {
-			t.Log("Shape incorrect")
-			t.Log("Expected:", sz)
-			t.Log("Received:", b.shape)
-		}
+	a, b := newArrayB(10), fullb(true, 10)
+
+	tests := []struct {
+		a, b     *Arrayb
+		any, all bool
+		err      error
+	}{
+		{a, a.C(), true, true, nil},
+		{a, b, false, false, nil},
+		{a.C().Reshape(2, 5), a.C().Reshape(2, 5), true, true, nil},
+		{a, a.C().Set(true, 5), true, false, nil},
+		{b, b.C().Set(false, 7), true, false, nil},
+		{nil, a, false, false, NilError},
+		{a, nil, false, false, NilError},
+		{a.C().Reshape(2, 5), a, false, false, ShapeError},
+		{a.C().Reshape(2, 5), a.C().Reshape(5, 2), false, false, ShapeError},
 	}
 
-	b = a.Equals(Arange(5*4*3*2).Reshape(2, 3, 4, 5)).Any(0, 2)
-	for i, v := range b.data {
-		if i == 0 && !v {
-			t.Log("First value. Expected true, got", v)
+	var c *Arrayb
+	for i, v := range tests {
+		c = v.a.Equals(v.b)
+		if d := c.Any().At(0); d != v.any {
+			t.Logf("Test %d failed.  Any expected %v got %v\n", i, v.any, d)
+			t.Log(v.a.data, v.b.data, c.data)
 			t.Fail()
 		}
-		if i > 0 && v {
-			t.Log("First value. Expected false, got", v)
+		if d := c.All().At(0); d != v.all {
+			t.Logf("Test %d failed.  All expected %v got %v\n", i, v.all, d)
+			t.Log(v.a.data, v.b.data, c.data)
 			t.Fail()
 		}
-	}
-
-	b = a.Equals(Arange(5*4*3*2).Reshape(2, 3, 4, 5)).All(0, 2)
-	for _, v := range b.data {
-		if v {
-			t.Log("First value. Expected false, got", v)
-			t.Fail()
-		}
-	}
-
-	b = a.Equals(NewArray64(nil, 2, 3, 4, 5)).Any(0, 3)
-	for _, v := range b.data {
-		if !v {
-			t.Log("First value. Expected true, got", v)
+		if e, d, s := c.GetDebug(); e != v.err {
+			t.Logf("Test %d Error failed.  Expected %#v got %#v\n", i, v.err, e)
+			t.Log("Debug:", d, "\n", s, "\n", v.a, "\n", v.b)
 			t.Fail()
 		}
 	}
 }
 
-func TestDebug(t *testing.T) {
-	Debug(true)
-	var nilp *Array64
-	nilp.Set(12, 1, 4, 0).AddC(2).DivC(6).At(1, 4, 0)
-	if !nilp.HasErr() {
-		t.FailNow()
-		err, debug, stack := nilp.GetDebug()
-		t.Log(err)   // Prints generic error: "Nil pointer received."
-		t.Log(debug) // Prints debug info: "Nil pointer received by SetE()."
-		t.Log(stack)
-		t.Fail()
-	}
-	nilp = MinSet(Arange(10).Reshape(2, 5), Arange(10))
-	if err, debug, stack := nilp.GetDebug(); err != ShapeError {
-		t.Log(err)
-		t.Log(debug)
-		t.Log(stack)
-		t.Fail()
+func TestBoolNotEq(t *testing.T) {
+
+	a, b := newArrayB(10), fullb(true, 10)
+
+	tests := []struct {
+		a, b     *Arrayb
+		any, all bool
+		err      error
+	}{
+		{a, a.C(), false, false, nil},
+		{a, b, true, true, nil},
+		{a.C().Reshape(2, 5), a.C().Reshape(2, 5), false, false, nil},
+		{a.C().Reshape(2, 5), b.C().Reshape(2, 5), true, true, nil},
+		{a, a.C().Set(true, 5), true, false, nil},
+		{b, b.C().Set(false, 7), true, false, nil},
+		{nil, a, false, false, NilError},
+		{a, nil, false, false, NilError},
+		{a.C().Reshape(2, 5), a, false, false, ShapeError},
+		{a.C().Reshape(2, 5), a.C().Reshape(5, 2), false, false, ShapeError},
 	}
 
+	var c *Arrayb
+	for i, v := range tests {
+		c = v.a.NotEq(v.b)
+		if d := c.Any().At(0); d != v.any {
+			t.Logf("Test %d failed.  Any expected %v got %v\n", i, v.any, d)
+			t.Log(v.a.data, v.b.data, c.data)
+			t.Fail()
+		}
+		if d := c.All().At(0); d != v.all {
+			t.Logf("Test %d failed.  All expected %v got %v\n", i, v.all, d)
+			t.Log(v.a.data, v.b.data, c.data)
+			t.Fail()
+		}
+		if e, d, s := c.GetDebug(); e != v.err {
+			t.Logf("Test %d Error failed.  Expected %#v got %#v\n", i, v.err, e)
+			t.Log("Debug:", d, "\n", s, "\n", v.a, "\n", v.b)
+			t.Fail()
+		}
+	}
+}
+
+func TestBoolCompValid(t *testing.T) {
+
+	a := newArrayB(10)
+
+	tests := []struct {
+		a, b *Arrayb
+		e    bool
+		err  error
+	}{
+		{a, a.C(), false, nil},
+		{a.C().Reshape(2, 5), a.C(), true, ShapeError},
+		{a.C(), a.C().Reshape(2, 5), true, ShapeError},
+		{a.C(), nil, true, NilError},
+		{nil, a.C(), true, NilError},
+		{a.C(), &Arrayb{err: DivZeroError}, true, DivZeroError},
+		{&Arrayb{err: DivZeroError}, a.C(), true, DivZeroError},
+		{a.C().Reshape(5, 2), a.C().Reshape(2, 5), true, ShapeError},
+		{a.C().Reshape(5, 5), a, true, ReshapeError},
+	}
+
+	var c *Arrayb
+	for i, v := range tests {
+		c = v.a.Equals(v.b)
+		e := c.HasErr()
+		if e != v.e {
+			t.Logf("HasErr failed in test %d.  Expected %v got %v\n", i, v.e, c.HasErr())
+			t.Fail()
+		}
+		if e, d, s := c.GetDebug(); e != v.err {
+			t.Logf("Test %d Error Failed: Expected %#v got %#v\n", i, v.err, e)
+			t.Log("Debug:", d)
+			t.Log(s)
+			t.Log(v.a)
+			t.Fail()
+		}
+	}
+}
+
+func TestBoolValAxis(t *testing.T) {
+
+	a := newArrayB(10).Reshape(1, 1, 5, 1, 2)
+
+	tests := []struct {
+		a   *Arrayb
+		ax  []int
+		e   bool
+		err error
+	}{
+		{a, []int{}, false, nil},
+		{a.C().Reshape(2, 5), []int{1, 2, 3}, true, ShapeError},
+		{a.C(), []int{1, 2, 4, 4, 5, 6, 7}, true, ShapeError},
+		{a.C().Reshape(5, 2), []int{1, 1, 0, 0, 1}, false, nil},
+		{nil, []int{1}, true, NilError},
+		{a.C().Reshape(10), []int{1}, true, IndexError},
+		{a.C(), []int{0, 5, 1}, true, IndexError},
+		{&Arrayb{err: DivZeroError}, []int{0}, true, DivZeroError},
+		{a.C().Reshape(5, 5), []int{1}, true, ReshapeError},
+	}
+
+	var c *Arrayb
+	for i, v := range tests {
+		v.a.valAxis(v.ax, "")
+		e := v.a.HasErr()
+		if e != v.e {
+			t.Logf("HasErr failed in test %d.  Expected %v got %v\n", i, v.e, c.HasErr())
+			t.Fail()
+		}
+		if e, d, s := v.a.GetDebug(); e != v.err {
+			t.Logf("Test %d Error Failed: Expected %#v got %#v\n", i, v.err, e)
+			t.Log("Debug:", d)
+			t.Log(s)
+			t.Log(v.a)
+			t.Fail()
+		}
+	}
 }

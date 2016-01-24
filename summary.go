@@ -270,3 +270,18 @@ func (a *Array64) NaNMean(axis ...int) *Array64 {
 	}
 	return a.NaNSum(axis...).Div(a.NaNCount(axis...))
 }
+
+// Nonzero counts the number of non-zero elements are in the array
+func (a *Array64) Nonzero() (c *uint64) {
+	if a == nil || a.err != nil {
+		return nil
+	}
+
+	*c = 0
+	for _, v := range a.data {
+		if v != float64(0) {
+			(*c)++
+		}
+	}
+	return
+}
