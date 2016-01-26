@@ -214,7 +214,7 @@ func (a *Array64) MultC(b float64) *Array64 {
 	return a
 }
 
-// Mult performs element-wise division
+// Div performs element-wise division
 // Arrays must be the same size or able to broadcast.
 // Division by zero will result in a math.NaN() values.
 // This will modify the source array.
@@ -284,7 +284,7 @@ func (a *Array64) Div(b *Array64) *Array64 {
 	return a
 }
 
-// MultC divides all elements of the array by a constant.
+// DivC divides all elements of the array by a constant.
 // Division by zero will result in a math.NaN() values.
 func (a *Array64) DivC(b float64) *Array64 {
 	switch {
@@ -363,8 +363,8 @@ func (a *Array64) Pow(b *Array64) *Array64 {
 	return a
 }
 
-// MultC divides all elements of the array by a constant.
-// Division by zero will result in a math.NaN() values.
+// PowC raises all elements to a constant power.
+// Negative powers will result in a math.NaN() values.
 func (a *Array64) PowC(b float64) *Array64 {
 	if a == nil || a.err != nil {
 		return a

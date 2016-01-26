@@ -40,19 +40,26 @@ func (a *Array64) At(index ...int) float64 {
 		return math.NaN()
 	}
 
-	idx := uint64(0)
+	idx := a.valIdx(index, "At")
+	if a.err != nil {
+		return math.NaN()
+	}
+	return a.data[idx]
+}
+
+func (a *Array64) valIdx(index []int, mthd string) (idx uint64) {
 	for i, v := range index {
-		if uint64(v) > a.shape[i] || v < 0 {
+		if uint64(v) >= a.shape[i] || v < 0 {
 			a.err = IndexError
 			if debug {
-				a.debug = fmt.Sprintf("Index in E(%v) does not exist in array with shape %v", index, a.shape)
+				a.debug = fmt.Sprintf("Index received by %s() does not exist shape: %v index: %v", mthd, a.shape, index)
 				a.stack = string(stackBuf[:runtime.Stack(stackBuf, false)])
 			}
-			return math.NaN()
+			return 0
 		}
 		idx += uint64(v) * a.strides[i+1]
 	}
-	return a.data[idx]
+	return
 }
 
 // SliceElement returns the element group at one axis above the leaf elements.
@@ -62,24 +69,16 @@ func (a *Array64) SliceElement(index ...int) (ret []float64) {
 	case a == nil || a.err != nil:
 		return nil
 	case len(a.shape)-1 != len(index):
-		a.err = IndexError
+		a.err = InvIndexError
 		if debug {
 			a.debug = fmt.Sprintf("Incorrect number of indicies received by SliceElement().  Shape: %v  Index: %v", a.shape, index)
 			a.stack = string(stackBuf[:runtime.Stack(stackBuf, false)])
 		}
 		return nil
 	}
-	idx := uint64(0)
-	for i, v := range index {
-		if uint64(v) > a.shape[i] || v < 0 {
-			a.err = IndexError
-			if debug {
-				a.debug = fmt.Sprintf("Index received by SliceElement() does not exist shape: %v index: %v", a.shape, index)
-				a.stack = string(stackBuf[:runtime.Stack(stackBuf, false)])
-			}
-			return nil
-		}
-		idx += uint64(v) * a.strides[i+1]
+	idx := a.valIdx(index, "SliceElement")
+	if a.err != nil {
+		return nil
 	}
 	return append(ret, a.data[idx:idx+a.strides[len(a.strides)-2]]...)
 }
@@ -90,7 +89,7 @@ func (a *Array64) SubArr(index ...int) (ret *Array64) {
 	case a == nil || a.err != nil:
 		return a
 	case len(index) > len(a.shape):
-		a.err = ShapeError
+		a.err = InvIndexError
 		if debug {
 			a.debug = fmt.Sprintf("Too many indicies received by SubArr().  Shape: %v Indicies: %v", a.shape, index)
 			a.stack = string(stackBuf[:runtime.Stack(stackBuf, false)])
@@ -98,17 +97,9 @@ func (a *Array64) SubArr(index ...int) (ret *Array64) {
 		return a
 	}
 
-	idx := uint64(0)
-	for i, v := range index {
-		if uint64(v) > a.shape[i] {
-			a.err = IndexError
-			if debug {
-				a.debug = fmt.Sprintf("Index received by SubArr() does not exist shape: %v index: %v", a.shape, index)
-				a.stack = string(stackBuf[:runtime.Stack(stackBuf, false)])
-			}
-			return a
-		}
-		idx += uint64(v) * a.strides[i+1]
+	idx := a.valIdx(index, "SubArr")
+	if a.err != nil {
+		return a
 	}
 
 	ret = newArray64(a.shape[len(index):]...)
@@ -126,22 +117,16 @@ func (a *Array64) Set(val float64, index ...int) *Array64 {
 	case len(a.shape) != len(index):
 		a.err = InvIndexError
 		if debug {
-			a.debug = fmt.Sprintf("Incorrect number of indicies received by SetE().  Shape: %v Index: %v", a.shape, index)
+			a.debug = fmt.Sprintf("Incorrect number of indicies received by Set().  Shape: %v Index: %v", a.shape, index)
+			a.stack = string(stackBuf[:runtime.Stack(stackBuf, false)])
 		}
 		return a
 	}
-
-	idx := uint64(0)
-	for i, v := range index {
-		if uint64(v) > a.shape[i] || v < 0 {
-			a.err = IndexError
-			if debug {
-				a.debug = fmt.Sprintf("Index received by SetE() does not exist shape: %v index: %v", a.shape, index)
-			}
-			return a
-		}
-		idx += uint64(v) * a.strides[i+1]
+	idx := a.valIdx(index, "Set")
+	if a.err != nil {
+		return a
 	}
+
 	a.data[idx] = val
 	return a
 }
@@ -166,21 +151,12 @@ func (a *Array64) SetSliceElement(vals []float64, index ...int) *Array64 {
 		}
 		return a
 	}
-	idx := uint64(0)
-	for i, v := range index {
-		if uint64(v) > a.shape[i] || v < 0 {
-			a.err = IndexError
-			if debug {
-				a.debug = fmt.Sprintf("Index received by SetSliceElement() does not exist shape: %v index: %v", a.shape, index)
-				a.stack = string(stackBuf[:runtime.Stack(stackBuf, false)])
-			}
-
-			return a
-		}
-		idx += uint64(v) * a.strides[i+1]
+	idx := a.valIdx(index, "SetSliceElement")
+	if a.err != nil {
+		return nil
 	}
 
-	copy(a.data[idx:idx+a.strides[len(a.strides)-2]], vals)
+	copy(a.data[idx:idx+a.strides[len(a.strides)-2]], vals[:a.strides[len(a.strides)-2]])
 	return a
 }
 
@@ -223,17 +199,9 @@ func (a *Array64) SetSubArr(vals *Array64, index ...int) *Array64 {
 		}
 	}
 
-	idx := uint64(0)
-	for i, v := range index {
-		if uint64(v) > a.shape[i] || v < 0 {
-			a.err = IndexError
-			if debug {
-				a.debug = fmt.Sprintf("Index received by SetSubArr() out of range.  Shape: %v  Index: %v", a.shape, index)
-				a.stack = string(stackBuf[:runtime.Stack(stackBuf, false)])
-			}
-			return a
-		}
-		idx += uint64(v) * a.strides[i+1]
+	idx := a.valIdx(index, "SetSubArr")
+	if a != nil {
+		return nil
 	}
 
 	if len(vals.shape)-len(index)-len(a.shape) == 0 {

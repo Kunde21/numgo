@@ -244,12 +244,11 @@ func BenchmarkCollapse(b *testing.B) {
 func BenchmarkFoldMean(b *testing.B) {
 	a := Arange(2*3*4*5*6*7*8*9*10*11).Reshape(2, 3, 4, 5, 6, 7, 8, 9, 10, 11)
 	sm := func(d []float64) (r float64) {
-		i := 0
-		for _, v := range d {
-			r += v
-			i++
+		l := len(d)
+		for i := 0; i < l; i++ {
+			r += d[i]
 		}
-		return r / float64(i)
+		return r / float64(l)
 	}
 
 	if !a.C().Mean(1, 3, 5, 7).Equals(a.Fold(sm, 1, 3, 5, 7)).All().data[0] {
