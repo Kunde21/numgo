@@ -2,6 +2,8 @@
 
 An n-dimensional array package implemented in Go.  
 
+Note:  Under heavy development.  API will not stabilize until v0.1 tag.
+
 ## Installation 
 
 ```

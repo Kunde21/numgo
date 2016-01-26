@@ -234,7 +234,12 @@ func (a *Array64) Resize(shape ...int) *Array64 {
 	}
 
 	var sz uint64 = 1
-	a.shape = make([]uint64, len(shape))
+	ln := len(shape)
+	if ln <= cap(a.shape) {
+		a.shape = a.shape[:ln]
+	} else {
+		a.shape = append(a.shape, make([]uint64, ln-len(shape))...)
+	}
 	for i, v := range shape {
 		if v < 0 {
 			a.err = NegativeAxis
@@ -248,12 +253,17 @@ func (a *Array64) Resize(shape ...int) *Array64 {
 		a.shape[i] = uint64(v)
 	}
 
-	if sz > a.strides[0] {
+	if sz > a.strides[0] || uint64(cap(a.data)) >= sz {
 		a.data = append(a.data, make([]float64, a.strides[0]-sz)...)
 	} else {
 		a.data = a.data[:sz]
 	}
 
+	if ln+1 <= cap(a.strides) {
+		a.strides = a.strides[:ln+1]
+	} else {
+		a.strides = append(a.strides, make([]uint64, ln+1-len(a.strides))...)
+	}
 	a.strides = make([]uint64, len(shape)+1)
 	a.strides[0] = sz
 	sz = 1
