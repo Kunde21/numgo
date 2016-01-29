@@ -234,33 +234,45 @@ func (a *Array64) Resize(shape ...int) *Array64 {
 	}
 
 	var sz uint64 = 1
-	a.shape = make([]uint64, len(shape))
-	for i, v := range shape {
-		if v < 0 {
-			a.err = NegativeAxis
-			if debug {
-				a.debug = fmt.Sprintf("Negative axis length received by Resize.  Shape: %v", shape)
-				a.stack = string(stackBuf[:runtime.Stack(stackBuf, false)])
-			}
-			return a
+	for _, v := range shape {
+		if v >= 0 {
+			sz *= uint64(v)
+			continue
 		}
-		sz *= uint64(v)
-		a.shape[i] = uint64(v)
+
+		a.err = NegativeAxis
+		if debug {
+			a.debug = fmt.Sprintf("Negative axis length received by Resize.  Shape: %v", shape)
+			a.stack = string(stackBuf[:runtime.Stack(stackBuf, false)])
+		}
+		return a
 	}
 
-	if sz > a.strides[0] {
-		a.data = append(a.data, make([]float64, a.strides[0]-sz)...)
+	ln := len(shape)
+	if ln > cap(a.shape) {
+		a.shape = make([]uint64, ln)
+	} else {
+		a.shape = a.shape[:ln]
+	}
+
+	if ln+1 > cap(a.strides) {
+		a.strides = make([]uint64, ln+1)
+	} else {
+		a.strides = a.strides[:ln+1]
+	}
+
+	a.strides[ln] = 1
+	for i := ln - 1; i >= 0; i-- {
+		a.shape[i] = uint64(shape[i])
+		a.strides[i] = a.shape[i] * a.strides[i+1]
+	}
+
+	if sz > uint64(cap(a.data)) {
+		a.data = make([]float64, sz)
 	} else {
 		a.data = a.data[:sz]
 	}
 
-	a.strides = make([]uint64, len(shape)+1)
-	a.strides[0] = sz
-	sz = 1
-	for i := len(a.strides) - 1; i > 0; i-- {
-		a.strides[i] = sz
-		sz *= a.shape[i-1]
-	}
 	return a
 }
 
@@ -305,20 +317,25 @@ func (a *Array64) Append(val *Array64, axis int) *Array64 {
 		}
 	}
 
-	a.data = append(a.data, val.data...)
-
-	as, vs := a.strides[axis], val.strides[axis+1]
-	for i, j := a.strides[0]-as, val.strides[0]-vs; i < a.strides[0]; i, j = i-as, j-vs {
-		copy(a.data[i+j+as:i+j+as+vs], val.data[j:j+vs])
-		copy(a.data[i+j:i+j+as], a.data[i:i+as])
+	ln := len(a.data) + len(val.data)
+	var dat []float64
+	if ln > cap(a.data) {
+		dat = make([]float64, ln)
+	} else {
+		dat = a.data[:ln]
 	}
 
+	as, vs := a.strides[axis], val.strides[axis+1]
+	for i, j := a.strides[0], val.strides[0]; i > 0; i, j = i-as, j-vs {
+		copy(dat[i+j-vs:i+j], val.data[j-vs:j])
+		copy(dat[i+j-as-vs:i+j-vs], a.data[i-as:i])
+	}
+
+	a.data = dat
 	a.shape[axis] += val.shape[axis]
 
-	tmp := a.strides[axis+1]
 	for i := axis; i >= 0; i-- {
-		tmp *= a.shape[i]
-		a.strides[i] = tmp
+		a.strides[i] = a.strides[axis+1] * a.shape[i]
 	}
 
 	return a
