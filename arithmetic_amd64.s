@@ -10,14 +10,14 @@ TEXT ·addC(SB), NOSPLIT, $0
 	MOVQ d_len+16(FP), SI
 	// zero len return
 	CMPQ SI, $0
-	JE END
+	JE ACEND
 	// check tail
 	SUBQ $4, SI
-	JL TAIL
+	JL ACTAIL
 	// load multiplier
 	MOVSD c+0(FP), X0
 	SHUFPD $0, X0, X0
-LOOP:	// Unrolled x2 d[i]|d[i+1] += c
+ACLOOP:	// Unrolled x2 d[i]|d[i+1] += c
 	MOVUPD 0(R10), X1
 	MOVUPD 16(R10), X2
 	ADDPD X0, X1
@@ -26,18 +26,18 @@ LOOP:	// Unrolled x2 d[i]|d[i+1] += c
 	MOVUPD X2, 16(R10)
 	ADDQ $32, R10
 	SUBQ $4, SI
-	JGE LOOP
-TAIL:	// Catch len % 4 == 0
+	JGE ACLOOP
+ACTAIL:	// Catch len % 4 == 0
 	ADDQ $4, SI
-	JE END
-TL:	// Calc the last values individually d[i] += c
+	JE ACEND
+ACTL:	// Calc the last values individually d[i] += c
 	MOVSD 0(R10), X1
 	ADDSD X0,X1
 	MOVSD X1, 0(R10)
 	ADDQ $8, R10
 	SUBQ $1, SI
-	JG TL
-END:
+	JG ACTL
+ACEND:
 	RET
 
 // func subtrC(c float64, d []float64)
@@ -48,14 +48,14 @@ TEXT ·subtrC(SB), NOSPLIT, $0
 	MOVQ d_len+16(FP), SI
 	// zero len return
 	CMPQ SI, $0
-	JE END
+	JE SCEND
 	// check tail
 	SUBQ $4, SI
-	JL TAIL
+	JL SCTAIL
 	// load multiplier
 	MOVSD c+0(FP), X0
 	SHUFPD $0, X0, X0
-LOOP:	// load d[i] | d[i+1]
+SCLOOP:	// load d[i] | d[i+1]
 	MOVUPD 0(R10), X1
 	MOVUPD 16(R10), X2
 	SUBPD X0, X1
@@ -64,18 +64,18 @@ LOOP:	// load d[i] | d[i+1]
 	MOVUPD X2, 16(R10)
 	ADDQ $32, R10
 	SUBQ $4, SI
-	JGE LOOP	
-TAIL:
+	JGE SCLOOP
+SCTAIL:
 	ADDQ $4, SI
-	JE END
-TL:	
+	JE SCEND
+SCTL:	
 	MOVSD 0(R10), X1
 	SUBSD X0,X1
 	MOVSD X1, 0(R10)
 	ADDQ $8, R10
 	SUBQ $1, SI
-	JG TL
-END:
+	JG SCTL
+SCEND:
 	RET
 
 // func multC(c float64, d []float64)
@@ -86,14 +86,14 @@ TEXT ·multC(SB), NOSPLIT, $0
 	MOVQ d_len+16(FP), SI
 	// zero len return
 	CMPQ SI, $0
-	JE END
+	JE MCEND
 	// check tail
 	SUBQ $4, SI
-	JL TAIL
+	JL MCTAIL
 	// load multiplier
 	MOVSD c+0(FP), X0
 	SHUFPD $0, X0, X0
-LOOP:	// load d[i] | d[i+1]
+MCLOOP:	// load d[i] | d[i+1]
 	MOVUPD 0(R10), X1
 	MOVUPD 16(R10), X2
 	MULPD X0, X1
@@ -102,18 +102,18 @@ LOOP:	// load d[i] | d[i+1]
 	MOVUPD X2, 16(R10)
 	ADDQ $32, R10
 	SUBQ $4, SI
-	JGE LOOP	
-TAIL:
+	JGE MCLOOP
+MCTAIL:
 	ADDQ $4, SI
-	JE END
-TL:	
+	JE MCEND
+MCTL:	
 	MOVSD 0(R10), X1
 	MULSD X0,X1
 	MOVSD X1, 0(R10)
 	ADDQ $8, R10
 	SUBQ $1, SI
-	JG TL
-END:
+	JG MCTL
+MCEND:
 	RET
 
 // func divC(c float64, d []float64)
@@ -124,14 +124,14 @@ TEXT ·divC(SB), NOSPLIT, $0
 	MOVQ d_len+16(FP), SI
 	// zero len return
 	CMPQ SI, $0
-	JE END
+	JE DCEND
 	// check tail
 	SUBQ $4, SI
-	JL TAIL
+	JL DCTAIL
 	// load multiplier
 	MOVSD c+0(FP), X0
 	SHUFPD $0, X0, X0
-LOOP:	// load d[i] | d[i+1]
+DCLOOP:	// load d[i] | d[i+1]
 	MOVUPD 0(R10), X1
 	MOVUPD 16(R10), X2
 	DIVPD X0, X1
@@ -140,18 +140,18 @@ LOOP:	// load d[i] | d[i+1]
 	MOVUPD X2, 16(R10)
 	ADDQ $32, R10
 	SUBQ $4, SI
-	JGE LOOP	
-TAIL:
+	JGE DCLOOP	
+DCTAIL:
 	ADDQ $4, SI
-	JE END
-TL:	
+	JE DCEND
+DCTL:	
 	MOVSD 0(R10), X1
 	DIVSD X0, X1
 	MOVSD X1, 0(R10)
 	ADDQ $8, R10
 	SUBQ $1, SI
-	JG TL
-END:
+	JG DCTL
+DCEND:
 	RET
 	
 // func add(a,b []float64)
@@ -168,40 +168,40 @@ TEXT ·add(SB), NOSPLIT, $0
 	MOVQ DI, R11
 	// zero len return
 	CMPQ SI, $0
-	JE END
+	JE AEND
 	// check tail
 	SUBQ $2, SI
-	JL TAIL
-LD:
+	JL ATAIL
+ALD:
 	CMPQ DI, $1
-	JE LT
+	JE ALT
 	SUBQ $2, DI
-	JGE LO
+	JGE ALO
 	MOVQ R10, R9
 	MOVQ R11, DI
 	SUBQ $2, DI
-LO:
+ALO:
 	MOVUPD (R9), X1
 	ADDQ $16, R9
-	JMP LOOP
-LT:
+	JMP ALOOP
+ALT:
 	MOVLPD (R9), X1
 	MOVQ R10, R9
 	MOVQ R11, DI
 	MOVHPD (R9), X1
 	SUBQ $1, DI
 	ADDQ $8, R9
-LOOP:	
+ALOOP:	
 	MOVUPD (R8), X0
 	ADDPD X1, X0
 	MOVUPD X0, (R8)
 	ADDQ $16, R8
 	SUBQ $2, SI
-	JGE LD
-TAIL:
+	JGE ALD
+ATAIL:
 	ADDQ $2, SI
-	JE END
-TL:	
+	JE AEND
+ATL:	
 	MOVSD (R8), X0
 	MOVSD (R9), X1
 	ADDSD X1,X0
@@ -209,8 +209,8 @@ TL:
 	ADDQ $8, R8
 	ADDQ $8, R9
 	SUBQ $1, SI
-	JG TL
-END:
+	JG ATL
+AEND:
 	RET
 
 // func subtr(a,b []float64)
@@ -228,40 +228,40 @@ TEXT ·subtr(SB), NOSPLIT, $0
 	// zero len return
 	MOVQ $0, AX
 	CMPQ AX, SI
-	JE END
+	JE SEND
 	// check tail
 	SUBQ $2, SI
-	JL TAIL
-LD:
+	JL STAIL
+SLD:
 	SUBQ $1, DI
-	JE LT
+	JE SLT
 	SUBQ $1, DI
-	JGE LO
+	JGE SLO
 	MOVQ R10, R9
 	MOVQ R11, DI
 	SUBQ $2, DI
-LO:
+SLO:
 	MOVUPD 0(R9), X1
 	ADDQ $16, R9
-	JMP LOOP
-LT:
+	JMP SLOOP
+SLT:
 	MOVLPD 0(R9), X1
 	MOVQ R10, R9
 	MOVQ R11, DI
 	MOVHPD 0(R9), X1
 	SUBQ $1, DI
 	ADDQ $8, R9
-LOOP:	
+SLOOP:	
 	MOVUPD 0(R8), X0
 	SUBPD X1, X0
 	MOVUPD X0, 0(R8)
 	ADDQ $16, R8
 	SUBQ $2, SI
-	JGE LD
-TAIL:
+	JGE SLD
+STAIL:
 	ADDQ $2, SI
-	JE END
-TL:	
+	JE SEND
+STL:	
 	MOVSD 0(R8), X0
 	MOVSD 0(R9), X1
 	SUBSD X1,X0
@@ -269,8 +269,8 @@ TL:
 	ADDQ $8, R8
 	ADDQ $8, R9
 	SUBQ $1, SI
-	JG TL
-END:
+	JG STL
+SEND:
 	RET
 
 // func mult(a,b []float64)
@@ -288,40 +288,40 @@ TEXT ·mult(SB), NOSPLIT, $0
 	// zero len return
 	MOVQ $0, AX
 	CMPQ AX, SI
-	JE END
+	JE MEND
 	// check tail
 	SUBQ $2, SI
-	JL TAIL
-LD:
+	JL MTAIL
+MLD:
 	SUBQ $1, DI
-	JE LT
+	JE MLT
 	SUBQ $1, DI
-	JGE LO
+	JGE MLO
 	MOVQ R10, R9
 	MOVQ R11, DI
 	SUBQ $2, DI
-LO:
+MLO:
 	MOVUPD 0(R9), X1
 	ADDQ $16, R9
-	JMP LOOP
-LT:
+	JMP MLOOP
+MLT:
 	MOVLPD 0(R9), X1
 	MOVQ R10, R9
 	MOVQ R11, DI
 	MOVHPD 0(R9), X1
 	SUBQ $1, DI
 	ADDQ $8, R9
-LOOP:	
+MLOOP:	
 	MOVUPD 0(R8), X0
 	MULPD X1, X0
 	MOVUPD X0, 0(R8)
 	ADDQ $16, R8
 	SUBQ $2, SI
-	JGE LD
-TAIL:
+	JGE MLD
+MTAIL:
 	ADDQ $2, SI
-	JE END
-TL:	
+	JE MEND
+MTL:	
 	MOVSD 0(R8), X0
 	MOVSD 0(R9), X1
 	MULSD X1,X0
@@ -329,8 +329,8 @@ TL:
 	ADDQ $8, R8
 	ADDQ $8, R9
 	SUBQ $1, SI
-	JG TL
-END:
+	JG MTL
+MEND:
 	RET
 
 // func div(a,b []float64)
@@ -348,40 +348,40 @@ TEXT ·div(SB), NOSPLIT, $0
 	// zero len return
 	MOVQ $0, AX
 	CMPQ AX, SI
-	JE END
+	JE DEND
 	// check tail
 	SUBQ $2, SI
-	JL TAIL
-LD:
+	JL DTAIL
+DLD:
 	SUBQ $1, DI
-	JE LT
+	JE DLT
 	SUBQ $1, DI
-	JGE LO
+	JGE DLO
 	MOVQ R10, R9
 	MOVQ R11, DI
 	SUBQ $2, DI
-LO:
+DLO:
 	MOVUPD 0(R9), X1
 	ADDQ $16, R9
-	JMP LOOP
-LT:
+	JMP DLOOP
+DLT:
 	MOVLPD 0(R9), X1
 	MOVQ R10, R9
 	MOVQ R11, DI
 	MOVHPD 0(R9), X1
 	SUBQ $1, DI
 	ADDQ $8, R9
-LOOP:	
+DLOOP:	
 	MOVUPD 0(R8), X0
 	DIVPD X1, X0
 	MOVUPD X0, 0(R8)
 	ADDQ $16, R8
 	SUBQ $2, SI
-	JGE LD	
-TAIL:
+	JGE DLD
+DTAIL:
 	ADDQ $2, SI
-	JE END
-TL:	
+	JE DEND
+DTL:	
 	MOVSD 0(R8), X0
 	MOVSD 0(R9), X1
 	DIVSD X1,X0
@@ -389,6 +389,6 @@ TL:
 	ADDQ $8, R8
 	ADDQ $8, R9
 	SUBQ $1, SI
-	JG TL
-END:
+	JG DTL
+DEND:
 	RET
