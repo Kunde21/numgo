@@ -142,49 +142,50 @@ func (a *Array64) PowC(b float64) *Array64 {
 }
 
 // FMA12 is the fuse multiply add functionality.
-// Array x will contain x[i] = a*x[i]+b[i]
-func (x *Array64) FMA12(a float64, b *Array64) *Array64 {
-	if x.valRith(b, "FMA") {
-		return x
+// Array x will contain a[i] = x*a[i]+b[i]
+func (a *Array64) FMA12(x float64, b *Array64) *Array64 {
+	if a.valRith(b, "FMA") {
+		return a
 	}
 
-	if b.strides[0] != x.strides[0] {
-		cmp, mul := new(sync.WaitGroup), len(x.data)/len(b.data)
+	if b.strides[0] != a.strides[0] {
+		cmp, mul := new(sync.WaitGroup), len(a.data)/len(b.data)
 		cmp.Add(mul)
 		for k := 0; k < mul; k++ {
 			go func(m int) {
-				fma12(a, x.data[m:m+len(b.data)], b.data)
+				fma12(x, a.data[m:m+len(b.data)], b.data)
 				cmp.Done()
 			}(k * len(b.data))
 		}
 		cmp.Wait()
-	} else {
-		fma12(a, x.data, b.data)
+		return a
 	}
-	return x
+
+	fma12(x, a.data, b.data)
+	return a
 }
 
-// FMA12 is the fuse multiply add functionality.
-// Array x will contain x[i] = x[i]*b[i]+a
-func (x *Array64) FMA21(a float64, b *Array64) *Array64 {
-	if x.valRith(b, "FMA") {
-		return x
+// FMA21 is the fuse multiply add functionality.
+// Array x will contain a[i] = a[i]*b[i]+x
+func (a *Array64) FMA21(x float64, b *Array64) *Array64 {
+	if a.valRith(b, "FMA") {
+		return a
 	}
-	if b.strides[0] != x.strides[0] {
-		cmp, mul := new(sync.WaitGroup), len(x.data)/len(b.data)
+	if b.strides[0] != a.strides[0] {
+		cmp, mul := new(sync.WaitGroup), len(a.data)/len(b.data)
 		cmp.Add(mul)
 		for k := 0; k < mul; k++ {
 			go func(m int) {
-				fma21(a, x.data[m:m+len(b.data)], b.data)
+				fma21(x, a.data[m:m+len(b.data)], b.data)
 				cmp.Done()
 			}(k * len(b.data))
 		}
 		cmp.Wait()
-		return x
+		return a
 	}
 
-	fma21(a, x.data, b.data)
-	return x
+	fma21(x, a.data, b.data)
+	return a
 }
 
 // valAr needs to be called before

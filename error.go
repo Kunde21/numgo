@@ -14,14 +14,25 @@ func (n *ngError) Error() string {
 }
 
 var (
-	NilError      = &ngError{"NilError: Nil pointer recieved."}
-	ShapeError    = &ngError{"ShapeError: Array shapes don't match and can't be broadcast."}
-	ReshapeError  = &ngError{"ReshapeError: New shape cannot change the size of the array."}
-	NegativeAxis  = &ngError{"NegativeAxis: Negative axis length received."}
-	IndexError    = &ngError{"IndexError: Index or Axis out of range."}
-	DivZeroError  = &ngError{"DivZeroError: Division by zero encountered."}
+	// NilError flags any error where a nil pointer is received
+	NilError = &ngError{"NilError: Nil pointer recieved."}
+	// ShapeError flags any mismatching
+	ShapeError = &ngError{"ShapeError: Array shapes don't match and can't be broadcast."}
+	// ReshapeError flags incorrect use of Reshape() calls.
+	// Resize() is the only call that can change the capacity of arrays.
+	ReshapeError = &ngError{"ReshapeError: New shape cannot change the size of the array."}
+	// NegativeAxis is forNew/Reshape/Resize calls with negative axis length: not allowed
+	NegativeAxis = &ngError{"NegativeAxis: Negative axis length received."}
+	// IndexError flags any attempt to index out of range
+	IndexError = &ngError{"IndexError: Index or Axis out of range."}
+	// DivZeroError flags division by zero
+	DivZeroError = &ngError{"DivZeroError: Division by zero encountered."}
+	// InvIndexError flags Negative or illegal indexes
 	InvIndexError = &ngError{"InvIndexError: Invalid or illegal index received."}
-	FoldMapError  = &ngError{"FoldMapError: Fold/Map function panic encountered."}
+	// FoldMapError catches panics within Fold/FoldCC/Map calls.
+	// This will store the panic message in the debug string
+	// when debugging is turned off, for proper errror reporting
+	FoldMapError = &ngError{"FoldMapError: Fold/Map function panic encountered."}
 
 	debug    bool
 	stackBuf []byte
@@ -60,7 +71,7 @@ func (a *Array64) HasErr() bool {
 // GetErr returns the error object and clears the error from the array.
 //
 // This will only return an error value once per error instance.  Do not use
-// it in the if statment to test for the existence of an error.  HasErr() is
+// it in the if statement to test for the existence of an error.  HasErr() is
 // provided for that purpose.
 func (a *Array64) GetErr() (err error) {
 	if a == nil || (a.data == nil && a.err == nil) {
@@ -159,7 +170,7 @@ func (a *Arrayb) HasErr() bool {
 // GetErr returns the error object and clears the error from the array.
 //
 // This will only return an error value once per error instance.  Do not use
-// it in the if statment to test for the existence of an error.  HasErr() is
+// it in the if statement to test for the existence of an error.  HasErr() is
 // provided for that purpose.
 func (a *Arrayb) GetErr() (err error) {
 	if a == nil || (a.data == nil && a.err == nil) {

@@ -39,7 +39,7 @@ func (a *Array64) Sum(axis ...int) (r *Array64) {
 	for i := 0; i < len(axis); i++ {
 		maj, min := a.strides[axis[i]], a.strides[axis[i]+1]
 		for j := uint64(0); j+maj <= uint64(len(t)); j += maj {
-			for k := j; k < j+min; k += 1 {
+			for k := j; k < j+min; k++ {
 				for z := k + min; z < j+maj; z += min {
 					t[k] += t[z]
 				}
