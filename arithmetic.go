@@ -10,56 +10,27 @@ import (
 // Arrays must be the same size or able to broadcast.
 // This will modify the source array.
 func (a *Array64) Add(b *Array64) *Array64 {
-	switch {
-	case a == nil || a.err != nil:
-		return a
-	case b == nil:
-		a.err = NilError
-		if debug {
-			a.debug = "Array received by Add() is a Nil pointer."
-			a.stack = string(stackBuf[:runtime.Stack(stackBuf, false)])
-		}
-		fallthrough
-	case b.err != nil:
-		a.err = b.err
-		if debug {
-			a.debug = "Array received by Add() is in error."
-			a.stack = string(stackBuf[:runtime.Stack(stackBuf, false)])
-		}
-		return a
-	case len(a.shape) < len(b.shape):
-		a.err = ShapeError
-		if debug {
-			a.debug = fmt.Sprintf("Array received by Add() can not be broadcast.  Shape: %v  Val shape: %v", a.shape, b.shape)
-			a.stack = string(stackBuf[:runtime.Stack(stackBuf, false)])
-		}
+	if a.valRith(b, "Add") {
 		return a
 	}
+	/*	compChan := make(chan struct{})
+		mul := len(a.data) / len(b.data)
+		for k := 0; k < mul; k++ {
+			go func(m int) {
+				for i, v := range b.data {
+					a.data[i+m] += v
+				}
+				compChan <- struct{}{}
+			}(k * len(b.data))
+		}
+		for k := 0; k < mul; k++ {
+			<-compChan
+		}
+		close(compChan)
+	*/
 
-	for i, j := len(b.shape)-1, len(a.shape)-1; i >= 0; i, j = i-1, j-1 {
-		if a.shape[j] != b.shape[i] {
-			a.err = ShapeError
-			if debug {
-				a.debug = fmt.Sprintf("Array received by Add() can not be broadcast.  Shape: %v  Val shape: %v", a.shape, b.shape)
-				a.stack = string(stackBuf[:runtime.Stack(stackBuf, false)])
-			}
-			return a
-		}
-	}
-	compChan := make(chan struct{})
-	mul := len(a.data) / len(b.data)
-	for k := 0; k < mul; k++ {
-		go func(m int) {
-			for i, v := range b.data {
-				a.data[i+m] += v
-			}
-			compChan <- struct{}{}
-		}(k * len(b.data))
-	}
-	for k := 0; k < mul; k++ {
-		<-compChan
-	}
-	close(compChan)
+	add(a.data, b.data)
+
 	return a
 }
 
@@ -69,9 +40,7 @@ func (a *Array64) AddC(b float64) *Array64 {
 		return a
 	}
 
-	for i := 0; i < len(a.data); i++ {
-		a.data[i] += b
-	}
+	addC(b, a.data)
 	return a
 }
 
@@ -79,57 +48,11 @@ func (a *Array64) AddC(b float64) *Array64 {
 // Arrays must be the same size or albe to broadcast.
 // This will modify the source array.
 func (a *Array64) Subtr(b *Array64) *Array64 {
-	switch {
-	case a == nil || a.err != nil:
-		return a
-	case b == nil:
-		a.err = NilError
-		if debug {
-			a.debug = "Array received by Subtr() is a Nil pointer."
-			a.stack = string(stackBuf[:runtime.Stack(stackBuf, false)])
-		}
-		fallthrough
-	case b.err != nil:
-		a.err = b.err
-		if debug {
-			a.debug = "Array received by Subtr() is in error."
-			a.stack = string(stackBuf[:runtime.Stack(stackBuf, false)])
-		}
-		return a
-	case len(a.shape) < len(b.shape):
-		a.err = ShapeError
-		if debug {
-			a.debug = fmt.Sprintf("Array received by Subtr() can not be broadcast.  Shape: %v  Val shape: %v", a.shape, b.shape)
-			a.stack = string(stackBuf[:runtime.Stack(stackBuf, false)])
-		}
+	if a.valRith(b, "Subtr") {
 		return a
 	}
 
-	for i, j := len(b.shape)-1, len(a.shape)-1; i >= 0; i, j = i-1, j-1 {
-		if a.shape[j] != b.shape[i] {
-			a.err = ShapeError
-			if debug {
-				a.debug = fmt.Sprintf("Array received by Subtr() can not be broadcast.  Shape: %v  Val shape: %v", a.shape, b.shape)
-				a.stack = string(stackBuf[:runtime.Stack(stackBuf, false)])
-			}
-			return a
-		}
-	}
-
-	compChan := make(chan struct{})
-	mul := len(a.data) / len(b.data)
-	for k := 0; k < mul; k++ {
-		go func(m int) {
-			for i, v := range b.data {
-				a.data[i+m] -= v
-			}
-			compChan <- struct{}{}
-		}(k * len(b.data))
-	}
-	for k := 0; k < mul; k++ {
-		<-compChan
-	}
-	close(compChan)
+	subtr(a.data, b.data)
 	return a
 }
 
@@ -139,9 +62,7 @@ func (a *Array64) SubtrC(b float64) *Array64 {
 		return a
 	}
 
-	for i := 0; i < len(a.data); i++ {
-		a.data[i] -= b
-	}
+	subtrC(b, a.data)
 	return a
 }
 
@@ -149,56 +70,11 @@ func (a *Array64) SubtrC(b float64) *Array64 {
 // Arrays must be the same size or able to broadcast.
 // This will modify the source array.
 func (a *Array64) Mult(b *Array64) *Array64 {
-	switch {
-	case a == nil || a.err != nil:
-		return a
-	case b == nil:
-		a.err = NilError
-		if debug {
-			a.debug = "Array received by Mult() is a Nil pointer."
-			a.stack = string(stackBuf[:runtime.Stack(stackBuf, false)])
-		}
-		fallthrough
-	case b.err != nil:
-		a.err = b.err
-		if debug {
-			a.debug = "Array received by Mult() is in error."
-			a.stack = string(stackBuf[:runtime.Stack(stackBuf, false)])
-		}
-		return a
-	case len(a.shape) < len(b.shape):
-		a.err = ShapeError
-		if debug {
-			a.debug = fmt.Sprintf("Array received by Mult() can not be broadcast.  Shape: %v  Val shape: %v", a.shape, b.shape)
-			a.stack = string(stackBuf[:runtime.Stack(stackBuf, false)])
-		}
+	if a.valRith(b, "Mult") {
 		return a
 	}
 
-	for i, j := len(b.shape)-1, len(a.shape)-1; i >= 0; i, j = i-1, j-1 {
-		if a.shape[j] != b.shape[i] {
-			a.err = ShapeError
-			if debug {
-				a.debug = fmt.Sprintf("Array received by Mult() can not be broadcast.  Shape: %v  Val shape: %v", a.shape, b.shape)
-				a.stack = string(stackBuf[:runtime.Stack(stackBuf, false)])
-			}
-			return a
-		}
-	}
-	compChan := make(chan struct{})
-	mul := len(a.data) / len(b.data)
-	for k := 0; k < mul; k++ {
-		go func(m int) {
-			for i, v := range b.data {
-				a.data[i+m] *= v
-			}
-			compChan <- struct{}{}
-		}(k * len(b.data))
-	}
-	for k := 0; k < mul; k++ {
-		<-compChan
-	}
-	close(compChan)
+	mult(a.data, b.data)
 	return a
 }
 
@@ -208,9 +84,7 @@ func (a *Array64) MultC(b float64) *Array64 {
 		return a
 	}
 
-	for i := 0; i < len(a.data); i++ {
-		a.data[i] *= b
-	}
+	multC(b, a.data)
 	return a
 }
 
@@ -219,68 +93,10 @@ func (a *Array64) MultC(b float64) *Array64 {
 // Division by zero will result in a math.NaN() values.
 // This will modify the source array.
 func (a *Array64) Div(b *Array64) *Array64 {
-	switch {
-	case a == nil || a.err != nil:
-		return a
-	case b == nil:
-		a.err = NilError
-		if debug {
-			a.debug = "Array received by Div() is a Nil pointer."
-			a.stack = string(stackBuf[:runtime.Stack(stackBuf, false)])
-		}
-
-		fallthrough
-	case b.err != nil:
-		a.err = b.err
-		if debug {
-			a.debug = "Array received by Div() is in error."
-			a.stack = string(stackBuf[:runtime.Stack(stackBuf, false)])
-		}
-		return a
-	case len(a.shape) < len(b.shape):
-		a.err = ShapeError
-		if debug {
-			a.debug = fmt.Sprintf("Array received by Div() can not be broadcast.  Shape: %v  Val shape: %v", a.shape, b.shape)
-			a.stack = string(stackBuf[:runtime.Stack(stackBuf, false)])
-		}
+	if a.valRith(b, "Div") {
 		return a
 	}
-	for i, j := len(b.shape)-1, len(a.shape)-1; i >= 0; i, j = i-1, j-1 {
-		if a.shape[j] != b.shape[i] {
-			if debug {
-				a.debug = fmt.Sprintf("Array received by Div() can not be broadcast.  Shape: %v  Val shape: %v", a.shape, b.shape)
-				a.stack = string(stackBuf[:runtime.Stack(stackBuf, false)])
-			}
-			return a
-		}
-	}
-
-	compChan := make(chan struct{})
-	mul := len(a.data) / len(b.data)
-	for k := 0; k < mul; k++ {
-		go func(m int) {
-			for i, v := range b.data {
-				if v == 0 {
-					a.data[i+m] = math.NaN()
-					if a.err == nil {
-						a.err = DivZeroError
-						if debug {
-							a.debug = "Division by zero encountered in Div()"
-							a.stack = string(stackBuf[:runtime.Stack(stackBuf, false)])
-						}
-					}
-				} else {
-					a.data[i+m] /= v
-				}
-			}
-			compChan <- struct{}{}
-		}(k * len(b.data))
-	}
-
-	for k := 0; k < mul; k++ {
-		<-compChan
-	}
-	close(compChan)
+	div(a.data, b.data)
 	return a
 }
 
@@ -312,40 +128,10 @@ func (a *Array64) DivC(b float64) *Array64 {
 // Arrays must be the same size or able to broadcast.
 // This will modify the source array.
 func (a *Array64) Pow(b *Array64) *Array64 {
-	switch {
-	case a == nil || a.err != nil:
-		return a
-	case b == nil:
-		a.err = NilError
-		if debug {
-			a.debug = "Array received by Pow() is a Nil pointer."
-			a.stack = string(stackBuf[:runtime.Stack(stackBuf, false)])
-		}
-		return a
-	case b.err != nil:
-		a.err = b.err
-		if debug {
-			a.debug = "Array received by Pow() is in error."
-			a.stack = string(stackBuf[:runtime.Stack(stackBuf, false)])
-		}
-	case len(a.shape) < len(b.shape):
-		a.err = ShapeError
-		if debug {
-			a.debug = fmt.Sprintf("Array received by Pow() can not be broadcast.  Shape: %v  Val shape: %v", a.shape, b.shape)
-			a.stack = string(stackBuf[:runtime.Stack(stackBuf, false)])
-		}
+	if a.valRith(b, "Pow") {
 		return a
 	}
-	for i, j := len(b.shape)-1, len(a.shape)-1; i >= 0; i, j = i-1, j-1 {
-		if a.shape[j] != b.shape[i] {
-			a.err = ShapeError
-			if debug {
-				a.debug = fmt.Sprintf("Array received by Pow() can not be broadcast.  Shape: %v  Val shape: %v", a.shape, b.shape)
-				a.stack = string(stackBuf[:runtime.Stack(stackBuf, false)])
-			}
-			return a
-		}
-	}
+
 	compChan := make(chan struct{})
 	mul := len(a.data) / len(b.data)
 	for k := 0; k < mul; k++ {
@@ -374,4 +160,45 @@ func (a *Array64) PowC(b float64) *Array64 {
 		a.data[i] = math.Pow(a.data[i], b)
 	}
 	return a
+}
+
+// valAr needs to be called before
+func (a *Array64) valRith(b *Array64, mthd string) bool {
+	switch {
+	case a == nil || a.err != nil:
+		return true
+	case b == nil:
+		a.err = NilError
+		if debug {
+			a.debug = "Array received by " + mthd + "() is a Nil pointer."
+			a.stack = string(stackBuf[:runtime.Stack(stackBuf, false)])
+		}
+		return true
+	case b.err != nil:
+		a.err = b.err
+		if debug {
+			a.debug = "Array received by " + mthd + "() is in error."
+			a.stack = string(stackBuf[:runtime.Stack(stackBuf, false)])
+		}
+		return true
+	case len(a.shape) < len(b.shape):
+		a.err = ShapeError
+		if debug {
+			a.debug = fmt.Sprintf("Array received by %s() can not be broadcast.  Shape: %v  Val shape: %v", mthd, a.shape, b.shape)
+			a.stack = string(stackBuf[:runtime.Stack(stackBuf, false)])
+		}
+		return true
+	}
+
+	for i, j := len(b.shape)-1, len(a.shape)-1; i >= 0; i, j = i-1, j-1 {
+		if a.shape[j] != b.shape[i] {
+			a.err = ShapeError
+			if debug {
+				a.debug = fmt.Sprintf("Array received by %s() can not be broadcast.  Shape: %v  Val shape: %v", mthd, a.shape, b.shape)
+				a.stack = string(stackBuf[:runtime.Stack(stackBuf, false)])
+			}
+			return true
+		}
+	}
+	return false
 }

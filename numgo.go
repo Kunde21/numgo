@@ -25,12 +25,11 @@ func NewArray64(data []float64, shape ...int) (a *Array64) {
 		shape = append(shape, len(data))
 	}
 
-	a = new(Array64)
 	var sz uint64 = 1
 	sh := make([]uint64, len(shape))
 	for i, v := range shape {
 		if v < 0 {
-			a.err = NegativeAxis
+			a = &Array64{err: NegativeAxis}
 			if debug {
 				a.debug = fmt.Sprintf("Negative axis length received by Create: %v", shape)
 				a.stack = string(stackBuf[:runtime.Stack(stackBuf, false)])
@@ -41,13 +40,29 @@ func NewArray64(data []float64, shape ...int) (a *Array64) {
 		sh[i] = uint64(v)
 	}
 
-	a.shape = sh
-	a.data = make([]float64, sz)
+	defer func() {
+		if r := recover(); r != nil {
+			a.err = FoldMapError
+			a.debug = fmt.Sprint(r)
+			if debug {
+				a.stack = string(stackBuf[:runtime.Stack(stackBuf, false)])
+			}
+		}
+	}()
+
+	a = &Array64{
+		shape:   sh,
+		strides: make([]uint64, len(shape)+1),
+		data:    make([]float64, sz),
+		err:     nil,
+		debug:   "",
+		stack:   "",
+	}
+
 	if data != nil {
 		copy(a.data, data)
 	}
 
-	a.strides = make([]uint64, len(sh)+1)
 	tmp := uint64(1)
 	for i := len(a.strides) - 1; i > 0; i-- {
 		a.strides[i] = tmp

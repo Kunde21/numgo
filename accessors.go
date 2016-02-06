@@ -268,7 +268,9 @@ func (a *Array64) Resize(shape ...int) *Array64 {
 	}
 
 	if sz > uint64(cap(a.data)) {
+		tmp := a.data
 		a.data = make([]float64, sz)
+		copy(a.data, tmp)
 	} else {
 		a.data = a.data[:sz]
 	}
