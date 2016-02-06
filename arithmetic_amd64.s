@@ -1,5 +1,7 @@
 // +build !noasm !appengine
 
+#define NOSPLIT 4
+
 // func addC(c float64, d []float64)
 TEXT ·addC(SB), NOSPLIT, $0
 	//data ptr
