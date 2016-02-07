@@ -14,6 +14,9 @@ TEXT ·addC(SB), NOSPLIT, $0
 	// check tail
 	SUBQ $4, SI
 	JL ACTAIL
+	// avx support
+	CMPB   runtime·support_avx2(SB), $1
+	JE AVX_AC
 	// load multiplier
 	MOVSD c+0(FP), X0
 	SHUFPD $0, X0, X0
@@ -27,6 +30,17 @@ ACLOOP:	// Unrolled x2 d[i]|d[i+1] += c
 	ADDQ $32, R10
 	SUBQ $4, SI
 	JGE ACLOOP
+	JMP ACTAIL
+AVX_AC:
+	VBROADCASTD c+0(FP), Y0
+AVX_ACLOOP:	
+	VMOVDQU (R10), Y1
+	VPADDW Y0,Y1,Y1
+	VMOVDQU Y1, (R10)
+	ADDQ $32, R10
+	SUBQ $4, SI
+	JGE AVX_ACLOOP
+
 ACTAIL:	// Catch len % 4 == 0
 	ADDQ $4, SI
 	JE ACEND

@@ -140,7 +140,7 @@ func TestMult(t *testing.T) {
 }
 
 func BenchmarkAddC(b *testing.B) {
-	a := Arange(1003)
+	a := Arange(5003)
 
 	b.ResetTimer()
 	b.ReportAllocs()
@@ -151,7 +151,7 @@ func BenchmarkAddC(b *testing.B) {
 }
 
 func BenchmarkSubtrC(b *testing.B) {
-	a := Arange(1003)
+	a := Arange(5003)
 
 	b.ResetTimer()
 	b.ReportAllocs()
