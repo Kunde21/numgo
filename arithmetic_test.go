@@ -15,28 +15,21 @@ func init() {
 func TestAddC(t *testing.T) {
 	a := Arange(21)
 
-	fmt.Println(a.C().AddC(5))
-	a.Resize(20)
-	fmt.Println(a.C().AddC(5))
-	a = Arange(22)
-	fmt.Println(a.C().AddC(5))
-	a.Resize(23)
-	fmt.Println(a.C().AddC(5))
-
-	runtime.GC()
+	if b := a.AddC(2).Equals(Arange(2, 23)); !b.All().At(0) {
+		t.Log(b)
+		t.Log(a)
+		t.Fail()
+	}
 }
 
 func TestSubtrC(t *testing.T) {
 	a := Arange(21)
+	if b := a.SubtrC(2).Equals(Arange(-2, 19)); !b.All().At(0) {
+		t.Log(b)
+		t.Log(a)
+		t.Fail()
+	}
 
-	fmt.Println(a.C().SubtrC(5))
-	a.Resize(20)
-	fmt.Println(a.C().SubtrC(5))
-	a = Arange(22)
-	fmt.Println(a.C().SubtrC(5))
-	a.Resize(23)
-	fmt.Println(a.C().SubtrC(5))
-	runtime.GC()
 }
 
 func TestAdd(t *testing.T) {
@@ -139,7 +132,19 @@ func TestMult(t *testing.T) {
 	}
 }
 
-func BenchmarkAddC(b *testing.B) {
+func BenchmarkSubtrC(b *testing.B) {
+	a := Arange(5003)
+
+	b.ResetTimer()
+	b.ReportAllocs()
+	for i := 0; i < b.N; i++ {
+		a.SubtrC(5)
+	}
+	runtime.GC()
+}
+
+func BenchmarkAddC_AVX(b *testing.B) {
+	avxSupt = true
 	a := Arange(5003)
 
 	b.ResetTimer()
@@ -150,13 +155,14 @@ func BenchmarkAddC(b *testing.B) {
 	runtime.GC()
 }
 
-func BenchmarkSubtrC(b *testing.B) {
+func BenchmarkAddC_noAVX(b *testing.B) {
+	avxSupt = false
 	a := Arange(5003)
 
 	b.ResetTimer()
 	b.ReportAllocs()
 	for i := 0; i < b.N; i++ {
-		a.SubtrC(5)
+		a.AddC(5)
 	}
 	runtime.GC()
 }

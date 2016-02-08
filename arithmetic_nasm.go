@@ -2,6 +2,9 @@
 
 package numgo
 
+func initasm() {
+}
+
 func addC(c float64, d []float64) {
 	for i := range d {
 		d[i] += c

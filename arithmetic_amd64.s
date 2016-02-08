@@ -1,8 +1,40 @@
 // +build !noasm !appengine
 
-#define NOSPLIT 4
+#define NOSPLIT 7
 
-// func addC(c float64, d []float64)
+// func initasm()(a,a2 bool)
+// pulled from runtime/asm_amd64.s
+TEXT ·initasm(SB), NOSPLIT, $0
+	MOVQ	$1, AX
+	CPUID
+	// Detect AVX and AVX2 as per 14.7.1  Detection of AVX2 chapter of [1]
+	// [1] 64-ia-32-architectures-software-developer-manual-325462.pdf
+	// http://www.intel.com/content/dam/www/public/us/en/documents/manuals/64-ia-32-architectures-software-developer-manual-325462.pdf
+	ANDL    $0x18000000, CX // check for OSXSAVE and AVX bits
+	CMPL    CX, $0x18000000
+	JNE     noavx
+	MOVL    $0, CX
+	// For XGETBV, OSXSAVE bit is required and sufficient
+	BYTE $0x0f; BYTE $0x01; BYTE $0xD0
+	ANDL    $6, AX
+	CMPL    AX, $6 // Check for OS support of YMM registers
+	JNE     noavx
+	MOVB    $1, a+0(FP)// asmngo·avx(SB) // numgo·avx_supt
+	MOVL    $7, AX
+	MOVL    $0, CX
+	CPUID
+	ANDL    $0x20, BX // check for AVX2 bit
+	CMPL    BX, $0x20
+	JNE     noavx2
+	MOVB    $1, a2+1(FP) //numgo·avx_supt2
+	RET
+noavx:
+	MOVB    $0, a+0(FP) //numgo·avx_supt
+noavx2:
+	MOVB    $0, a2+1(FP) //numgo·avx_supt2
+	RET
+	
+// func AddC(c float64, d []float64)
 TEXT ·addC(SB), NOSPLIT, $0
 	//data ptr
 	MOVQ d+8(FP), R10
@@ -14,11 +46,14 @@ TEXT ·addC(SB), NOSPLIT, $0
 	// check tail
 	SUBQ $4, SI
 	JL ACTAIL
-	// avx support
-	CMPB   runtime·support_avx2(SB), $1
-	JE AVX_AC
+	// avx support test
+	LEAQ c+0(FP), R9
+	CMPB ·avxSupt(SB), $1
+	JE AVX_AC  // BYTE INSTRUCTIONS IMPLEMENTED, No guarantees
+	CMPB ·avx2Supt(SB), $1
+	JE AVX2_AC
 	// load multiplier
-	MOVSD c+0(FP), X0
+	MOVSD (R9), X0
 	SHUFPD $0, X0, X0
 ACLOOP:	// Unrolled x2 d[i]|d[i+1] += c
 	MOVUPD 0(R10), X1
@@ -31,16 +66,19 @@ ACLOOP:	// Unrolled x2 d[i]|d[i+1] += c
 	SUBQ $4, SI
 	JGE ACLOOP
 	JMP ACTAIL
+	// NEED AVX INSTRUCTION CODING FOR THIS TO WORK
+AVX2_AC: // Until AVX2 is known
 AVX_AC:
-	VBROADCASTD c+0(FP), Y0
-AVX_ACLOOP:	
-	VMOVDQU (R10), Y1
-	VPADDW Y0,Y1,Y1
-	VMOVDQU Y1, (R10)
+	//VBROADCASTD (R9), Y0 
+	BYTE $0xC4; BYTE $0xC2; BYTE $0x7D; BYTE $0x19; BYTE $0x01
+AVX_ACLOOP:
+	//VADDPD (R10),Y0,Y1
+	BYTE $0xC4; BYTE $0xC1; BYTE $0x7D; BYTE $0x58; BYTE $0x0A
+	//VMOVDQU Y1, (R10)
+	BYTE $0xC4; BYTE $0xC1; BYTE $0x7E; BYTE $0x7F; BYTE $0x0A
 	ADDQ $32, R10
 	SUBQ $4, SI
 	JGE AVX_ACLOOP
-
 ACTAIL:	// Catch len % 4 == 0
 	ADDQ $4, SI
 	JE ACEND
