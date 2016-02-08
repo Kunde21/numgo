@@ -13,30 +13,14 @@ func (a *Array64) Add(b *Array64) *Array64 {
 	if a.valRith(b, "Add") {
 		return a
 	}
-	/*	compChan := make(chan struct{})
-		mul := len(a.data) / len(b.data)
-		for k := 0; k < mul; k++ {
-			go func(m int) {
-				for i, v := range b.data {
-					a.data[i+m] += v
-				}
-				compChan <- struct{}{}
-			}(k * len(b.data))
-		}
-		for k := 0; k < mul; k++ {
-			<-compChan
-		}
-		close(compChan)
-	*/
 
 	add(a.data, b.data)
-
 	return a
 }
 
 // AddC adds a constant to all elements of the array.
 func (a *Array64) AddC(b float64) *Array64 {
-	if a == nil || a.err != nil {
+	if a.HasErr() {
 		return a
 	}
 
@@ -58,7 +42,7 @@ func (a *Array64) Subtr(b *Array64) *Array64 {
 
 // SubtrC subtracts a constant from all elements of the array.
 func (a *Array64) SubtrC(b float64) *Array64 {
-	if a == nil || a.err != nil {
+	if a.HasErr() {
 		return a
 	}
 
@@ -80,7 +64,7 @@ func (a *Array64) Mult(b *Array64) *Array64 {
 
 // MultC multiplies all elements of the array by a constant.
 func (a *Array64) MultC(b float64) *Array64 {
-	if a == nil || a.err != nil {
+	if a.HasErr() {
 		return a
 	}
 
@@ -96,6 +80,7 @@ func (a *Array64) Div(b *Array64) *Array64 {
 	if a.valRith(b, "Div") {
 		return a
 	}
+
 	div(a.data, b.data)
 	return a
 }
@@ -104,7 +89,7 @@ func (a *Array64) Div(b *Array64) *Array64 {
 // Division by zero will result in a math.NaN() values.
 func (a *Array64) DivC(b float64) *Array64 {
 	switch {
-	case a == nil || a.err != nil:
+	case a.HasErr():
 		return a
 	case b == 0:
 		a.err = DivZeroError
@@ -152,7 +137,7 @@ func (a *Array64) Pow(b *Array64) *Array64 {
 // PowC raises all elements to a constant power.
 // Negative powers will result in a math.NaN() values.
 func (a *Array64) PowC(b float64) *Array64 {
-	if a == nil || a.err != nil {
+	if a.HasErr() {
 		return a
 	}
 
@@ -162,10 +147,32 @@ func (a *Array64) PowC(b float64) *Array64 {
 	return a
 }
 
+// FMA12 is the fuse multiply add functionality.
+// Array x will contain x[i] = a*x[i]+b[i]
+func (x *Array64) FMA12(a float64, b *Array64) *Array64 {
+	if x.valRith(b, "FMA") {
+		return x
+	}
+
+	fma12(a, x.data, b.data)
+	return x
+}
+
+// FMA12 is the fuse multiply add functionality.
+// Array x will contain x[i] = x[i]*b[i]+a
+func (x *Array64) FMA21(a float64, b *Array64) *Array64 {
+	if x.valRith(b, "FMA") {
+		return x
+	}
+
+	fma21(a, x.data, b.data)
+	return x
+}
+
 // valAr needs to be called before
 func (a *Array64) valRith(b *Array64, mthd string) bool {
 	switch {
-	case a == nil || a.err != nil:
+	case a.HasErr():
 		return true
 	case b == nil:
 		a.err = NilError
@@ -174,7 +181,7 @@ func (a *Array64) valRith(b *Array64, mthd string) bool {
 			a.stack = string(stackBuf[:runtime.Stack(stackBuf, false)])
 		}
 		return true
-	case b.err != nil:
+	case b.HasErr():
 		a.err = b.err
 		if debug {
 			a.debug = "Array received by " + mthd + "() is in error."

@@ -51,7 +51,7 @@ func Debug(set bool) bool {
 // Use HasErr() as a gate for the GetErr() or GetDebug() choice in
 // error handling code.
 func (a *Array64) HasErr() bool {
-	if a == nil {
+	if a == nil || (a.data == nil && a.err == nil) {
 		return true
 	}
 	return a.err != nil
@@ -63,7 +63,7 @@ func (a *Array64) HasErr() bool {
 // it in the if statment to test for the existence of an error.  HasErr() is
 // provided for that purpose.
 func (a *Array64) GetErr() (err error) {
-	if a == nil {
+	if a == nil || (a.data == nil && a.err == nil) {
 		return NilError
 	}
 	err = a.err
@@ -77,7 +77,7 @@ func (a *Array64) GetErr() (err error) {
 // This debug information will only be generated and returned if numgo.Debug is set to true
 // before the function call that causes the error.
 func (a *Array64) GetDebug() (err error, debugStr, stackTrace string) {
-	if a == nil {
+	if a == nil || (a.data == nil && a.err == nil) {
 		err = NilError
 		if debug {
 			debugStr = "Nil pointer received by GetDebug().  Source array was not initialized."
@@ -150,7 +150,7 @@ func decodeErr(err int8) (a *ngError) {
 // Use HasErr() as a gate for the GetErr() or GetDebug() choice in
 // error handling code.
 func (a *Arrayb) HasErr() bool {
-	if a == nil {
+	if a == nil || (a.data == nil && a.err == nil) {
 		return true
 	}
 	return a.err != nil
@@ -162,7 +162,7 @@ func (a *Arrayb) HasErr() bool {
 // it in the if statment to test for the existence of an error.  HasErr() is
 // provided for that purpose.
 func (a *Arrayb) GetErr() (err error) {
-	if a == nil {
+	if a == nil || (a.data == nil && a.err == nil) {
 		return NilError
 	}
 	err = a.err
@@ -176,7 +176,7 @@ func (a *Arrayb) GetErr() (err error) {
 // This debug information will only be generated and returned if numgo.Debug is set to true
 // before the function call that causes the error.
 func (a *Arrayb) GetDebug() (err error, debugStr, stackTrace string) {
-	if a == nil {
+	if a == nil || (a.data == nil && a.err == nil) {
 		err = NilError
 		if debug {
 			debugStr = "Nil pointer received in GetDebug().  Source array was not initialized."

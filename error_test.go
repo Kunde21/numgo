@@ -27,3 +27,74 @@ func TestDebug(t *testing.T) {
 	}
 
 }
+
+func TestEncodeDecode(t *testing.T) {
+	for _, v := range []*ngError{
+		nil,
+		NilError,
+		ShapeError,
+		ReshapeError,
+		NegativeAxis,
+		IndexError,
+		DivZeroError,
+		InvIndexError,
+		FoldMapError,
+	} {
+		if e := decodeErr(encodeErr(v)); v != e {
+			t.Log("Failed:", v)
+			t.Log("Received:", e)
+			t.Fail()
+		}
+	}
+
+	if e := encodeErr(&ngError{"Not pkg error"}); e != -1 {
+		t.Log("Incorrect error returned: ", e)
+		t.Fail()
+	}
+
+	if e := decodeErr(-1); e.Error() != "Unknown error Unmarshaled: -1" {
+		t.Log("Incorrect error returned: ", e)
+		t.Fail()
+	}
+}
+
+func TestGetErr(t *testing.T) {
+	var a *Array64
+	var b *Arrayb
+
+	c, d := new(Array64), new(Arrayb)
+
+	if !a.HasErr() || !b.HasErr() {
+		t.Log("Bad error state", a.HasErr(), b.HasErr())
+		t.Fail()
+	}
+	if !c.HasErr() || !d.HasErr() {
+		t.Log("Bad error state (new) ", c.HasErr(), d.HasErr())
+		t.Fail()
+	}
+	switch {
+	case a.GetErr() != NilError:
+		t.Log("a failed", a.GetErr())
+		t.Fail()
+	case b.GetErr() != NilError:
+		t.Log("b failed", b.GetErr())
+		t.Fail()
+	case c.GetErr() != NilError:
+		t.Log("c failed", c.GetErr())
+		t.Fail()
+	case d.GetErr() != NilError:
+		t.Log("d failed", d.GetErr())
+		t.Fail()
+	}
+
+	d.err = DivZeroError
+	if e := d.GetErr(); e != DivZeroError {
+		t.Log("Error storage failed", e)
+		t.Fail()
+	}
+	c.err = DivZeroError
+	if e := c.GetErr(); e != DivZeroError {
+		t.Log("Error storage failed", e)
+		t.Fail()
+	}
+}

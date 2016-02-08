@@ -1,8 +1,6 @@
 package numgo
 
 import (
-	"fmt"
-	"log"
 	"math"
 	"runtime"
 	"testing"
@@ -49,7 +47,6 @@ func TestAdd(t *testing.T) {
 	}
 	runtime.GC()
 
-	log.Println("Mismatch")
 	a = Arange(20)
 	a.Reshape(2, 2, 5)
 	runtime.GC()
@@ -65,14 +62,13 @@ func TestAdd(t *testing.T) {
 	a.AddC(1)
 	tst := Arange(20).Reshape(2, 2, 5).Add(Arange(1, 6))
 	runtime.GC()
-	if e := a.Equals(tst); e.All().At(0) {
-		fmt.Println("Add passed")
-	} else {
-		fmt.Println(e.data)
-		fmt.Println(Arange(1, 6))
-		fmt.Println(Arange(20))
-		fmt.Println(a.Flatten())
-		fmt.Println(tst.Flatten())
+	if e := a.Equals(tst); !e.All().At(0) {
+		t.Log(e.data)
+		t.Log(Arange(1, 6))
+		t.Log(Arange(20))
+		t.Log(a.Flatten())
+		t.Log(tst.Flatten())
+		t.Fail()
 	}
 	runtime.GC()
 }
@@ -129,6 +125,36 @@ func TestMult(t *testing.T) {
 			t.Log("Expected NaN, got ", v)
 			t.FailNow()
 		}
+	}
+}
+
+func TestFMA12(t *testing.T) {
+	a := Arange(1, 100, .5)
+	if len(a.data) != (100-1)/.5 {
+		t.Log("Expected:", (100-1)/.5, "Got:", len(a.data))
+		t.FailNow()
+	}
+
+	b := a.C().FMA12(2, a)
+	c := a.C().MultC(2).Add(a)
+	if e := b.Equals(c); !e.All().At(0) {
+		t.Log(a, "\n", b, "\n", c)
+		t.Fail()
+	}
+}
+
+func TestFMA21(t *testing.T) {
+	a := Arange(1, 100, .5)
+	if len(a.data) != (100-1)/.5 {
+		t.Log("Expected:", (100-1)/.5, "Got:", len(a.data))
+		t.FailNow()
+	}
+
+	b := a.C().FMA21(2, a)
+	c := a.C().Mult(a).AddC(2)
+	if e := b.Equals(c); !e.All().At(0) {
+		t.Log(a, "\n", b, "\n", c)
+		t.Fail()
 	}
 }
 
@@ -236,5 +262,46 @@ func BenchmarkDiv(b *testing.B) {
 		a.Div(n)
 	}
 	b.StopTimer()
+	runtime.GC()
+}
+
+func BenchmarkFMA12_FMA(b *testing.B) {
+	if !fmaSupt {
+		b.Skip()
+	}
+	a := Arange(1, 1000000, .5)
+	if len(a.data) != (1000000-1)/.5 {
+		b.Log("Expected:", (1000000-1)/.5, "Got:", len(a.data))
+		b.FailNow()
+	}
+
+	b.ResetTimer()
+	b.ReportAllocs()
+	for i := 0; i < b.N; i++ {
+		a.FMA12(2, a)
+	}
+	b.StopTimer()
+	runtime.GC()
+}
+
+func BenchmarkFMA12_noFMA(b *testing.B) {
+	if !fmaSupt {
+		b.Skip()
+	}
+	tmp := fmaSupt
+	fmaSupt = false
+	a := Arange(1, 1000000, .5)
+	if len(a.data) != (1000000-1)/.5 {
+		b.Log("Expected:", (1000000-1)/.5, "Got:", len(a.data))
+		b.FailNow()
+	}
+
+	b.ResetTimer()
+	b.ReportAllocs()
+	for i := 0; i < b.N; i++ {
+		a.FMA12(2, a)
+	}
+	b.StopTimer()
+	fmaSupt = tmp
 	runtime.GC()
 }
