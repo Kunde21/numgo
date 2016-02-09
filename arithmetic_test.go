@@ -281,6 +281,14 @@ func TestFMA21(t *testing.T) {
 		t.Log(a, "\n", b, "\n", c)
 		t.Fail()
 	}
+
+	b = a.C().Reshape(2, 3, 33).FMA21(2, Arange(33))
+	c = a.C().Reshape(2, 3, 33).Mult(Arange(33)).AddC(2)
+	if e := b.Equals(c); !e.All().At(0) {
+		t.Log(a, "\n", b, "\n", c)
+		t.Fail()
+	}
+
 	a.Reshape(10, 10).FMA21(2, a)
 	if !a.HasErr() {
 		t.Log(a.GetErr())
