@@ -4,6 +4,7 @@ import (
 	"fmt"
 	"math"
 	"math/rand"
+	"runtime"
 	"testing"
 	"time"
 )
@@ -239,6 +240,8 @@ func BenchmarkCollapse(b *testing.B) {
 	for i := 0; i < b.N; i++ {
 		a.collapse([]int{5, 3, 7, 8})
 	}
+	b.StopTimer()
+	runtime.GC()
 }
 
 func BenchmarkFoldMean(b *testing.B) {
@@ -260,6 +263,8 @@ func BenchmarkFoldMean(b *testing.B) {
 	for i := 0; i < b.N; i++ {
 		a.Fold(sm, 5, 3, 7, 8)
 	}
+	b.StopTimer()
+	runtime.GC()
 }
 
 func BenchmarkFoldCCMean(b *testing.B) {
@@ -282,6 +287,8 @@ func BenchmarkFoldCCMean(b *testing.B) {
 	for i := 0; i < b.N; i++ {
 		a.FoldCC(sm, 5, 3, 7, 8)
 	}
+	b.StopTimer()
+	runtime.GC()
 }
 
 func BenchmarkMean(b *testing.B) {
@@ -292,4 +299,6 @@ func BenchmarkMean(b *testing.B) {
 	for i := 0; i < b.N; i++ {
 		a.Mean(5, 3, 7, 8)
 	}
+	b.StopTimer()
+	runtime.GC()
 }
