@@ -4,6 +4,7 @@ import (
 	"fmt"
 	"math"
 	"runtime"
+	"sync"
 )
 
 // Add performs element-wise addition
@@ -147,7 +148,19 @@ func (x *Array64) FMA12(a float64, b *Array64) *Array64 {
 		return x
 	}
 
-	fma12(a, x.data, b.data)
+	if b.strides[0] != x.strides[0] {
+		cmp, mul := new(sync.WaitGroup), len(x.data)/len(b.data)
+		cmp.Add(mul)
+		for k := 0; k < mul; k++ {
+			go func(m int) {
+				fma12(a, x.data[m:m+len(b.data)], b.data)
+				cmp.Done()
+			}(k * len(b.data))
+		}
+		cmp.Wait()
+	} else {
+		fma12(a, x.data, b.data)
+	}
 	return x
 }
 
@@ -155,6 +168,18 @@ func (x *Array64) FMA12(a float64, b *Array64) *Array64 {
 // Array x will contain x[i] = x[i]*b[i]+a
 func (x *Array64) FMA21(a float64, b *Array64) *Array64 {
 	if x.valRith(b, "FMA") {
+		return x
+	}
+	if b.strides[0] != x.strides[0] {
+		cmp, mul := new(sync.WaitGroup), len(x.data)/len(b.data)
+		cmp.Add(mul)
+		for k := 0; k < mul; k++ {
+			go func(m int) {
+				fma21(a, x.data[m:m+len(b.data)], b.data)
+				cmp.Done()
+			}(k * len(b.data))
+		}
+		cmp.Wait()
 		return x
 	}
 

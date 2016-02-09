@@ -63,12 +63,10 @@ func NewArray64(data []float64, shape ...int) (a *Array64) {
 		copy(a.data, data)
 	}
 
-	tmp := uint64(1)
-	for i := len(a.strides) - 1; i > 0; i-- {
-		a.strides[i] = tmp
-		tmp *= sh[i-1]
+	a.strides[len(shape)] = 1
+	for i := len(shape) - 1; i >= 0; i-- {
+		a.strides[i] = a.strides[i+1] * a.shape[i]
 	}
-	a.strides[0] = tmp
 	a.err = nil
 	return
 }
@@ -100,7 +98,7 @@ func newArray64(shape ...uint64) (a *Array64) {
 // All elements will be set to the value passed in val.
 func Full(val float64, shape ...int) (a *Array64) {
 	a = NewArray64(nil, shape...)
-	if a.err != nil {
+	if a.HasErr() {
 		return
 	}
 	a.AddC(val)
@@ -109,7 +107,7 @@ func Full(val float64, shape ...int) (a *Array64) {
 
 func full(val float64, shape ...uint64) (a *Array64) {
 	a = newArray64(shape...)
-	if a.err != nil {
+	if a.HasErr() {
 		return
 	}
 	a.AddC(val)

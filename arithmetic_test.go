@@ -1,6 +1,7 @@
 package numgo
 
 import (
+	"fmt"
 	"math"
 	"runtime"
 	"testing"
@@ -244,6 +245,7 @@ func TestFMA12(t *testing.T) {
 		t.Log("Expected:", (100-1)/.5, "Got:", len(a.data))
 		t.FailNow()
 	}
+	fmt.Println(a.shape)
 
 	b := a.C().FMA12(2, a)
 	c := a.C().MultC(2).Add(a)
@@ -251,6 +253,14 @@ func TestFMA12(t *testing.T) {
 		t.Log(a, "\n", b, "\n", c)
 		t.Fail()
 	}
+
+	b = a.C().Reshape(2, 3, 33).FMA12(2, Arange(33))
+	c = a.C().Reshape(2, 3, 33).MultC(2).Add(Arange(33))
+	if e := b.Equals(c); !e.All().At(0) {
+		t.Log(a, "\n", b, "\n", c)
+		t.Fail()
+	}
+
 	a.Reshape(10, 10).FMA12(2, a)
 	if !a.HasErr() {
 		t.Log(a.GetErr())
@@ -417,9 +427,9 @@ func BenchmarkDiv(b *testing.B) {
 }
 
 func BenchmarkFMA12_FMA(b *testing.B) {
-	a := Arange(1, 1000000, .5)
-	if len(a.data) != (1000000-1)/.5 {
-		b.Log("Expected:", (1000000-1)/.5, "Got:", len(a.data))
+	a := Arange(0, 1000000, .5)
+	if len(a.data) != (1000000)/.5 {
+		b.Log("Expected:", (1000000)/.5, "Got:", len(a.data))
 		b.FailNow()
 	}
 
@@ -427,6 +437,39 @@ func BenchmarkFMA12_FMA(b *testing.B) {
 	b.ReportAllocs()
 	for i := 0; i < b.N; i++ {
 		a.FMA12(2, a)
+	}
+	b.StopTimer()
+	runtime.GC()
+}
+
+func BenchmarkFMA12_FMAB(b *testing.B) {
+	a := Arange(0, 1000000, .5).Reshape(2, 2, 500, 1000)
+	if len(a.data) != (1000000)/.5 {
+		b.Log("Expected:", (1000000)/.5, "Got:", len(a.data))
+		b.FailNow()
+	}
+	c := Arange(1000)
+
+	b.ResetTimer()
+	b.ReportAllocs()
+	for i := 0; i < b.N; i++ {
+		a.FMA12(2, c)
+	}
+	b.StopTimer()
+	runtime.GC()
+}
+
+func BenchmarkCopy(b *testing.B) {
+	a := Arange(0, 1000000, .5)
+	if len(a.data) != (1000000)/.5 {
+		b.Log("Expected:", (1000000)/.5, "Got:", len(a.data))
+		b.FailNow()
+	}
+	c := a.C()
+	b.ResetTimer()
+	b.ReportAllocs()
+	for i := 0; i < b.N; i++ {
+		copy(c.data, a.data)
 	}
 	b.StopTimer()
 	runtime.GC()
