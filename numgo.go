@@ -90,7 +90,6 @@ func newArray64(shape ...uint64) (a *Array64) {
 		a.strides[i] = tmp
 		tmp *= shape[i-1]
 	}
-	//if sz == 0{
 
 	a.strides[0] = tmp
 	a.err = nil

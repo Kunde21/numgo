@@ -18,6 +18,11 @@ func TestAddC(t *testing.T) {
 		t.Log(a)
 		t.Fail()
 	}
+	a.Reshape(10, 10).AddC(1)
+	if !a.HasErr() {
+		t.Log(a.GetErr())
+		t.Fail()
+	}
 }
 
 func TestSubtrC(t *testing.T) {
@@ -27,7 +32,54 @@ func TestSubtrC(t *testing.T) {
 		t.Log(a)
 		t.Fail()
 	}
+	a.Reshape(10, 10).SubtrC(2)
+	if !a.HasErr() {
+		t.Log(a.GetErr())
+		t.Fail()
+	}
+}
 
+func TestMultC(t *testing.T) {
+	a := Arange(21)
+
+	if b := a.MultC(2).Equals(Arange(0, 42, 2)); !b.All().At(0) {
+		t.Log(b)
+		t.Log(a)
+		t.Fail()
+	}
+	a.Reshape(10, 10).MultC(1)
+	if !a.HasErr() {
+		t.Log(a.GetErr())
+		t.Fail()
+	}
+}
+
+func TestDivC(t *testing.T) {
+	a := Arange(0, 42, 2)
+	if b := a.DivC(2).Equals(Arange(21)); !b.All().At(0) {
+		t.Log(b)
+		t.Log(a)
+		t.Fail()
+	}
+	a.DivC(0)
+	if !a.HasErr() {
+		t.Log(a.GetErr())
+		t.Fail()
+	}
+}
+
+func TestPowC(t *testing.T) {
+	a := Arange(0, 42, 2)
+	if b := a.PowC(0).Equals(Full(1, 21)); !b.All().At(0) {
+		t.Log(b)
+		t.Log(a)
+		t.Fail()
+	}
+	a.Reshape(10, 10).PowC(0)
+	if !a.HasErr() {
+		t.Log(a.GetErr())
+		t.Fail()
+	}
 }
 
 func TestAdd(t *testing.T) {
@@ -70,6 +122,12 @@ func TestAdd(t *testing.T) {
 		t.Log(tst.Flatten())
 		t.Fail()
 	}
+
+	a.Reshape(10, 10).Add(Arange(5))
+	if !a.HasErr() {
+		t.Log(a.GetErr())
+		t.Fail()
+	}
 	runtime.GC()
 }
 
@@ -110,6 +168,13 @@ func TestSubtr(t *testing.T) {
 			}
 		}
 	}
+
+	a.Reshape(10, 10).Subtr(Arange(5))
+	if !a.HasErr() {
+		t.Log(a.GetErr())
+		t.Fail()
+	}
+
 }
 
 func TestMult(t *testing.T) {
@@ -126,6 +191,51 @@ func TestMult(t *testing.T) {
 			t.FailNow()
 		}
 	}
+	a.Reshape(10, 10).Mult(Arange(5))
+	if !a.HasErr() {
+		t.Log(a.GetErr())
+		t.Fail()
+	}
+}
+
+func TestDiv(t *testing.T) {
+	a := Arange(1, 100, .5)
+	if len(a.data) != (100-1)/.5 {
+		t.Log("Expected:", (100-1)/.5, "Got:", len(a.data))
+		t.FailNow()
+	}
+
+	a = a.C().Div(a)
+	if e := a.Equals(Full(1, 200)); e.All().At(0) {
+		t.Log(e)
+		t.Fail()
+	}
+
+	a.Reshape(10, 10).Div(Arange(5))
+	if !a.HasErr() {
+		t.Log(a.GetErr())
+		t.Fail()
+	}
+}
+
+func TestPow(t *testing.T) {
+	a := Arange(1, 100, .5)
+	if len(a.data) != (100-1)/.5 {
+		t.Log("Expected:", (100-1)/.5, "Got:", len(a.data))
+		t.FailNow()
+	}
+
+	a = a.Reshape(2, 33, 3).Pow(Full(0, 3))
+	if e := a.Equals(Full(1, 2, 10, 10)); e.All().At(0) {
+		t.Log(e)
+		t.Fail()
+	}
+
+	a.Reshape(10, 10).Pow(Arange(5))
+	if !a.HasErr() {
+		t.Log(a.GetErr())
+		t.Fail()
+	}
 }
 
 func TestFMA12(t *testing.T) {
@@ -141,6 +251,11 @@ func TestFMA12(t *testing.T) {
 		t.Log(a, "\n", b, "\n", c)
 		t.Fail()
 	}
+	a.Reshape(10, 10).FMA12(2, a)
+	if !a.HasErr() {
+		t.Log(a.GetErr())
+		t.Fail()
+	}
 }
 
 func TestFMA21(t *testing.T) {
@@ -154,6 +269,42 @@ func TestFMA21(t *testing.T) {
 	c := a.C().Mult(a).AddC(2)
 	if e := b.Equals(c); !e.All().At(0) {
 		t.Log(a, "\n", b, "\n", c)
+		t.Fail()
+	}
+	a.Reshape(10, 10).FMA21(2, a)
+	if !a.HasErr() {
+		t.Log(a.GetErr())
+		t.Fail()
+	}
+}
+
+func TestValRith(t *testing.T) {
+	var a, b *Array64
+	if !a.valRith(b, "") {
+		t.Fail()
+	}
+	a = NewArray64(nil, 0)
+	if !a.valRith(b, "") {
+		t.Fail()
+	}
+	_ = a.GetErr()
+	b = &Array64{err: DivZeroError}
+	if !a.valRith(b, "") {
+		t.Fail()
+	}
+	_ = a.GetErr()
+	b = NewArray64(nil, 2, 2, 2)
+	if !a.valRith(b, "") {
+		t.Fail()
+	}
+	_ = a.GetErr()
+	a = NewArray64(nil, 2, 2, 4)
+	if !a.valRith(b, "") {
+		t.Fail()
+	}
+	_ = a.GetErr()
+	a.Resize(2, 2, 2)
+	if a.valRith(b, "") {
 		t.Fail()
 	}
 }

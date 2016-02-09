@@ -117,19 +117,12 @@ func (a *Array64) Pow(b *Array64) *Array64 {
 		return a
 	}
 
-	compChan := make(chan struct{})
-	mul := len(a.data) / len(b.data)
-	for k := 0; k < mul; k++ {
-		go func(m int) {
-			for i, v := range b.data {
-				a.data[i+m] = math.Pow(a.data[i+m], v)
-			}
-			compChan <- struct{}{}
-		}(k * len(b.data))
-	}
-
-	for k := 0; k < mul; k++ {
-		<-compChan
+	lna, lnb := len(a.data), len(b.data)
+	for i, j := 0, 0; i < lna; i, j = i+1, j+1 {
+		if j >= lnb {
+			j = 0
+		}
+		a.data[i] = math.Pow(a.data[i], b.data[j])
 	}
 	return a
 }
