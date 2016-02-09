@@ -266,9 +266,6 @@ func BenchmarkDiv(b *testing.B) {
 }
 
 func BenchmarkFMA12_FMA(b *testing.B) {
-	if !fmaSupt {
-		b.Skip()
-	}
 	a := Arange(1, 1000000, .5)
 	if len(a.data) != (1000000-1)/.5 {
 		b.Log("Expected:", (1000000-1)/.5, "Got:", len(a.data))
