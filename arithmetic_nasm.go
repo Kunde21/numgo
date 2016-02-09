@@ -2,6 +2,10 @@
 
 package numgo
 
+var (
+	avxSupt, avx2Supt, fmaSupt bool
+)
+
 func initasm() {
 }
 
@@ -69,12 +73,22 @@ func div(a, b []float64) {
 	}
 }
 
-func fma(a float64, x, b []float64) {
-	lna, lnb := len(a), len(b)
-	for i, j := 0, 0; i < lna; i, j = i+1, j+1 {
+func fma12(a float64, x, b []float64) {
+	lnx, lnb := len(x), len(b)
+	for i, j := 0, 0; i < lnx; i, j = i+1, j+1 {
 		if j >= lnb {
 			j = 0
 		}
 		x[i] = a*x[i] + b[j]
+	}
+}
+
+func fma21(a float64, x, b []float64) {
+	lnx, lnb := len(x), len(b)
+	for i, j := 0, 0; i < lnx; i, j = i+1, j+1 {
+		if j >= lnb {
+			j = 0
+		}
+		x[i] = x[i]*b[j] + a
 	}
 }

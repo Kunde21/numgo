@@ -1,7 +1,6 @@
 package numgo
 
 import (
-	"fmt"
 	"math"
 	"runtime"
 	"testing"
@@ -245,7 +244,6 @@ func TestFMA12(t *testing.T) {
 		t.Log("Expected:", (100-1)/.5, "Got:", len(a.data))
 		t.FailNow()
 	}
-	fmt.Println(a.shape)
 
 	b := a.C().FMA12(2, a)
 	c := a.C().MultC(2).Add(a)
@@ -339,7 +337,6 @@ func BenchmarkSubtrC(b *testing.B) {
 }
 
 func BenchmarkAddC_AVX(b *testing.B) {
-	avxSupt = true
 	a := Arange(5003)
 
 	b.ResetTimer()
@@ -351,6 +348,9 @@ func BenchmarkAddC_AVX(b *testing.B) {
 }
 
 func BenchmarkAddC_noAVX(b *testing.B) {
+	if !avxSupt {
+		b.Skip()
+	}
 	avxSupt = false
 	a := Arange(5003)
 
@@ -359,6 +359,8 @@ func BenchmarkAddC_noAVX(b *testing.B) {
 	for i := 0; i < b.N; i++ {
 		a.AddC(5)
 	}
+	b.StopTimer()
+	avxSupt = true
 	runtime.GC()
 }
 
