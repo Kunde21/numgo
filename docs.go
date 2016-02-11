@@ -78,7 +78,7 @@ Debugging options
 Debugging can be enabled by calling numgo.Debug(true). This will give detailed error strings by using GetDebug() instead of GetErr(). This makes debugging chained method calls much easier.
 
  numgo.Debug(true)
- nilp := new(Array64)     // Forgot to inintialize the array.
+ nilp := new(Array64)     // Forgot to initialize the array.
 
  nilp.Set(12, 1,4,0).AddC(2).DivC(6).At(1,4,0)
  if nilp.HasErr(){

@@ -7,6 +7,7 @@ import (
 	"strings"
 )
 
+// Arrayb is an n-dimensional array of boolean values
 type Arrayb struct {
 	shape        []uint64
 	strides      []uint64
@@ -79,7 +80,7 @@ func newArrayB(shape ...uint64) (a *Arrayb) {
 	return
 }
 
-// Full creates an Arrayb object with dimensions givin in order from outer-most to inner-most
+// Fullb creates an Arrayb object with dimensions givin in order from outer-most to inner-most
 // All elements will be set to 'val' in the returned array.
 func Fullb(val bool, shape ...int) (a *Arrayb) {
 	a = NewArrayB(nil, shape...)
