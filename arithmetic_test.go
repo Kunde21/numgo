@@ -299,25 +299,30 @@ func TestValRith(t *testing.T) {
 	if !a.valRith(b, "") {
 		t.Fail()
 	}
+
 	a = NewArray64(nil, 0)
 	if !a.valRith(b, "") {
 		t.Fail()
 	}
+
 	_ = a.GetErr()
 	b = &Array64{err: DivZeroError}
 	if !a.valRith(b, "") {
 		t.Fail()
 	}
+
 	_ = a.GetErr()
 	b = NewArray64(nil, 2, 2, 2)
 	if !a.valRith(b, "") {
 		t.Fail()
 	}
+
 	_ = a.GetErr()
 	a = NewArray64(nil, 2, 2, 4)
 	if !a.valRith(b, "") {
 		t.Fail()
 	}
+
 	_ = a.GetErr()
 	a.Resize(2, 2, 2)
 	if a.valRith(b, "") {
@@ -365,7 +370,7 @@ func BenchmarkAddC_noAVX(b *testing.B) {
 }
 
 func BenchmarkMultC(b *testing.B) {
-	a := Arange(1003)
+	a := Arange(5003)
 
 	b.ResetTimer()
 	b.ReportAllocs()
@@ -377,7 +382,7 @@ func BenchmarkMultC(b *testing.B) {
 }
 
 func BenchmarkDivC(b *testing.B) {
-	a := Arange(1003)
+	a := Arange(5003)
 
 	b.ResetTimer()
 	b.ReportAllocs()
@@ -401,7 +406,7 @@ func BenchmarkAdd(b *testing.B) {
 }
 
 func BenchmarkSubtr(b *testing.B) {
-	a, n := NewArray64(nil, 10, 10, 12), Arange(12)
+	a, n := NewArray64(nil, 10, 10, 10, 12), Arange(12)
 
 	b.ResetTimer()
 	b.ReportAllocs()
@@ -413,7 +418,7 @@ func BenchmarkSubtr(b *testing.B) {
 }
 
 func BenchmarkMult(b *testing.B) {
-	a, n := NewArray64(nil, 10, 10, 12), Arange(1, 13)
+	a, n := NewArray64(nil, 10, 10, 10, 12), Arange(1, 13)
 
 	b.ResetTimer()
 	b.ReportAllocs()
@@ -425,7 +430,7 @@ func BenchmarkMult(b *testing.B) {
 }
 
 func BenchmarkDiv(b *testing.B) {
-	a, n := NewArray64(nil, 10, 10, 12), Arange(1, 13)
+	a, n := NewArray64(nil, 10, 10, 10, 12), Arange(1, 13)
 
 	b.ResetTimer()
 	b.ReportAllocs()

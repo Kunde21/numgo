@@ -204,3 +204,107 @@ func TestSetSliceElement(t *testing.T) {
 		t.Fail()
 	}
 }
+
+func TestSetSubArr(t *testing.T) {
+	a := NewArray64(nil, 5, 5, 3, 5)
+
+	b := Arange(15).Reshape(3, 5)
+	a.SetSubArr(b, 0, 1)
+	if a.HasErr() {
+		t.Log(a.GetErr())
+		t.Fail()
+	}
+	for i := range a.data {
+		if i >= 15 && i < 30 && a.data[i] != float64(i-15) {
+			t.Log("Failed at:", i, a.data[i])
+			t.Fail()
+		}
+		if !(i >= 15 && i < 30) && a.data[i] != 0 {
+			t.Log("Not 0 Failed at:", i, a.data[i])
+			t.Fail()
+		}
+	}
+	a.SetSubArr(b, 0)
+	for i := range a.data {
+		if i >= 0 && i < 5*15 && a.data[i] != float64(i%15) {
+			t.Log("Failed 2 at:", i, a.data[i])
+			t.Fail()
+		}
+		if !(i >= 0 && i < 5*15) && a.data[i] != 0 {
+			t.Log("Not 0 Failed 2 at:", i, a.data[i])
+			t.Fail()
+		}
+	}
+	a.SetSubArr(b, 1, 1, 1)
+	if e := a.GetErr(); e != InvIndexError {
+		t.Log("Did not error correctly.  Expected InvIndexError, got ", e)
+		t.Fail()
+	}
+
+	a.SetSubArr(b.Reshape(5, 3), 0, 1)
+	if e := a.GetErr(); e != ShapeError {
+		t.Log("Did not error correctly.  Expected ShapeError, got ", e)
+		t.Fail()
+	}
+	b.err = DivZeroError
+	a.SetSubArr(b.Reshape(3, 5), 0, 1)
+	if e := a.GetErr(); e != DivZeroError {
+		t.Log("Did not error correctly.  Expected DivZeroError, got ", e)
+		t.Fail()
+	}
+	b.err, a = nil, nil
+	a.SetSubArr(b, 0, 1)
+	if e := a.GetErr(); e != NilError {
+		t.Log("Did not error correctly.  Expected NilError, got ", e)
+		t.Fail()
+	}
+}
+
+func TestResize(t *testing.T) {
+	a := NewArray64(nil, 5, 5, 3, 5)
+
+	a.Resize(-1)
+	if e := a.GetErr(); e != NegativeAxis {
+		t.Log("Negative axis failed to error", e)
+		t.Fail()
+	}
+	a.Resize(5, 3, 2, -10)
+	if e := a.GetErr(); e != NegativeAxis {
+		t.Log("Negative axis failed to error", e)
+		t.Fail()
+	}
+
+	a.Set(1, 0, 0, 0, 2).Resize(5, 5)
+	if a.HasErr() {
+		t.Log("Error in set/resize", a.GetErr())
+		t.Fail()
+	}
+	_ = a.At(0, 0, 0, 2)
+	if e := a.GetErr(); e != InvIndexError {
+		t.Log("Bad Error after resize", e)
+		t.Fail()
+	}
+	if c := a.At(0, 2); c != 1 {
+		t.Log("Data didn't move correctly in reduction.  Expected 1, got", c)
+		t.Fail()
+	}
+	if c := a.Resize(5, 5, 3).At(0, 0, 2); c != 1 {
+		t.Log("Data didn't move correctly in small expansion.  Expected 1, got", c)
+		t.Fail()
+	}
+	if c := a.Resize(5, 5, 3, 5, 10).At(0, 0, 0, 0, 2); c != 1 {
+		t.Log("Data didn't move correctly in large expansion.  Expected 1, got", c)
+		t.Fail()
+	}
+	a.Resize().At(0)
+	if e := a.GetErr(); e != IndexError {
+		t.Log("Did not error correctly.  Expected IndexError, got ", e)
+		t.Fail()
+	}
+
+	a.err = DivZeroError
+	if e := a.Resize(10).GetErr(); e != DivZeroError {
+		t.Log("Error didn't pass through correctly.  Expected DivZeroError, got", e)
+		t.Fail()
+	}
+}

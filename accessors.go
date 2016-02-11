@@ -8,7 +8,7 @@ import (
 
 // Flatten reshapes the data to a 1-D array.
 func (a *Array64) Flatten() *Array64 {
-	if a == nil || a.err != nil {
+	if a.HasErr() {
 		return a
 	}
 	return a.Reshape(int(a.strides[0]))
@@ -16,7 +16,7 @@ func (a *Array64) Flatten() *Array64 {
 
 // C will return a deep copy of the source array.
 func (a *Array64) C() (b *Array64) {
-	if a == nil || a.err != nil {
+	if a.HasErr() {
 		return a
 	}
 
@@ -28,26 +28,26 @@ func (a *Array64) C() (b *Array64) {
 // At returns the element at the given index.
 // There should be one index per axis.  Generates a ShapeError if incorrect index.
 func (a *Array64) At(index ...int) float64 {
-	switch {
-	case a == nil || a.err != nil:
-		return math.NaN()
-	case len(a.shape) != len(index):
-		a.err = InvIndexError
-		if debug {
-			a.debug = fmt.Sprintf("Indexes E(%v) do not match array shape %v", index, a.shape)
-			a.stack = string(stackBuf[:runtime.Stack(stackBuf, false)])
-		}
+	idx := a.valIdx(index, "At")
+	if a.HasErr() {
 		return math.NaN()
 	}
 
-	idx := a.valIdx(index, "At")
-	if a.err != nil {
-		return math.NaN()
-	}
 	return a.data[idx]
 }
 
 func (a *Array64) valIdx(index []int, mthd string) (idx uint64) {
+	if a.HasErr() {
+		return 0
+	}
+	if len(index) > len(a.shape) {
+		a.err = InvIndexError
+		if debug {
+			a.debug = fmt.Sprintf("Incorrect number of indicies received by %s().  Shape: %v  Index: %v", mthd, a.shape, index)
+			a.stack = string(stackBuf[:runtime.Stack(stackBuf, false)])
+		}
+		return 0
+	}
 	for i, v := range index {
 		if uint64(v) >= a.shape[i] || v < 0 {
 			a.err = IndexError
@@ -65,8 +65,9 @@ func (a *Array64) valIdx(index []int, mthd string) (idx uint64) {
 // SliceElement returns the element group at one axis above the leaf elements.
 // Data is returned as a copy  in a float slice.
 func (a *Array64) SliceElement(index ...int) (ret []float64) {
+	idx := a.valIdx(index, "SliceElement")
 	switch {
-	case a == nil || a.err != nil:
+	case a.HasErr():
 		return nil
 	case len(a.shape)-1 != len(index):
 		a.err = InvIndexError
@@ -76,29 +77,14 @@ func (a *Array64) SliceElement(index ...int) (ret []float64) {
 		}
 		return nil
 	}
-	idx := a.valIdx(index, "SliceElement")
-	if a.err != nil {
-		return nil
-	}
+
 	return append(ret, a.data[idx:idx+a.strides[len(a.strides)-2]]...)
 }
 
 // SubArr slices the array at a given index.
 func (a *Array64) SubArr(index ...int) (ret *Array64) {
-	switch {
-	case a == nil || a.err != nil:
-		return a
-	case len(index) > len(a.shape):
-		a.err = InvIndexError
-		if debug {
-			a.debug = fmt.Sprintf("Too many indicies received by SubArr().  Shape: %v Indicies: %v", a.shape, index)
-			a.stack = string(stackBuf[:runtime.Stack(stackBuf, false)])
-		}
-		return a
-	}
-
 	idx := a.valIdx(index, "SubArr")
-	if a.err != nil {
+	if a.HasErr() {
 		return a
 	}
 
@@ -111,19 +97,8 @@ func (a *Array64) SubArr(index ...int) (ret *Array64) {
 // Set sets the element at the given index.
 // There should be one index per axis.  Generates a ShapeError if incorrect index.
 func (a *Array64) Set(val float64, index ...int) *Array64 {
-	switch {
-	case a == nil || a.err != nil:
-		return a
-	case len(a.shape) != len(index):
-		a.err = InvIndexError
-		if debug {
-			a.debug = fmt.Sprintf("Incorrect number of indicies received by Set().  Shape: %v Index: %v", a.shape, index)
-			a.stack = string(stackBuf[:runtime.Stack(stackBuf, false)])
-		}
-		return a
-	}
 	idx := a.valIdx(index, "Set")
-	if a.err != nil {
+	if a.HasErr() {
 		return a
 	}
 
@@ -134,8 +109,9 @@ func (a *Array64) Set(val float64, index ...int) *Array64 {
 // SetSliceElement sets the element group at one axis above the leaf elements.
 // Source Array is returned, for function-chaining design.
 func (a *Array64) SetSliceElement(vals []float64, index ...int) *Array64 {
+	idx := a.valIdx(index, "SetSliceElement")
 	switch {
-	case a == nil || a.err != nil:
+	case a.HasErr():
 		return a
 	case len(a.shape)-1 != len(index):
 		if debug {
@@ -151,10 +127,6 @@ func (a *Array64) SetSliceElement(vals []float64, index ...int) *Array64 {
 		}
 		return a
 	}
-	idx := a.valIdx(index, "SetSliceElement")
-	if a.err != nil {
-		return nil
-	}
 
 	copy(a.data[idx:idx+a.strides[len(a.strides)-2]], vals[:a.strides[len(a.strides)-2]])
 	return a
@@ -163,22 +135,17 @@ func (a *Array64) SetSliceElement(vals []float64, index ...int) *Array64 {
 // SetSubArr sets the array below a given index to the values in vals.
 // Values will be broadcast up multiple axes if the shapes match.
 func (a *Array64) SetSubArr(vals *Array64, index ...int) *Array64 {
+	idx := a.valIdx(index, "SetSubArr")
 	switch {
-	case a == nil || vals == nil:
-		a.err = NilError
-		if debug {
-			a.debug = "Input array value received by SetE is a Nil pointer."
-			a.stack = string(stackBuf[:runtime.Stack(stackBuf, false)])
-		}
-		fallthrough
-	case a.err != nil:
+	case a.HasErr():
 		return a
-	case vals.err != nil:
-		a.err = vals.err
+	case vals.HasErr():
+		a.err = vals.GetErr()
 		if debug {
 			a.debug = "Array received by SetSubArr() is in error."
 			a.stack = string(stackBuf[:runtime.Stack(stackBuf, false)])
 		}
+		return a
 	case len(vals.shape)+len(index) > len(a.shape):
 		a.err = InvIndexError
 		if debug {
@@ -188,7 +155,7 @@ func (a *Array64) SetSubArr(vals *Array64, index ...int) *Array64 {
 		return a
 	}
 
-	for i, j := len(a.shape)-1, len(vals.shape)-1; i >= 0; i, j = i-1, j-1 {
+	for i, j := len(a.shape)-1, len(vals.shape)-1; j >= 0; i, j = i-1, j-1 {
 		if a.shape[i] != vals.shape[j] {
 			a.err = ShapeError
 			if debug {
@@ -199,12 +166,7 @@ func (a *Array64) SetSubArr(vals *Array64, index ...int) *Array64 {
 		}
 	}
 
-	idx := a.valIdx(index, "SetSubArr")
-	if a != nil {
-		return nil
-	}
-
-	if len(vals.shape)-len(index)-len(a.shape) == 0 {
+	if len(a.shape)-len(index)-len(vals.shape) == 0 {
 		copy(a.data[idx:idx+uint64(len(vals.data))], vals.data)
 		return a
 	}
@@ -227,10 +189,13 @@ func (a *Array64) SetSubArr(vals *Array64, index ...int) *Array64 {
 // Element location in the underlying slice will not be adjusted to the new shape.
 func (a *Array64) Resize(shape ...int) *Array64 {
 	switch {
-	case a == nil || a.err != nil:
+	case a.HasErr():
 		return a
 	case len(shape) == 0:
-		return newArray64(0)
+		tmp := newArray64(0)
+		a.shape, a.strides = tmp.shape, tmp.strides
+		a.data = tmp.data
+		return a
 	}
 
 	var sz uint64 = 1
@@ -248,29 +213,29 @@ func (a *Array64) Resize(shape ...int) *Array64 {
 		return a
 	}
 
-	ln := len(shape)
-	if ln > cap(a.shape) {
-		a.shape = make([]uint64, ln)
+	ln, cp := len(shape), cap(a.shape)
+	if ln > cp {
+		a.shape = append(a.shape[:cp], make([]uint64, ln-cp)...)
 	} else {
 		a.shape = a.shape[:ln]
 	}
 
-	if ln+1 > cap(a.strides) {
-		a.strides = make([]uint64, ln+1)
+	ln, cp = ln+1, cap(a.strides)
+	if ln > cp {
+		a.strides = append(a.strides[:cp], make([]uint64, ln-cp)...)
 	} else {
-		a.strides = a.strides[:ln+1]
+		a.strides = a.strides[:ln]
 	}
 
-	a.strides[ln] = 1
-	for i := ln - 1; i >= 0; i-- {
+	a.strides[ln-1] = 1
+	for i := ln - 2; i >= 0; i-- {
 		a.shape[i] = uint64(shape[i])
 		a.strides[i] = a.shape[i] * a.strides[i+1]
 	}
 
-	if sz > uint64(cap(a.data)) {
-		tmp := a.data
-		a.data = make([]float64, sz)
-		copy(a.data, tmp)
+	cp = cap(a.data)
+	if sz > uint64(cp) {
+		a.data = append(a.data[:cp], make([]float64, sz-uint64(cp))...)
 	} else {
 		a.data = a.data[:sz]
 	}
