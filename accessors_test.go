@@ -308,3 +308,71 @@ func TestResize(t *testing.T) {
 		t.Fail()
 	}
 }
+
+func TestAppend(t *testing.T) {
+	a := NewArray64(nil, 1, 2, 3, 4, 5)
+	b := Arange(120)
+
+	a.Append(nil, 1)
+	if e := a.GetErr(); e != NilError {
+		t.Log("Expected NilError, received", e)
+		t.Fail()
+	}
+
+	a.Append(b, 1)
+	if e := a.GetErr(); e != ShapeError {
+		t.Log("Expected ShapeError, received", e)
+		t.Fail()
+	}
+
+	a.Append(b, 5)
+	if e := a.GetErr(); e != IndexError {
+		t.Log("Expected IndexError, received", e)
+		t.Fail()
+	}
+
+	a.Append(nil, -1)
+	if e := a.GetErr(); e != IndexError {
+		t.Log("Expected IndexError, received", e)
+		t.Fail()
+	}
+
+	a.Append(b.Reshape(5, 4, 3, 2, 1), 1)
+	if e := a.GetErr(); e != ShapeError {
+		t.Log("Expected ShapeError, received", e)
+		t.Fail()
+	}
+
+	a.Append(b.Reshape(1, 2, 1, 3, 4, 5), 2)
+	if e := a.GetErr(); e != ShapeError {
+		t.Log("Expected ShapeError, received", e)
+		t.Fail()
+	}
+
+	a.Append(b.Reshape(1, 2, 3, 4, 5), 2)
+	if e := a.GetErr(); e != nil {
+		t.Log("Unexpected Error: ", e)
+		t.Fail()
+	}
+	if a.shape[2] != 6 {
+		t.Log("Shape updated incorrectly.  Expected 6, got", a.shape[2])
+		t.Fail()
+	}
+
+	a.Resize(1, 2, 3, 4, 5).Append(b, 0)
+	if e := a.GetErr(); e != nil {
+		t.Log("Unexpected Error: ", e)
+		t.Fail()
+	}
+	if a.shape[0] != 2 {
+		t.Log("Shape updated incorrectly.  Expected 2, got", a.shape[0])
+		t.Fail()
+	}
+
+	a.err = DivZeroError
+	a.Append(b, 0)
+	if e := a.GetErr(); e != DivZeroError {
+		t.Log("Expected DivZeroError, received", e)
+		t.Fail()
+	}
+}

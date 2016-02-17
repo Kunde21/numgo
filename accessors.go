@@ -249,7 +249,7 @@ func (a *Array64) Resize(shape ...int) *Array64 {
 // All axes must be the same except the appending axis.
 func (a *Array64) Append(val *Array64, axis int) *Array64 {
 	switch {
-	case a == nil || a.err != nil:
+	case a.HasErr():
 		return a
 	case axis >= len(a.shape) || axis < 0:
 		a.err = IndexError
@@ -258,12 +258,13 @@ func (a *Array64) Append(val *Array64, axis int) *Array64 {
 			a.stack = string(stackBuf[:runtime.Stack(stackBuf, false)])
 		}
 		return a
-	case val.err != nil:
-		a.err = val.err
+	case val.HasErr():
+		a.err = val.GetErr()
 		if debug {
 			a.debug = "Array received by Append() is in error."
 			a.stack = string(stackBuf[:runtime.Stack(stackBuf, false)])
 		}
+		return a
 	case len(a.shape) != len(val.shape):
 		a.err = ShapeError
 		if debug {
@@ -286,13 +287,14 @@ func (a *Array64) Append(val *Array64, axis int) *Array64 {
 
 	ln := len(a.data) + len(val.data)
 	var dat []float64
-	if ln > cap(a.data) {
+	cp := cap(a.data)
+	if ln > cp {
 		dat = make([]float64, ln)
 	} else {
 		dat = a.data[:ln]
 	}
 
-	as, vs := a.strides[axis], val.strides[axis+1]
+	as, vs := a.strides[axis+1], val.strides[axis+1]
 	for i, j := a.strides[0], val.strides[0]; i > 0; i, j = i-as, j-vs {
 		copy(dat[i+j-vs:i+j], val.data[j-vs:j])
 		copy(dat[i+j-as-vs:i+j-vs], a.data[i-as:i])
