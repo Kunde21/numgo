@@ -394,7 +394,7 @@ func BenchmarkDivC(b *testing.B) {
 }
 
 func BenchmarkAdd(b *testing.B) {
-	a, n := NewArray64(nil, 10, 10, 12), Arange(12)
+	a, n := NewArray64(nil, 10, 10, 10, 12), Arange(12)
 
 	b.ResetTimer()
 	b.ReportAllocs()

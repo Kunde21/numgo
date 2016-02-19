@@ -37,6 +37,17 @@ func TestSum(t *testing.T) {
 	}
 }
 
+func BenchmarkSum(b *testing.B) {
+	sz := []int{7, 3, 4, 8, 5, 6}
+	a := Arange(3 * 4 * 5 * 6 * 7 * 8).Reshape(sz...)
+
+	b.ResetTimer()
+	b.ReportAllocs()
+	for i := 0; i < b.N; i++ {
+		a.C().Sum(0, 2, 4)
+	}
+}
+
 func TestNaNSum(t *testing.T) {
 	mask := func(i int, v float64) MapFunc {
 		return func(d float64) float64 {

@@ -5,549 +5,748 @@
 // func initasm()(a,a2 bool)
 // pulled from runtime/asm_amd64.s
 TEXT ·initasm(SB), NOSPLIT, $0
-	MOVQ 	$1, AX
+	MOVQ $1, AX
 	CPUID
-	ANDL 	$0x18001000, CX
-	CMPL 	CX, $0x18001000
-	JNE	nofma
-	MOVB    $1, ·fmaSupt(SB) 	// set numgo·fmaSupt
-	JMP 	fma
+	ANDL $0x18001000, CX
+	CMPL CX, $0x18001000
+	JNE  nofma
+	MOVB $1, ·fmaSupt(SB) // set numgo·fmaSupt
+	JMP  fma
+
 nofma:
-	MOVB    $0, ·fmaSupt(SB)
+	MOVB $0, ·fmaSupt(SB)
+
 fma:
-	MOVQ	$1, AX
+	MOVQ $1, AX
 	CPUID
+
 	// Detect AVX and AVX2 as per 14.7.1  Detection of AVX2 chapter of [1]
 	// [1] 64-ia-32-architectures-software-developer-manual-325462.pdf
 	// http://www.intel.com/content/dam/www/public/us/en/documents/manuals/64-ia-32-architectures-software-developer-manual-325462.pdf
-	ANDL    $0x18000000, CX  	// check for OSXSAVE and AVX bits
-	CMPL    CX, $0x18000000
-	JNE     noavx
+	ANDL $0x18000000, CX // check for OSXSAVE and AVX bits
+	CMPL CX, $0x18000000
+	JNE  noavx
+
 	// For XGETBV, OSXSAVE bit is required and sufficient
-	MOVL    $0, CX
+	MOVL $0, CX
+
 	// Check for FMA capability
-	BYTE 	$0x0F; BYTE $0x01; BYTE $0xD0
-	ANDL    $6, AX
-	CMPL    AX, $6		// Check for OS support of YMM registers
-	JNE     noavx
-	MOVB    $1, ·avxSupt(SB)	// set numgo·avxSupt
+	BYTE $0x0F; BYTE $0x01; BYTE $0xD0
+	ANDL $6, AX
+	CMPL AX, $6                        // Check for OS support of YMM registers
+	JNE  noavx
+	MOVB $1, ·avxSupt(SB)              // set numgo·avxSupt
+
 	// Check for AVX2 capability
-	MOVL    $7, AX
-	MOVL    $0, CX
+	MOVL $7, AX
+	MOVL $0, CX
 	CPUID
-	ANDL    $0x20, BX 		// check for AVX2 bit
-	CMPL    BX, $0x20
-	JNE     noavx2
-	MOVB    $1, ·avx2Supt(SB) 	// set numgo·avx2Supt
+	ANDL $0x20, BX         // check for AVX2 bit
+	CMPL BX, $0x20
+	JNE  noavx2
+	MOVB $1, ·avx2Supt(SB) // set numgo·avx2Supt
 	RET
+
 noavx:
-	MOVB    $0, ·avxSupt(SB)	// set numgo·avxSupt
+	MOVB $0, ·avxSupt(SB) // set numgo·avxSupt
+
 noavx2:
-	MOVB    $0, ·avx2Supt(SB) 	// set numgo·avx2Supt
+	MOVB $0, ·avx2Supt(SB) // set numgo·avx2Supt
 	RET
 
 // func AddC(c float64, d []float64)
 TEXT ·addC(SB), NOSPLIT, $0
-	//data ptr
-	MOVQ 	d+8(FP), R10
+	// data ptr
+	MOVQ d+8(FP), R10
+
 	// n = data len
-	MOVQ 	d_len+16(FP), SI
+	MOVQ d_len+16(FP), SI
+
 	// zero len return
-	CMPQ 	SI, $0
-	JE 	ACEND
+	CMPQ SI, $0
+	JE   ACEND
+
 	// check tail
-	SUBQ 	$4, SI
-	JL 	ACTAIL
+	SUBQ $4, SI
+	JL   ACTAIL
+
 	// avx support test
-	LEAQ 	c+0(FP), R9
-	CMPB 	·avxSupt(SB), $1
-	JE 	AVX_AC
-	CMPB 	·avx2Supt(SB), $1
-	JE 	AVX2_AC
+	LEAQ c+0(FP), R9
+	CMPB ·avxSupt(SB), $1
+	JE   AVX_AC
+	CMPB ·avx2Supt(SB), $1
+	JE   AVX2_AC
+
 	// load multiplier
-	MOVSD 	(R9), X0
-	SHUFPD 	$0, X0, X0
-ACLOOP:	// Unrolled x2 d[i]|d[i+1] += c
-	MOVUPD 	0(R10), X1
-	MOVUPD 	16(R10), X2
-	ADDPD 	X0, X1
-	ADDPD 	X0, X2
-	MOVUPD 	X1, 0(R10)
-	MOVUPD 	X2, 16(R10)
-	ADDQ 	$32, R10
-	SUBQ 	$4, SI
-	JGE 	ACLOOP
-	JMP 	ACTAIL
-	// NEED AVX INSTRUCTION CODING FOR THIS TO WORK
+	MOVSD  (R9), X0
+	SHUFPD $0, X0, X0
+
+ACLOOP:  // Unrolled x2 d[i]|d[i+1] += c
+	MOVUPD 0(R10), X1
+	MOVUPD 16(R10), X2
+	ADDPD  X0, X1
+	ADDPD  X0, X2
+	MOVUPD X1, 0(R10)
+	MOVUPD X2, 16(R10)
+	ADDQ   $32, R10
+	SUBQ   $4, SI
+	JGE    ACLOOP
+	JMP    ACTAIL
+
+// NEED AVX INSTRUCTION CODING FOR THIS TO WORK
 AVX2_AC: // Until AVX2 is known
 AVX_AC:
-	//VBROADCASTD (R9), Y0 
-	BYTE 	$0xC4; BYTE $0xC2; BYTE $0x7D; BYTE $0x19; BYTE $0x01
+	// VBROADCASTD (R9), Y0
+	BYTE $0xC4; BYTE $0xC2; BYTE $0x7D; BYTE $0x19; BYTE $0x01
+
 AVX_ACLOOP:
-	//VADDPD (R10),Y0,Y1
-	BYTE 	$0xC4; BYTE $0xC1; BYTE $0x7D; BYTE $0x58; BYTE $0x0A
-	//VMOVDQU Y1, (R10)
-	BYTE 	$0xC4; BYTE $0xC1; BYTE $0x7E; BYTE $0x7F; BYTE $0x0A
+	// VADDPD (R10),Y0,Y1
+	BYTE $0xC4; BYTE $0xC1; BYTE $0x7D; BYTE $0x58; BYTE $0x0A
+
+	// VMOVDQU Y1, (R10)
+	BYTE $0xC4; BYTE $0xC1; BYTE $0x7E; BYTE $0x7F; BYTE $0x0A
 	ADDQ $32, R10
 	SUBQ $4, SI
-	JGE AVX_ACLOOP
-ACTAIL:	// Catch len % 4 == 0
+	JGE  AVX_ACLOOP
+
+ACTAIL:  // Catch len % 4 == 0
 	ADDQ $4, SI
-	JE ACEND
-ACTL:	// Calc the last values individually d[i] += c
+	JE   ACEND
+
+ACTL:  // Calc the last values individually d[i] += c
 	MOVSD 0(R10), X1
-	ADDSD X0,X1
+	ADDSD X0, X1
 	MOVSD X1, 0(R10)
-	ADDQ $8, R10
-	SUBQ $1, SI
-	JG ACTL
+	ADDQ  $8, R10
+	SUBQ  $1, SI
+	JG    ACTL
+
 ACEND:
 	RET
 
 // func subtrC(c float64, d []float64)
 TEXT ·subtrC(SB), NOSPLIT, $0
-	//data ptr
+	// data ptr
 	MOVQ d+8(FP), R10
+
 	// n = data len
 	MOVQ d_len+16(FP), SI
+
 	// zero len return
 	CMPQ SI, $0
-	JE SCEND
+	JE   SCEND
+
 	// check tail
 	SUBQ $4, SI
-	JL SCTAIL
+	JL   SCTAIL
+
 	// load multiplier
-	MOVSD c+0(FP), X0
+	MOVSD  c+0(FP), X0
 	SHUFPD $0, X0, X0
-SCLOOP:	// load d[i] | d[i+1]
+
+SCLOOP:  // load d[i] | d[i+1]
 	MOVUPD 0(R10), X1
 	MOVUPD 16(R10), X2
-	SUBPD X0, X1
-	SUBPD X0, X2
+	SUBPD  X0, X1
+	SUBPD  X0, X2
 	MOVUPD X1, 0(R10)
 	MOVUPD X2, 16(R10)
-	ADDQ $32, R10
-	SUBQ $4, SI
-	JGE SCLOOP
+	ADDQ   $32, R10
+	SUBQ   $4, SI
+	JGE    SCLOOP
+
 SCTAIL:
 	ADDQ $4, SI
-	JE SCEND
-SCTL:	
+	JE   SCEND
+
+SCTL:
 	MOVSD 0(R10), X1
-	SUBSD X0,X1
+	SUBSD X0, X1
 	MOVSD X1, 0(R10)
-	ADDQ $8, R10
-	SUBQ $1, SI
-	JG SCTL
+	ADDQ  $8, R10
+	SUBQ  $1, SI
+	JG    SCTL
+
 SCEND:
 	RET
 
 // func multC(c float64, d []float64)
 TEXT ·multC(SB), NOSPLIT, $0
-	//data ptr
+	// data ptr
 	MOVQ d+8(FP), R10
+
 	// n = data len
 	MOVQ d_len+16(FP), SI
+
 	// zero len return
 	CMPQ SI, $0
-	JE MCEND
+	JE   MCEND
+
 	// check tail
 	SUBQ $4, SI
-	JL MCTAIL
+	JL   MCTAIL
+
 	// load multiplier
-	MOVSD c+0(FP), X0
+	MOVSD  c+0(FP), X0
 	SHUFPD $0, X0, X0
-MCLOOP:	// load d[i] | d[i+1]
+
+MCLOOP:  // load d[i] | d[i+1]
 	MOVUPD 0(R10), X1
 	MOVUPD 16(R10), X2
-	MULPD X0, X1
-	MULPD X0, X2
+	MULPD  X0, X1
+	MULPD  X0, X2
 	MOVUPD X1, 0(R10)
 	MOVUPD X2, 16(R10)
-	ADDQ $32, R10
-	SUBQ $4, SI
-	JGE MCLOOP
+	ADDQ   $32, R10
+	SUBQ   $4, SI
+	JGE    MCLOOP
+
 MCTAIL:
 	ADDQ $4, SI
-	JE MCEND
-MCTL:	
+	JE   MCEND
+
+MCTL:
 	MOVSD 0(R10), X1
-	MULSD X0,X1
+	MULSD X0, X1
 	MOVSD X1, 0(R10)
-	ADDQ $8, R10
-	SUBQ $1, SI
-	JG MCTL
+	ADDQ  $8, R10
+	SUBQ  $1, SI
+	JG    MCTL
+
 MCEND:
 	RET
 
 // func divC(c float64, d []float64)
 TEXT ·divC(SB), NOSPLIT, $0
-	//data ptr
+	// data ptr
 	MOVQ d+8(FP), R10
+
 	// n = data len
 	MOVQ d_len+16(FP), SI
+
 	// zero len return
 	CMPQ SI, $0
-	JE DCEND
+	JE   DCEND
+
 	// check tail
 	SUBQ $4, SI
-	JL DCTAIL
+	JL   DCTAIL
+
 	// load multiplier
-	MOVSD c+0(FP), X0
+	MOVSD  c+0(FP), X0
 	SHUFPD $0, X0, X0
-DCLOOP:	// load d[i] | d[i+1]
+
+DCLOOP:  // load d[i] | d[i+1]
 	MOVUPD 0(R10), X1
 	MOVUPD 16(R10), X2
-	DIVPD X0, X1
-	DIVPD X0, X2
+	DIVPD  X0, X1
+	DIVPD  X0, X2
 	MOVUPD X1, 0(R10)
 	MOVUPD X2, 16(R10)
-	ADDQ $32, R10
-	SUBQ $4, SI
-	JGE DCLOOP	
+	ADDQ   $32, R10
+	SUBQ   $4, SI
+	JGE    DCLOOP
+
 DCTAIL:
 	ADDQ $4, SI
-	JE DCEND
-DCTL:	
+	JE   DCEND
+
+DCTL:
 	MOVSD 0(R10), X1
 	DIVSD X0, X1
 	MOVSD X1, 0(R10)
-	ADDQ $8, R10
-	SUBQ $1, SI
-	JG DCTL
+	ADDQ  $8, R10
+	SUBQ  $1, SI
+	JG    DCTL
+
 DCEND:
 	RET
-	
+
 // func add(a,b []float64)
 TEXT ·add(SB), NOSPLIT, $0
-	//a data ptr
+	// a data ptr
 	MOVQ a_base+0(FP), R8
-	//a len
+
+	// a len
 	MOVQ a_len+8(FP), SI
-	//b data ptr
+
+	// b data ptr
 	MOVQ b_base+24(FP), R9
 	MOVQ R9, R10
-	//b len
+
+	// b len
 	MOVQ b_len+32(FP), DI
 	MOVQ DI, R11
+
 	// zero len return
 	CMPQ SI, $0
-	JE AEND
+	JE   AEND
+
 	// check tail
 	SUBQ $2, SI
-	JL ATAIL
+	JL   ATAIL
+
 ALD:
 	CMPQ DI, $1
-	JE ALT
+	JE   ALT
 	SUBQ $2, DI
-	JGE ALO
+	JGE  ALO
 	MOVQ R10, R9
 	MOVQ R11, DI
 	SUBQ $2, DI
+
 ALO:
 	MOVUPD (R9), X1
-	ADDQ $16, R9
-	JMP ALOOP
+	ADDQ   $16, R9
+	JMP    ALOOP
+
 ALT:
 	MOVLPD (R9), X1
-	MOVQ R10, R9
-	MOVQ R11, DI
+	MOVQ   R10, R9
+	MOVQ   R11, DI
 	MOVHPD (R9), X1
-	SUBQ $1, DI
-	ADDQ $8, R9
-ALOOP:	
+	SUBQ   $1, DI
+	ADDQ   $8, R9
+
+ALOOP:
 	MOVUPD (R8), X0
-	ADDPD X1, X0
+	ADDPD  X1, X0
 	MOVUPD X0, (R8)
-	ADDQ $16, R8
-	SUBQ $2, SI
-	JGE ALD
+	ADDQ   $16, R8
+	SUBQ   $2, SI
+	JGE    ALD
+
 ATAIL:
 	ADDQ $2, SI
-	JE AEND
-ATL:	
+	JE   AEND
+
+ATL:
 	MOVSD (R8), X0
 	MOVSD (R9), X1
-	ADDSD X1,X0
+	ADDSD X1, X0
 	MOVSD X0, (R8)
-	ADDQ $8, R8
-	ADDQ $8, R9
-	SUBQ $1, SI
-	JG ATL
+	ADDQ  $8, R8
+	ADDQ  $8, R9
+	SUBQ  $1, SI
+	JG    ATL
+
 AEND:
+	RET
+
+// func vadd(a,b[]float64)
+// req:  len(a) == len(b)
+TEXT ·vadd(SB), NOSPLIT, $0
+	// a data ptr
+	MOVQ a_base+0(FP), R8
+
+	// a len
+	MOVQ a_len+8(FP), SI
+	MOVQ SI, DI
+
+	// b data ptr
+	MOVQ b_base+24(FP), R9
+
+	// zero len return
+	CMPQ SI, $0
+	JE   vadd_exit
+
+	// check tail
+	SUBQ $8, SI
+	JL   vadd_tail
+
+	// AVX vs SSE
+	CMPQ ·avxSupt(SB), $1
+	JE   vadd_avx_loop
+
+vadd_loop:
+	MOVUPD (R8), X0
+	MOVUPD (R9), X1
+	MOVUPD 16(R8), X2
+	MOVUPD 16(R9), X3
+	MOVUPD 32(R8), X4
+	MOVUPD 32(R9), X5
+	MOVUPD 48(R8), X6
+	MOVUPD 48(R9), X7
+	ADDPD  X1, X0
+	ADDPD  X3, X2
+	ADDPD  X5, X4
+	ADDPD  X7, X6
+	MOVUPD X0, (R8)
+	MOVUPD X2, 16(R8)
+	MOVUPD X4, 32(R8)
+	MOVUPD X6, 48(R8)
+	ADDQ   $64, R8
+	ADDQ   $64, R9
+	SUBQ   $8, SI
+	JGE    vadd_loop
+
+vadd_tail:
+	ADDQ $8, SI
+	JE   vadd_exit
+
+vadd_tail_loop:
+	MOVSD (R8), X15
+	MOVSD (R9), X14
+	ADDSD X14, X15
+	MOVSD X15, (R8)
+	ADDQ  $8, R8
+	ADDQ  $8, R9
+	SUBQ  $1, SI
+	JGE   vadd_tail_loop
+	JMP   vadd_exit
+	
+vadd_avx_loop:
+	//VMOVDQA (R9), Y0
+	BYTE $0xC4; BYTE $0xC1; BYTE $0x7E; BYTE $0x6F; BYTE $0x01
+	//VMOVDQA 32(R9), Y1
+	BYTE $0xC4; BYTE $0xC1; BYTE $0x7E; BYTE $0x6F; BYTE $0x49; BYTE $0x20
+
+	// VADDPD (R10),Y0,Y0
+	BYTE $0xC4; BYTE $0xC1; BYTE $0x7D; BYTE $0x58; BYTE $0x02
+	// VADDPD 32(R10),Y1,Y1
+	BYTE $0xC4; BYTE $0xC1; BYTE $0x75; BYTE $0x58; BYTE $0x4A; BYTE $0x20
+
+	//VMOVDQA Y0, (R10)
+	BYTE $0xC4; BYTE $0xC1; BYTE $0x7E; BYTE $0x7F; BYTE $0x01
+	//VMOVDQA Y1, 32(R10)
+	BYTE $0xC4; BYTE $0xC1; BYTE $0x7E; BYTE $0x7F; BYTE $0x49; BYTE $0x20
+
+	ADDQ $64, R10
+	SUBQ $8, SI
+	JGE  vadd_avx_loop
+	//VZEROUPPER
+	BYTE $0xC5; BYTE $0xF8; BYTE $0x77
+	ADDQ $8, SI
+	JE   vadd_exit
+	JMP  vadd_tail_loop
+
+vadd_exit:
 	RET
 
 // func subtr(a,b []float64)
 TEXT ·subtr(SB), NOSPLIT, $0
-	//a data ptr
+	// a data ptr
 	MOVQ a_base+0(FP), R8
-	//a len
+
+	// a len
 	MOVQ a_len+8(FP), SI
-	//b data ptr
+
+	// b data ptr
 	MOVQ b_base+24(FP), R9
 	MOVQ R9, R10
-	//b len
+
+	// b len
 	MOVQ b_len+32(FP), DI
 	MOVQ DI, R11
+
 	// zero len return
 	MOVQ $0, AX
 	CMPQ AX, SI
-	JE SEND
+	JE   SEND
+
 	// check tail
 	SUBQ $2, SI
-	JL STAIL
+	JL   STAIL
+
 SLD:
 	SUBQ $1, DI
-	JE SLT
+	JE   SLT
 	SUBQ $1, DI
-	JGE SLO
+	JGE  SLO
 	MOVQ R10, R9
 	MOVQ R11, DI
 	SUBQ $2, DI
+
 SLO:
 	MOVUPD 0(R9), X1
-	ADDQ $16, R9
-	JMP SLOOP
+	ADDQ   $16, R9
+	JMP    SLOOP
+
 SLT:
 	MOVLPD 0(R9), X1
-	MOVQ R10, R9
-	MOVQ R11, DI
+	MOVQ   R10, R9
+	MOVQ   R11, DI
 	MOVHPD 0(R9), X1
-	SUBQ $1, DI
-	ADDQ $8, R9
-SLOOP:	
+	SUBQ   $1, DI
+	ADDQ   $8, R9
+
+SLOOP:
 	MOVUPD 0(R8), X0
-	SUBPD X1, X0
+	SUBPD  X1, X0
 	MOVUPD X0, 0(R8)
-	ADDQ $16, R8
-	SUBQ $2, SI
-	JGE SLD
+	ADDQ   $16, R8
+	SUBQ   $2, SI
+	JGE    SLD
+
 STAIL:
 	ADDQ $2, SI
-	JE SEND
-STL:	
+	JE   SEND
+
+STL:
 	MOVSD 0(R8), X0
 	MOVSD 0(R9), X1
-	SUBSD X1,X0
+	SUBSD X1, X0
 	MOVSD X0, 0(R8)
-	ADDQ $8, R8
-	ADDQ $8, R9
-	SUBQ $1, SI
-	JG STL
+	ADDQ  $8, R8
+	ADDQ  $8, R9
+	SUBQ  $1, SI
+	JG    STL
+
 SEND:
 	RET
 
 // func mult(a,b []float64)
 TEXT ·mult(SB), NOSPLIT, $0
-	//a data ptr
+	// a data ptr
 	MOVQ a_base+0(FP), R8
-	//a len
+
+	// a len
 	MOVQ a_len+8(FP), SI
-	//b data ptr
+
+	// b data ptr
 	MOVQ b_base+24(FP), R9
 	MOVQ R9, R10
-	//b len
+
+	// b len
 	MOVQ b_len+32(FP), DI
 	MOVQ DI, R11
+
 	// zero len return
 	MOVQ $0, AX
 	CMPQ AX, SI
-	JE MEND
+	JE   MEND
+
 	// check tail
 	SUBQ $2, SI
-	JL MTAIL
+	JL   MTAIL
+
 MLD:
 	SUBQ $1, DI
-	JE MLT
+	JE   MLT
 	SUBQ $1, DI
-	JGE MLO
+	JGE  MLO
 	MOVQ R10, R9
 	MOVQ R11, DI
 	SUBQ $2, DI
+
 MLO:
 	MOVUPD 0(R9), X1
-	ADDQ $16, R9
-	JMP MLOOP
+	ADDQ   $16, R9
+	JMP    MLOOP
+
 MLT:
 	MOVLPD 0(R9), X1
-	MOVQ R10, R9
-	MOVQ R11, DI
+	MOVQ   R10, R9
+	MOVQ   R11, DI
 	MOVHPD 0(R9), X1
-	SUBQ $1, DI
-	ADDQ $8, R9
-MLOOP:	
+	SUBQ   $1, DI
+	ADDQ   $8, R9
+
+MLOOP:
 	MOVUPD 0(R8), X0
-	MULPD X1, X0
+	MULPD  X1, X0
 	MOVUPD X0, 0(R8)
-	ADDQ $16, R8
-	SUBQ $2, SI
-	JGE MLD
+	ADDQ   $16, R8
+	SUBQ   $2, SI
+	JGE    MLD
+
 MTAIL:
 	ADDQ $2, SI
-	JE MEND
-MTL:	
+	JE   MEND
+
+MTL:
 	MOVSD 0(R8), X0
 	MOVSD 0(R9), X1
-	MULSD X1,X0
+	MULSD X1, X0
 	MOVSD X0, 0(R8)
-	ADDQ $8, R8
-	ADDQ $8, R9
-	SUBQ $1, SI
-	JG MTL
+	ADDQ  $8, R8
+	ADDQ  $8, R9
+	SUBQ  $1, SI
+	JG    MTL
+
 MEND:
 	RET
 
 // func div(a,b []float64)
 TEXT ·div(SB), NOSPLIT, $0
-	//a data ptr
+	// a data ptr
 	MOVQ a_base+0(FP), R8
-	//a len
+
+	// a len
 	MOVQ a_len+8(FP), SI
-	//b data ptr
+
+	// b data ptr
 	MOVQ b_base+24(FP), R9
 	MOVQ R9, R10
-	//b len
+
+	// b len
 	MOVQ b_len+32(FP), DI
 	MOVQ DI, R11
+
 	// zero len return
 	MOVQ $0, AX
 	CMPQ AX, SI
-	JE DEND
+	JE   DEND
+
 	// check tail
 	SUBQ $2, SI
-	JL DTAIL
+	JL   DTAIL
+
 DLD:
 	SUBQ $1, DI
-	JE DLT
+	JE   DLT
 	SUBQ $1, DI
-	JGE DLO
+	JGE  DLO
 	MOVQ R10, R9
 	MOVQ R11, DI
 	SUBQ $2, DI
+
 DLO:
 	MOVUPD 0(R9), X1
-	ADDQ $16, R9
-	JMP DLOOP
+	ADDQ   $16, R9
+	JMP    DLOOP
+
 DLT:
 	MOVLPD 0(R9), X1
-	MOVQ R10, R9
-	MOVQ R11, DI
+	MOVQ   R10, R9
+	MOVQ   R11, DI
 	MOVHPD 0(R9), X1
-	SUBQ $1, DI
-	ADDQ $8, R9
-DLOOP:	
+	SUBQ   $1, DI
+	ADDQ   $8, R9
+
+DLOOP:
 	MOVUPD 0(R8), X0
-	DIVPD X1, X0
+	DIVPD  X1, X0
 	MOVUPD X0, 0(R8)
-	ADDQ $16, R8
-	SUBQ $2, SI
-	JGE DLD
+	ADDQ   $16, R8
+	SUBQ   $2, SI
+	JGE    DLD
+
 DTAIL:
 	ADDQ $2, SI
-	JE DEND
-DTL:	
+	JE   DEND
+
+DTL:
 	MOVSD 0(R8), X0
 	MOVSD 0(R9), X1
-	DIVSD X1,X0
+	DIVSD X1, X0
 	MOVSD X0, 0(R8)
-	ADDQ $8, R8
-	ADDQ $8, R9
-	SUBQ $1, SI
-	JG DTL
+	ADDQ  $8, R8
+	ADDQ  $8, R9
+	SUBQ  $1, SI
+	JG    DTL
+
 DEND:
 	RET
-
 
 // func fma12(a float64, x,b []float64)
 // x[i] = a*x[i]+b[i]
 TEXT ·fma12(SB), NOSPLIT, $0
 	// a ptr
-	MOVSD 	a+0(FP), X2
-	SHUFPD 	$0, X2, X2
+	MOVSD  a+0(FP), X2
+	SHUFPD $0, X2, X2
+
 	// x data ptr
-	MOVQ 	x_base+8(FP), R8
+	MOVQ x_base+8(FP), R8
+
 	// x len
-	MOVQ 	x_len+16(FP), SI
+	MOVQ x_len+16(FP), SI
+
 	// b data ptr
-	MOVQ 	b_base+32(FP), R9
-	MOVQ 	R9, R10
+	MOVQ b_base+32(FP), R9
+	MOVQ R9, R10
+
 	// b len
-	MOVQ 	b_len+40(FP), DI
-	MOVQ 	DI, R11
+	MOVQ b_len+40(FP), DI
+	MOVQ DI, R11
+
 	// zero len return
-	CMPQ 	SI, $0
-	JE 	F12END
+	CMPQ SI, $0
+	JE   F12END
+
 	// check tail
-	SUBQ 	$2, SI
-	JL 	F12TAIL
+	SUBQ $2, SI
+	JL   F12TAIL
+
 F12LD:
-	CMPQ 	DI, $1
-	JE 	F12LT
-	SUBQ 	$2, DI
-	JGE 	F12LO
-	MOVQ 	R10, R9
-	MOVQ 	R11, DI
-	SUBQ 	$2, DI
+	CMPQ DI, $1
+	JE   F12LT
+	SUBQ $2, DI
+	JGE  F12LO
+	MOVQ R10, R9
+	MOVQ R11, DI
+	SUBQ $2, DI
+
 F12LO:
-	MOVUPD	(R9), X1
-	ADDQ 	$16, R9
-	JMP 	F12LOOP
+	MOVUPD (R9), X1
+	ADDQ   $16, R9
+	JMP    F12LOOP
+
 F12LT:
-	MOVLPD 	(R9), X1
-	MOVQ 	R10, R9
-	MOVQ 	R11, DI
-	MOVHPD 	(R9), X1
-	SUBQ 	$1, DI
-	ADDQ 	$8, R9
-F12LOOP:	
-	MOVUPD 	(R8), X0
-	MULPD 	X2, X0
-	ADDPD 	X1, X0
-	MOVUPD 	X0, (R8)
-	ADDQ 	$16, R8
-	SUBQ 	$2, SI
-	JGE 	F12LD
-	JMP 	F12TAIL
+	MOVLPD (R9), X1
+	MOVQ   R10, R9
+	MOVQ   R11, DI
+	MOVHPD (R9), X1
+	SUBQ   $1, DI
+	ADDQ   $8, R9
+
+F12LOOP:
+	MOVUPD (R8), X0
+	MULPD  X2, X0
+	ADDPD  X1, X0
+	MOVUPD X0, (R8)
+	ADDQ   $16, R8
+	SUBQ   $2, SI
+	JGE    F12LD
+	JMP    F12TAIL
+
 F12LDF:
-	CMPQ 	DI, $1
-	JE 	F12LTF
-	SUBQ 	$2, DI
-	JGE 	F12LOF
-	MOVQ 	R10, R9
-	MOVQ 	R11, DI
-	SUBQ 	$2, DI
+	CMPQ DI, $1
+	JE   F12LTF
+	SUBQ $2, DI
+	JGE  F12LOF
+	MOVQ R10, R9
+	MOVQ R11, DI
+	SUBQ $2, DI
+
 F12LOF:
-	MOVUPD	(R9), X1
-	ADDQ 	$16, R9
-	JMP 	F12LOOPF
+	MOVUPD (R9), X1
+	ADDQ   $16, R9
+	JMP    F12LOOPF
+
 F12LTF:
-	MOVLPD 	(R9), X1
-	MOVQ 	R10, R9
-	MOVQ 	R11, DI
-	MOVHPD 	(R9), X1
-	SUBQ 	$1, DI
-	ADDQ 	$8, R9
-F12LOOPF:	
-	MOVUPD 	(R8), X0
-	//VMFADD213PD X0, X1, X2
-	BYTE 	$0xC4; BYTE $0xE2; BYTE $0xF1; BYTE $0x98; BYTE $0xC2
-	MOVUPD 	X0, (R8)
-	ADDQ 	$16, R8
-	SUBQ 	$2, SI
-	JGE 	F12LDF
+	MOVLPD (R9), X1
+	MOVQ   R10, R9
+	MOVQ   R11, DI
+	MOVHPD (R9), X1
+	SUBQ   $1, DI
+	ADDQ   $8, R9
+
+F12LOOPF:
+	MOVUPD (R8), X0
+
+	// VMFADD213PD X0, X1, X2
+	BYTE   $0xC4; BYTE $0xE2; BYTE $0xF1; BYTE $0x98; BYTE $0xC2
+	MOVUPD X0, (R8)
+	ADDQ   $16, R8
+	SUBQ   $2, SI
+	JGE    F12LDF
+
 F12TAIL:
-	ADDQ 	$2, SI
-	JE 	F12END
-F12TL:	
-	MOVSD 	(R8), X0
-	MOVSD 	(R9), X1
-	MULPD 	X2, X0
-	ADDPD 	X1, X0
-	MOVSD 	X0, (R8)
-	ADDQ 	$8, R8
-	ADDQ 	$8, R9
-	SUBQ 	$1, SI
-	JG 	F12TL
+	ADDQ $2, SI
+	JE   F12END
+
+F12TL:
+	MOVSD (R8), X0
+	MOVSD (R9), X1
+	MULPD X2, X0
+	ADDPD X1, X0
+	MOVSD X0, (R8)
+	ADDQ  $8, R8
+	ADDQ  $8, R9
+	SUBQ  $1, SI
+	JG    F12TL
+
 F12END:
 	RET
 
@@ -555,91 +754,109 @@ F12END:
 // x[i] = x[i]*b[i]+a
 TEXT ·fma21(SB), NOSPLIT, $0
 	// a ptr
-	MOVSD 	a+0(FP), X2
-	SHUFPD 	$0, X2, X2
+	MOVSD  a+0(FP), X2
+	SHUFPD $0, X2, X2
+
 	// x data ptr
-	MOVQ 	x_base+8(FP), R8
+	MOVQ x_base+8(FP), R8
+
 	// x len
-	MOVQ 	x_len+16(FP), SI
+	MOVQ x_len+16(FP), SI
+
 	// b data ptr
-	MOVQ 	b_base+32(FP), R9
-	MOVQ 	R9, R10
+	MOVQ b_base+32(FP), R9
+	MOVQ R9, R10
+
 	// b len
-	MOVQ 	b_len+40(FP), DI
-	MOVQ 	DI, R11
+	MOVQ b_len+40(FP), DI
+	MOVQ DI, R11
+
 	// zero len return
-	CMPQ 	SI, $0
-	JE 	F21END
+	CMPQ SI, $0
+	JE   F21END
+
 	// check tail
-	SUBQ 	$2, SI
-	JL 	F21TAIL
+	SUBQ $2, SI
+	JL   F21TAIL
+
 F21LD:
-	CMPQ 	DI, $1
-	JE 	F21LT
-	SUBQ 	$2, DI
-	JGE 	F21LO
-	MOVQ 	R10, R9
-	MOVQ 	R11, DI
-	SUBQ 	$2, DI
+	CMPQ DI, $1
+	JE   F21LT
+	SUBQ $2, DI
+	JGE  F21LO
+	MOVQ R10, R9
+	MOVQ R11, DI
+	SUBQ $2, DI
+
 F21LO:
-	MOVUPD	(R9), X1
-	ADDQ 	$16, R9
-	JMP 	F21LOOP
+	MOVUPD (R9), X1
+	ADDQ   $16, R9
+	JMP    F21LOOP
+
 F21LT:
-	MOVLPD 	(R9), X1
-	MOVQ 	R10, R9
-	MOVQ 	R11, DI
-	MOVHPD 	(R9), X1
-	SUBQ 	$1, DI
-	ADDQ 	$8, R9
-F21LOOP:	
-	MOVUPD 	(R8), X0
-	MULPD 	X1, X0
-	ADDPD 	X2, X0
-	MOVUPD 	X0, (R8)
-	ADDQ 	$16, R8
-	SUBQ 	$2, SI
-	JGE 	F21LD
-	JMP	F21TAIL
+	MOVLPD (R9), X1
+	MOVQ   R10, R9
+	MOVQ   R11, DI
+	MOVHPD (R9), X1
+	SUBQ   $1, DI
+	ADDQ   $8, R9
+
+F21LOOP:
+	MOVUPD (R8), X0
+	MULPD  X1, X0
+	ADDPD  X2, X0
+	MOVUPD X0, (R8)
+	ADDQ   $16, R8
+	SUBQ   $2, SI
+	JGE    F21LD
+	JMP    F21TAIL
+
 F21LDF:
-	CMPQ 	DI, $1
-	JE 	F21LTF
-	SUBQ 	$2, DI
-	JGE 	F21LOF
-	MOVQ 	R10, R9
-	MOVQ 	R11, DI
-	SUBQ 	$2, DI
+	CMPQ DI, $1
+	JE   F21LTF
+	SUBQ $2, DI
+	JGE  F21LOF
+	MOVQ R10, R9
+	MOVQ R11, DI
+	SUBQ $2, DI
+
 F21LOF:
-	MOVUPD	(R9), X1
-	ADDQ 	$16, R9
-	JMP 	F21LOOPF
+	MOVUPD (R9), X1
+	ADDQ   $16, R9
+	JMP    F21LOOPF
+
 F21LTF:
-	MOVLPD 	(R9), X1
-	MOVQ 	R10, R9
-	MOVQ 	R11, DI
-	MOVHPD 	(R9), X1
-	SUBQ 	$1, DI
-	ADDQ 	$8, R9
-F21LOOPF:	
-	MOVUPD 	(R8), X0
-	//VMFADD213PD X0, X1, X2
-	BYTE $0xC4; BYTE $0xE2; BYTE $0xF1; BYTE $0xA8; BYTE $0xC2
-	MOVUPD 	X0, (R8)
-	ADDQ 	$16, R8
-	SUBQ 	$2, SI
-	JGE 	F21LDF
+	MOVLPD (R9), X1
+	MOVQ   R10, R9
+	MOVQ   R11, DI
+	MOVHPD (R9), X1
+	SUBQ   $1, DI
+	ADDQ   $8, R9
+
+F21LOOPF:
+	MOVUPD (R8), X0
+
+	// VMFADD213PD X0, X1, X2
+	BYTE   $0xC4; BYTE $0xE2; BYTE $0xF1; BYTE $0xA8; BYTE $0xC2
+	MOVUPD X0, (R8)
+	ADDQ   $16, R8
+	SUBQ   $2, SI
+	JGE    F21LDF
+
 F21TAIL:
-	ADDQ 	$2, SI
-	JE 	F21END
-F21TL:	
-	MOVSD 	(R8), X0
-	MOVSD 	(R9), X1
-	MULPD 	X1, X0
-	ADDPD 	X2, X0
-	MOVSD 	X0, (R8)
-	ADDQ 	$8, R8
-	ADDQ 	$8, R9
-	SUBQ 	$1, SI
-	JG 	F21TL
+	ADDQ $2, SI
+	JE   F21END
+
+F21TL:
+	MOVSD (R8), X0
+	MOVSD (R9), X1
+	MULPD X1, X0
+	ADDPD X2, X0
+	MOVSD X0, (R8)
+	ADDQ  $8, R8
+	ADDQ  $8, R9
+	SUBQ  $1, SI
+	JG    F21TL
+
 F21END:
 	RET

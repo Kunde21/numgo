@@ -24,6 +24,7 @@ func multC(c float64, d []float64)
 func divC(c float64, d []float64)
 
 func add(a, b []float64)
+func vadd(a, b []float64)
 
 func subtr(a, b []float64)
 

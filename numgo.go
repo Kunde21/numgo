@@ -22,8 +22,11 @@ type Array64 struct {
 // Passing a slice with no shape data will wrap the slice as a 1-D array.
 // All values will default to zero.  Passing nil as the data parameter creates an empty array.
 func NewArray64(data []float64, shape ...int) (a *Array64) {
-	if data != nil && len(shape) == 0 {
+	switch {
+	case data != nil && len(shape) == 0:
 		shape = append(shape, len(data))
+	case data == nil && len(shape) == 0:
+		shape = append(shape, 0)
 	}
 
 	var sz uint64 = 1
@@ -40,16 +43,6 @@ func NewArray64(data []float64, shape ...int) (a *Array64) {
 		sz *= uint64(v)
 		sh[i] = uint64(v)
 	}
-
-	defer func() {
-		if r := recover(); r != nil {
-			a.err = FoldMapError
-			a.debug = fmt.Sprint(r)
-			if debug {
-				a.stack = string(stackBuf[:runtime.Stack(stackBuf, false)])
-			}
-		}
-	}()
 
 	a = &Array64{
 		shape:   sh,
@@ -68,7 +61,6 @@ func NewArray64(data []float64, shape ...int) (a *Array64) {
 	for i := len(shape) - 1; i >= 0; i-- {
 		a.strides[i] = a.strides[i+1] * a.shape[i]
 	}
-	a.err = nil
 	return
 }
 
@@ -79,19 +71,19 @@ func newArray64(shape ...uint64) (a *Array64) {
 		sz *= uint64(v)
 	}
 
-	a = new(Array64)
-	a.shape = shape
-	a.data = make([]float64, sz)
-
-	a.strides = make([]uint64, len(shape)+1)
-	tmp := uint64(1)
-	for i := len(a.strides) - 1; i > 0; i-- {
-		a.strides[i] = tmp
-		tmp *= shape[i-1]
+	a = &Array64{
+		shape:   shape,
+		strides: make([]uint64, len(shape)+1),
+		data:    make([]float64, sz),
+		err:     nil,
+		debug:   "",
+		stack:   "",
 	}
 
-	a.strides[0] = tmp
-	a.err = nil
+	a.strides[len(shape)] = 1
+	for i := len(shape) - 1; i >= 0; i-- {
+		a.strides[i] = a.strides[i+1] * a.shape[i]
+	}
 	return
 }
 
@@ -99,20 +91,20 @@ func newArray64(shape ...uint64) (a *Array64) {
 // All elements will be set to the value passed in val.
 func Full(val float64, shape ...int) (a *Array64) {
 	a = NewArray64(nil, shape...)
-	if a.HasErr() {
+	if a.HasErr() || val == 0 {
 		return
 	}
-	a.AddC(val)
-	return
+
+	return a.AddC(val)
 }
 
 func full(val float64, shape ...uint64) (a *Array64) {
 	a = newArray64(shape...)
-	if a.HasErr() {
+	if a.HasErr() || val == 0 {
 		return
 	}
-	a.AddC(val)
-	return
+
+	return a.AddC(val)
 }
 
 // RandArray64 creates an Arry64 object and fills it with random values from the default random source

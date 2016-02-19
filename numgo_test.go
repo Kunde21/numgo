@@ -6,7 +6,7 @@ func init() {
 	debug = true
 }
 
-func TestCreate(t *testing.T) {
+func TestNewArray64(t *testing.T) {
 	shp := []int{2, 3, 4}
 	a := NewArray64(nil, shp...)
 	if len(a.data) != 24 {
@@ -17,10 +17,42 @@ func TestCreate(t *testing.T) {
 	for _, v := range a.data {
 		if v != 0 {
 			t.Logf("Value %f, expected %d", v, 0)
+			t.Fail()
 		}
 	}
+	a = NewArray64(nil)
+	if e := a.GetErr(); e != nil {
+		t.Log("Unexpected error:", e)
+		t.Fail()
+	}
 
-	a = Full(1, shp...)
+	a = NewArray64([]float64{0, 1, 2, 3, 4})
+	if e := a.Equals(Arange(5)); !e.All().At(0) {
+		t.Log("Slice Assignment Failed", a.GetErr(), e)
+		t.Fail()
+	}
+
+	a = NewArray64([]float64{0, 1, 2, 3, 4}, 3)
+	if e := a.Equals(Arange(3)); !e.All().At(0) {
+		t.Log("Slice Assignment Failed", a.GetErr(), e)
+		t.Fail()
+	}
+
+	a = NewArray64([]float64{0, 1, 2, 3, 4, 5}, 2, -1, 3)
+	if e := a.GetErr(); e != NegativeAxis {
+		t.Log("Expected NegativeAxis, got:", e)
+		t.Fail()
+	}
+
+	a = NewArray64(nil, 1, 2, 5, 9)
+	if e := a.Equals(newArray64(1, 2, 5, 9)); !e.All().At(0) {
+		t.Log("Creation has different results:", e)
+		t.Fail()
+	}
+}
+func TestFull(t *testing.T) {
+	shp := []int{2, 3, 4}
+	a := Full(1, shp...)
 	if len(a.data) != 24 {
 		t.Logf("Length %d, expected %d\n", len(a.data), 24)
 		t.FailNow()

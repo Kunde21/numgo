@@ -21,38 +21,40 @@ func (a *Array64) Sum(axis ...int) (r *Array64) {
 
 	sort.IntSlice(axis).Sort()
 	n := make([]uint64, len(a.shape)-len(axis))
+
+axisR:
 	for i, t := 0, 0; i < len(a.shape); i++ {
-		tmp := false
 		for _, w := range axis {
 			if i == w {
-				tmp = true
-				break
+				continue axisR
 			}
 		}
-		if !tmp {
-			n[t] = a.shape[i]
-			t++
-		}
+		n[t] = a.shape[i]
+		t++
 	}
 
-	t := a.data
-	for i := 0; i < len(axis); i++ {
-		maj, min := a.strides[axis[i]], a.strides[axis[i]+1]
-		for j := uint64(0); j+maj <= uint64(len(t)); j += maj {
-			for k := j; k < j+min; k++ {
-				for z := k + min; z < j+maj; z += min {
-					t[k] += t[z]
+	ln := a.strides[0]
+	for k := 0; k < len(axis); k++ {
+		v, wd, st := a.shape[axis[k]], a.strides[axis[k]], a.strides[axis[k]+1]
+		if st == 1 {
+			for k := uint64(0); k < ln/wd; k++ {
+				a.data[k] = a.data[k*wd]
+				for i := uint64(1); i < wd; i++ {
+					a.data[k] += a.data[i+k*wd]
 				}
 			}
+			ln /= v
+			continue
 		}
 
-		j := uint64(1)
-		for ; j < uint64(len(t))/maj; j++ {
-			copy(t[j*min:(j+1)*min], t[j*maj:j*maj+min])
+		for w := uint64(0); w < ln; w += wd {
+			for i := uint64(1); i*st+1 < wd; i++ {
+				vadd(a.data[w:w+st], a.data[w+(i)*st:w+(i+1)*st])
+			}
+			copy(a.data[w/wd*st:(w/wd+1)*st], a.data[w:w+st])
 		}
-		t = append(t[:0], t[0:j*min]...)
+		ln /= v
 	}
-	a.data = t
 	a.shape = n
 
 	tmp := uint64(1)
@@ -61,6 +63,7 @@ func (a *Array64) Sum(axis ...int) (r *Array64) {
 		tmp *= n[i-1]
 	}
 	a.strides[0] = tmp
+	a.data = a.data[:tmp]
 	a.strides = a.strides[:len(n)+1]
 	return a
 }
@@ -105,20 +108,16 @@ func (a *Array64) Count(axis ...int) *Array64 {
 
 	tAxis := make([]uint64, len(a.shape)-len(axis))
 	cnt := uint64(1)
+cntAx:
 	for i, t := 0, 0; i < len(a.shape); i++ {
-		tmp := false
 		for _, w := range axis {
 			if i == w {
-				tmp = true
-				break
+				cnt *= a.shape[i]
+				continue cntAx
 			}
 		}
-		if !tmp {
-			tAxis[t] = a.shape[i]
-			t++
-		} else {
-			cnt *= a.shape[i]
-		}
+		tAxis[t] = a.shape[i]
+		t++
 	}
 	return full(float64(cnt), tAxis...)
 }
@@ -149,8 +148,8 @@ func (a *Array64) Mean(axis ...int) *Array64 {
 	case a.valAxis(&axis, "Mean"):
 		return a
 	}
-
-	return a.C().Sum(axis...).DivC(a.Count(axis...).data[0])
+	c := a.Count(axis...).At(0)
+	return a.C().Sum(axis...).DivC(c)
 }
 
 // NaNMean calculates the mean across the given axes.
