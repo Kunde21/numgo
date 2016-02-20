@@ -423,7 +423,7 @@ func BenchmarkSubtr(b *testing.B) {
 }
 
 func BenchmarkMult(b *testing.B) {
-	a, n := NewArray64(nil, 10, 10, 10, 12), Arange(1, 13)
+	a, n := NewArray64(nil, 10, 10, 10, 12), Arange(1, 12)
 
 	b.ResetTimer()
 	b.ReportAllocs()
@@ -435,7 +435,7 @@ func BenchmarkMult(b *testing.B) {
 }
 
 func BenchmarkDiv(b *testing.B) {
-	a, n := NewArray64(nil, 10, 10, 10, 12), Arange(1, 13)
+	a, n := NewArray64(nil, 10, 10, 10, 12), Arange(1, 12)
 
 	b.ResetTimer()
 	b.ReportAllocs()
@@ -448,8 +448,8 @@ func BenchmarkDiv(b *testing.B) {
 
 func BenchmarkFMA12_FMA(b *testing.B) {
 	a := Arange(0, 1000000, .5)
-	if len(a.data) != (1000000)/.5 {
-		b.Log("Expected:", (1000000)/.5, "Got:", len(a.data))
+	if len(a.data) != (1000000)/.5+1 {
+		b.Log("Expected:", (1000000)/.5+1, "Got:", len(a.data))
 		b.FailNow()
 	}
 
@@ -463,7 +463,7 @@ func BenchmarkFMA12_FMA(b *testing.B) {
 }
 
 func BenchmarkFMA12_FMAB(b *testing.B) {
-	a := Arange(0, 1000000, .5).Reshape(2, 2, 500, 1000)
+	a := Arange(0, 1000000, .5).Resize(2, 2, 500, 1000)
 	if len(a.data) != (1000000)/.5 {
 		b.Log("Expected:", (1000000)/.5, "Got:", len(a.data))
 		b.FailNow()
@@ -481,8 +481,8 @@ func BenchmarkFMA12_FMAB(b *testing.B) {
 
 func BenchmarkCopy(b *testing.B) {
 	a := Arange(0, 1000000, .5)
-	if len(a.data) != (1000000)/.5 {
-		b.Log("Expected:", (1000000)/.5, "Got:", len(a.data))
+	if len(a.data) != (1000000)/.5+1 {
+		b.Log("Expected:", (1000000)/.5+1, "Got:", len(a.data))
 		b.FailNow()
 	}
 	c := a.C()
@@ -502,8 +502,8 @@ func BenchmarkFMA12_noFMA(b *testing.B) {
 	tmp := fmaSupt
 	fmaSupt = false
 	a := Arange(1, 1000000, .5)
-	if len(a.data) != (1000000-1)/.5 {
-		b.Log("Expected:", (1000000-1)/.5, "Got:", len(a.data))
+	if len(a.data) != (1000000-1)/.5+1 {
+		b.Log("Expected:", (1000000-1)/.5+1, "Got:", len(a.data))
 		b.FailNow()
 	}
 

@@ -2,6 +2,7 @@ package numgo
 
 import (
 	"fmt"
+	"math"
 	"runtime"
 	"sort"
 )
@@ -14,7 +15,7 @@ func (a *Array64) Equals(b *Array64) (r *Arrayb) {
 	}
 
 	r = a.comp(b, func(i, j float64) bool {
-		if i == j {
+		if i == j || math.IsNaN(i) && math.IsNaN(j) {
 			return true
 		}
 		return false
@@ -30,7 +31,7 @@ func (a *Array64) NotEq(b *Array64) (r *Arrayb) {
 	}
 
 	r = a.comp(b, func(i, j float64) bool {
-		if i != j {
+		if i != j && !(math.IsNaN(i) && math.IsNaN(j)) {
 			return true
 		}
 		return false

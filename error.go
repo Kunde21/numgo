@@ -103,10 +103,12 @@ func (a *Array64) GetDebug() (err error, debugStr, stackTrace string) {
 
 // encodeErr is a supporting function for MarshalJSON
 func encodeErr(err error) int8 {
+	if err == nil {
+		return 0
+	}
+
 	e := err.(*ngError)
 	switch e {
-	case nil:
-		return 0
 	case NilError:
 		return 1
 	case ShapeError:
@@ -128,7 +130,7 @@ func encodeErr(err error) int8 {
 }
 
 // decodeErr is a supporting method for UnmarshalJSON
-func decodeErr(err int8) (a *ngError) {
+func decodeErr(err int8) (a error) {
 	switch err {
 	case 0:
 		a = nil

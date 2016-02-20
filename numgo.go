@@ -193,6 +193,8 @@ func (a *Array64) String() (s string) {
 		return "<nil>"
 	case a.err != nil:
 		return "Error: " + a.err.(*ngError).s
+	case a.data == nil || a.shape == nil || a.strides == nil:
+		return "<nil>"
 	case a.strides[0] == 0:
 		return "[]"
 	case len(a.shape) == 1:
@@ -235,7 +237,7 @@ func (a *Array64) String() (s string) {
 // This must not change the size of the array.
 // Incorrect dimensions will return a nil pointer
 func (a *Array64) Reshape(shape ...int) *Array64 {
-	if a == nil || a.err != nil {
+	if a.HasErr() || len(shape) == 0 {
 		return a
 	}
 
@@ -278,14 +280,16 @@ func (a *Array64) Reshape(shape ...int) *Array64 {
 // encode is used to prepare data for MarshalJSON that isn't JSON defined.
 func (a *Array64) encode() (inf, nan []int64, err int8) {
 	for k, v := range a.data {
-		a.data[k] = 0
 		switch {
 		case math.IsNaN(float64(v)):
-			nan = append(nan, int64(k))
+			a.data[k] = 0
+			nan = append(nan, int64(k+1))
 		case math.IsInf(float64(v), 1):
-			inf = append(inf, int64(k))
+			a.data[k] = 0
+			inf = append(inf, int64(k+1))
 		case math.IsInf(float64(v), -1):
-			inf = append(inf, int64(-k))
+			a.data[k] = 0
+			inf = append(inf, int64(-(k + 1)))
 		}
 	}
 
@@ -296,10 +300,8 @@ func (a *Array64) encode() (inf, nan []int64, err int8) {
 // MarshalJSON fulfills the json.Marshaler Interface for encoding data.
 // Custom Unmarshaler is needed to encode/send unexported values.
 func (a *Array64) MarshalJSON() ([]byte, error) {
-	if a == nil {
-		return nil, NilError
-	}
 	t := a.C()
+
 	inf, nan, err := t.encode()
 	return json.Marshal(struct {
 		Shape []uint64  `json:"shape"`
@@ -322,14 +324,14 @@ func (a *Array64) decode(i, n []int64, err int8) {
 	nan := math.NaN()
 
 	for _, v := range n {
-		a.data[v] = nan
+		a.data[v-1] = nan
 	}
 
 	for _, v := range i {
-		if v >= 0 {
-			a.data[v] = inf
+		if v-1 >= 0 {
+			a.data[v-1] = inf
 		} else {
-			a.data[-v] = nInf
+			a.data[-v-1] = nInf
 		}
 	}
 	a.err = decodeErr(err)
@@ -338,11 +340,6 @@ func (a *Array64) decode(i, n []int64, err int8) {
 // UnmarshalJSON fulfills the json.Unmarshaler interface for decoding data.
 // Custom Unmarshaler is needed to load/decode unexported values and build strides.
 func (a *Array64) UnmarshalJSON(b []byte) error {
-
-	if a == nil {
-		return NilError
-	}
-
 	tmpA := new(struct {
 		Shape []uint64  `json:"shape"`
 		Data  []float64 `json:"data"`
@@ -359,6 +356,12 @@ func (a *Array64) UnmarshalJSON(b []byte) error {
 	a.shape = tmpA.Shape
 	a.data = tmpA.Data
 	a.decode(tmpA.Inf, tmpA.Nan, tmpA.Err)
+
+	if a.data == nil && a.err == nil {
+		a.err = NilError
+		a.strides = nil
+		return nil
+	}
 
 	a.strides = make([]uint64, len(a.shape)+1)
 	tmp := uint64(1)

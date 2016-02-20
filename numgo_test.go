@@ -1,7 +1,9 @@
 package numgo
 
 import (
+	"encoding/json"
 	"fmt"
+	"math"
 	"strings"
 	"testing"
 )
@@ -11,6 +13,7 @@ func init() {
 }
 
 func TestNewArray64(t *testing.T) {
+	t.Parallel()
 	shp := []int{2, 3, 4}
 	a := NewArray64(nil, shp...)
 	if len(a.data) != 24 {
@@ -55,6 +58,7 @@ func TestNewArray64(t *testing.T) {
 	}
 }
 func TestFull(t *testing.T) {
+	t.Parallel()
 	shp := []int{2, 3, 4}
 	a := Full(1, shp...)
 	if len(a.data) != 24 {
@@ -92,6 +96,7 @@ func TestShapes(t *testing.T) {
 }
 
 func TestRandArray64(t *testing.T) {
+	t.Parallel()
 	a := RandArray64(0, 2, []int{2, 3, -7, 12})
 	if e := a.GetErr(); e != NegativeAxis {
 		t.Log("Expected NegativeAxis, got:", e)
@@ -100,6 +105,7 @@ func TestRandArray64(t *testing.T) {
 }
 
 func TestArange(t *testing.T) {
+	t.Parallel()
 	a := Arange(24)
 	if len(a.data) != 24 {
 		t.Logf("Length %d.  Expected size %d\n", len(a.data), 24)
@@ -151,6 +157,7 @@ func TestArange(t *testing.T) {
 }
 
 func TestIdent(t *testing.T) {
+	t.Parallel()
 	tmp := Identity(0)
 	if len(tmp.shape) != 2 {
 		t.Log("Incorrect identity shape.", tmp.shape)
@@ -201,6 +208,7 @@ func TestIdent(t *testing.T) {
 }
 
 func TestSubArray(t *testing.T) {
+	t.Parallel()
 	a := Arange(100).Reshape(2, 5, 10)
 	b := Arange(50).Reshape(5, 10)
 	c := a.SubArr(0)
@@ -218,6 +226,7 @@ func TestSubArray(t *testing.T) {
 }
 
 func TestString(t *testing.T) {
+	t.Parallel()
 	tests := []struct {
 		a   *Array64
 		str string
@@ -228,14 +237,131 @@ func TestString(t *testing.T) {
 		{Arange(10), fmt.Sprint(Arange(10).data)},
 		{Arange(10).Reshape(2, 5), "[[0 1 2 3 4] \n [5 6 7 8 9]]"},
 		{Arange(20).Reshape(2, 2, 5), "[[[0 1 2 3 4]  \n  [5 6 7 8 9]] \n\n [[10 11 12 13 14]  \n  [15 16 17 18 19]]]"},
+		{&Array64{}, "<nil>"},
 	}
 
 	for i, tst := range tests {
-		if !tst.a.HasErr() && !strings.EqualFold(tst.a.String(), tst.str) {
+		if !strings.EqualFold(tst.a.String(), tst.str) {
 			t.Log("String() gave unexpected results in test", i)
 			t.Log(tst.a)
 			t.Log(tst.str)
 			t.Fail()
 		}
+	}
+}
+
+func TestReshape(t *testing.T) {
+	t.Parallel()
+	tests := []struct {
+		a   *Array64
+		sh  []int
+		err error
+	}{
+		{Arange(10), []int{2, 5}, nil},
+		{Arange(11), []int{2, 5}, ReshapeError},
+		{Arange(10), []int{2, -5}, NegativeAxis},
+		{&Array64{err: DivZeroError}, []int{0}, DivZeroError},
+		{nil, []int{1}, NilError},
+	}
+
+	for i, tst := range tests {
+		tst.a.Reshape(tst.sh...)
+		if e := tst.a.GetErr(); e != tst.err {
+			t.Log("Error incorrect in test", i, ", expected", tst.err, "\ngot", e)
+			t.Fail()
+		}
+		if tst.err != nil {
+			continue
+		}
+		for j, v := range tst.a.shape {
+			if v != uint64(tst.sh[j]) {
+				t.Log("Reshape incorrect in test", i, ", expected", tst.sh, "got", tst.a.shape)
+				t.Fail()
+				break
+			}
+		}
+	}
+}
+
+func TestJSON(t *testing.T) {
+	//t.Parallel()
+
+	tests := []*Array64{
+		NewArray64(nil, 0),
+		Arange(10),
+		RandArray64(0, 2, []int{10, 10}).Div(Arange(10)),
+		Arange(10).Reshape(2, 2),
+		Full(math.NaN(), 10),
+		Full(math.Inf(1), 10),
+		Full(math.Inf(-1), 10),
+	}
+	for i, v := range tests {
+		b, err := json.Marshal(v)
+		if err != nil {
+			t.Log("Marshal Error in test", i, ":", err)
+			t.Fail()
+			continue
+		}
+		tmp := new(Array64)
+		err = json.Unmarshal(b, tmp)
+		if err != nil {
+			t.Log("Unmarshal Errorin test", i, ":", err)
+			t.Fail()
+			continue
+		}
+
+		e1, e2 := v.GetErr(), tmp.GetErr()
+		if e1 != e2 {
+			t.Log("Error mismatch in test", i)
+			t.Log("From:", e1)
+			t.Log("To:", e2)
+			t.Fail()
+		}
+
+		if e := tmp.Equals(v); !e.All().At(0) {
+			t.Log("Value changedin test", i)
+			t.Log(string(b))
+			t.Log(v)
+			t.Log(tmp)
+			t.Fail()
+		}
+	}
+
+	var v *Array64
+	b, err := json.Marshal(v)
+	if err != nil {
+		t.Log("Marshal Error in nil test:", err)
+		t.Fail()
+	}
+	tmp := new(Array64)
+	err = json.Unmarshal(b, tmp)
+	if err != nil {
+		t.Log("Unmarshal Error in nil test:", err)
+		t.Fail()
+	}
+
+	e1, e2 := v.GetErr(), tmp.GetErr()
+	if e1 != e2 {
+		t.Log("Error mismatch in nil test")
+		t.Log("From:", e1)
+		t.Log("To:", e2)
+		t.Fail()
+	}
+
+	b, err = json.Marshal(Arange(10))
+	v = nil
+	e1 = json.Unmarshal(b, v)
+	if e1 == nil {
+		t.Log("Empty unmarshal didn't return error:")
+		t.Log("Res:", v)
+		t.Fail()
+	}
+
+	v = new(Array64)
+	e1 = json.Unmarshal([]byte(`{"junk": "This will not pass."}`), v)
+	if e1 != nil || v.err != NilError {
+		t.Log("Error unmarshal didn't error correctly:")
+		t.Log(v)
+		t.Fail()
 	}
 }

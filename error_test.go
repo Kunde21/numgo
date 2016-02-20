@@ -29,7 +29,7 @@ func TestDebug(t *testing.T) {
 }
 
 func TestEncodeDecode(t *testing.T) {
-	for _, v := range []*ngError{
+	for _, v := range []error{
 		nil,
 		NilError,
 		ShapeError,
