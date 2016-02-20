@@ -84,7 +84,7 @@ func newArrayB(shape ...uint64) (a *Arrayb) {
 // All elements will be set to 'val' in the returned array.
 func Fullb(val bool, shape ...int) (a *Arrayb) {
 	a = NewArrayB(nil, shape...)
-	if a.err != nil {
+	if a.HasErr() || !val {
 		return a
 	}
 
@@ -96,7 +96,7 @@ func Fullb(val bool, shape ...int) (a *Arrayb) {
 
 func fullb(val bool, shape ...uint64) (a *Arrayb) {
 	a = newArrayB(shape...)
-	if a.err != nil {
+	if a.HasErr() || !val {
 		return a
 	}
 
@@ -112,7 +112,9 @@ func (a *Arrayb) String() (s string) {
 	case a == nil:
 		return "<nil>"
 	case a.err != nil:
-		return a.err.(*ngError).s
+		return "Error: " + a.err.Error()
+	case a.shape == nil || a.strides == nil || a.data == nil:
+		return "<nil>"
 	case a.strides[0] == 0:
 		return "[]"
 	}
@@ -194,14 +196,12 @@ func (a *Arrayb) Reshape(shape ...int) *Arrayb {
 
 // C will return a deep copy of the source array.
 func (a *Arrayb) C() (b *Arrayb) {
-	if a == nil || a.err != nil {
+	if a.HasErr() {
 		return a
 	}
 
 	b = newArrayB(a.shape...)
-	for i, v := range a.data {
-		b.data[i] = v
-	}
+	copy(b.data, a.data)
 	return
 }
 
@@ -209,29 +209,9 @@ func (a *Arrayb) C() (b *Arrayb) {
 // Any errors will return a false value and record the error for the
 // HasErr() and GetErr() functions.
 func (a *Arrayb) At(index ...int) bool {
-	switch {
-	case a == nil || a.err != nil:
+	idx := a.valIdx(index, "At")
+	if a.HasErr() {
 		return false
-	case len(a.shape) != len(index):
-		a.err = ShapeError
-		if debug {
-			a.debug = fmt.Sprintf("Indexes E(%v) do not match array shape %v", index, a.shape)
-			a.stack = string(stackBuf[:runtime.Stack(stackBuf, false)])
-		}
-		return false
-	}
-
-	idx := uint64(0)
-	for i, v := range index {
-		if uint64(v) > a.shape[i] || v < 0 {
-			a.err = IndexError
-			if debug {
-				a.debug = fmt.Sprintf("Index in E(%v) does not exist in array with shape %v", index, a.shape)
-				a.stack = string(stackBuf[:runtime.Stack(stackBuf, false)])
-			}
-			return false
-		}
-		idx += uint64(v) * a.strides[i+1]
 	}
 	return a.data[idx]
 }
@@ -239,29 +219,17 @@ func (a *Arrayb) At(index ...int) bool {
 // SliceElement returns the element group at one axis above the leaf elements.
 // Data is returned as a copy  in a float slice.
 func (a *Arrayb) SliceElement(index ...int) (ret []bool) {
+	idx := a.valIdx(index, "SliceElement")
 	switch {
-	case a == nil || a.err != nil:
+	case a.HasErr():
 		return nil
 	case len(a.shape)-1 != len(index):
-		a.err = ShapeError
+		a.err = InvIndexError
 		if debug {
 			a.debug = fmt.Sprintf("Incorrect number of indicies received by SliceElement().  Shape: %v  Index: %v", a.shape, index)
 			a.stack = string(stackBuf[:runtime.Stack(stackBuf, false)])
 		}
 		return nil
-	}
-
-	idx := uint64(0)
-	for i, v := range index {
-		if uint64(v) > a.shape[i] || v < 0 {
-			a.err = ShapeError
-			if debug {
-				a.debug = fmt.Sprintf("Index received by SliceElement() does not exist shape: %v index: %v", a.shape, index)
-				a.stack = string(stackBuf[:runtime.Stack(stackBuf, false)])
-			}
-			return nil
-		}
-		idx += uint64(v) * a.strides[i+1]
 	}
 	return append(ret, a.data[idx:idx+a.strides[len(a.strides)-2]]...)
 }
@@ -271,63 +239,24 @@ func (a *Arrayb) SliceElement(index ...int) (ret []bool) {
 // These are applied startig from the top axis.
 // Intermediate slicing of axes is not available at this point.
 func (a *Arrayb) SubArr(index ...int) (ret *Arrayb) {
-	switch {
-	case a == nil || a.err != nil:
+	idx := a.valIdx(index, "SubArr")
+	if a.HasErr() {
 		return nil
-	case len(a.shape) < len(index):
-		a.err = ShapeError
-		if debug {
-			a.debug = fmt.Sprintf("Too many indicies received by SubArr().  Shape: %v Indicies: %v", a.shape, index)
-			a.stack = string(stackBuf[:runtime.Stack(stackBuf, false)])
-		}
-		return a
-	}
-
-	idx := uint64(0)
-	for i, v := range index {
-		if uint64(v) > a.shape[i] || v < 0 {
-			if debug {
-				a.debug = fmt.Sprintf("Index received by SubArr() does not exist shape: %v index: %v", a.shape, index)
-				a.stack = string(stackBuf[:runtime.Stack(stackBuf, false)])
-			}
-			return
-		}
-		idx += uint64(v) * a.strides[i+1]
 	}
 
 	ret = newArrayB(a.shape[len(index):]...)
 	copy(ret.data, a.data[idx:idx+a.strides[len(index)]])
-
 	return
 }
 
 // Set sets the element at the given index.
 // There should be one index per axis.  Generates a ShapeError if incorrect index.
 func (a *Arrayb) Set(val bool, index ...int) *Arrayb {
-	switch {
-	case a == nil || a.err != nil:
-		return a
-	case len(a.shape) != len(index):
-		a.err = ShapeError
-		if debug {
-			a.debug = fmt.Sprintf("Incorrect number of indicies received by SetE().  Shape: %v Index: %v", a.shape, index)
-			a.stack = string(stackBuf[:runtime.Stack(stackBuf, false)])
-		}
+	idx := a.valIdx(index, "Set")
+	if a.HasErr() {
 		return a
 	}
 
-	idx := uint64(0)
-	for i, v := range index {
-		if uint64(v) > a.shape[i] || v < 0 {
-			a.err = IndexError
-			if debug {
-				a.debug = fmt.Sprintf("Index received by SetE() does not exist shape: %v index: %v", a.shape, index)
-				a.stack = string(stackBuf[:runtime.Stack(stackBuf, false)])
-			}
-			return a
-		}
-		idx += uint64(v) * a.strides[i+1]
-	}
 	a.data[idx] = val
 	return a
 }
@@ -591,4 +520,30 @@ func (a *Arrayb) UnmarshalJSON(b []byte) error {
 	a.strides[0] = tmp
 
 	return nil
+}
+
+func (a *Arrayb) valIdx(index []int, mthd string) (idx uint64) {
+	if a.HasErr() {
+		return 0
+	}
+	if len(index) > len(a.shape) {
+		a.err = InvIndexError
+		if debug {
+			a.debug = fmt.Sprintf("Incorrect number of indicies received by %s().  Shape: %v  Index: %v", mthd, a.shape, index)
+			a.stack = string(stackBuf[:runtime.Stack(stackBuf, false)])
+		}
+		return 0
+	}
+	for i, v := range index {
+		if uint64(v) >= a.shape[i] || v < 0 {
+			a.err = IndexError
+			if debug {
+				a.debug = fmt.Sprintf("Index received by %s() does not exist shape: %v index: %v", mthd, a.shape, index)
+				a.stack = string(stackBuf[:runtime.Stack(stackBuf, false)])
+			}
+			return 0
+		}
+		idx += uint64(v) * a.strides[i+1]
+	}
+	return
 }

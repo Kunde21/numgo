@@ -158,44 +158,31 @@ func TestArange(t *testing.T) {
 
 func TestIdent(t *testing.T) {
 	t.Parallel()
-	tmp := Identity(0)
-	if len(tmp.shape) != 2 {
-		t.Log("Incorrect identity shape.", tmp.shape)
-		t.Fail()
-	}
-	if tmp.shape[0] != 0 || tmp.shape[1] != 0 {
-		t.Log("Incorrect shape values. I(0)", tmp.shape)
-		t.Fail()
-	}
-	if len(tmp.data) > 0 {
-		t.Log("Data array incorrect.", tmp.data)
-		t.Fail()
-	}
-
-	tmp = Identity(1)
-	if tmp.shape[0] != 1 || tmp.shape[1] != 1 {
-		t.Log("Incorrect shape values. I(1)", tmp.shape)
-		t.Fail()
-	}
-	if len(tmp.data) != 1 {
-		t.Log("Data Length incorrect I(1)", len(tmp.data))
-		t.Fail()
-	}
-
-	tmp = Identity(4)
-	if tmp.shape[0] != 4 || tmp.shape[1] != 4 {
-		t.Log("Incorrect shape values. I(4)", tmp.shape)
-		t.Fail()
-	}
-	for i := 0; i < 4; i++ {
-		for j := 0; j < 4; j++ {
-			if i != j && tmp.At(i, j) != 0 {
-				t.Log("Data Value incorrect at", i, j, len(tmp.data))
-				t.Fail()
-			}
-			if i == j && tmp.At(i, j) != 1 {
-				t.Log("Data Value incorrect at", i, j, len(tmp.data))
-				t.Fail()
+	var tmp *Array64
+	for k := 0; k < 5; k++ {
+		tmp = Identity(k)
+		if len(tmp.shape) != 2 {
+			t.Log("Incorrect identity shape.", tmp.shape)
+			t.Fail()
+		}
+		if tmp.shape[0] != uint64(k) || tmp.shape[1] != uint64(k) {
+			t.Log("Incorrect shape values. I()", k, tmp.shape)
+			t.Fail()
+		}
+		if len(tmp.data) != k*k {
+			t.Log("Data array incorrect.", tmp.data)
+			t.Fail()
+		}
+		for i := 0; i < k; i++ {
+			for j := 0; j < k; j++ {
+				if i != j && tmp.At(i, j) != 0 {
+					t.Log("Data Value incorrect at", i, j, len(tmp.data))
+					t.Fail()
+				}
+				if i == j && tmp.At(i, j) != 1 {
+					t.Log("Data Value incorrect at", i, j, len(tmp.data))
+					t.Fail()
+				}
 			}
 		}
 	}
