@@ -13,7 +13,7 @@ func init() {
 func TestAddC(t *testing.T) {
 	a := Arange(21)
 
-	if b := a.AddC(2).Equals(Arange(2, 23)); !b.All().At(0) {
+	if b := a.AddC(2).Equals(Arange(2, 22)); !b.All().At(0) {
 		t.Log(b)
 		t.Log(a)
 		t.Fail()
@@ -27,7 +27,7 @@ func TestAddC(t *testing.T) {
 
 func TestSubtrC(t *testing.T) {
 	a := Arange(21)
-	if b := a.SubtrC(2).Equals(Arange(-2, 19)); !b.All().At(0) {
+	if b := a.SubtrC(2).Equals(Arange(-2, 18)); !b.All().At(0) {
 		t.Log(b)
 		t.Log(a)
 		t.Fail()
@@ -42,7 +42,7 @@ func TestSubtrC(t *testing.T) {
 func TestMultC(t *testing.T) {
 	a := Arange(21)
 
-	if b := a.MultC(2).Equals(Arange(0, 42, 2)); !b.All().At(0) {
+	if b := a.MultC(2).Equals(Arange(0, 40, 2)); !b.All().At(0) {
 		t.Log(b)
 		t.Log(a)
 		t.Fail()
@@ -55,7 +55,7 @@ func TestMultC(t *testing.T) {
 }
 
 func TestDivC(t *testing.T) {
-	a := Arange(0, 42, 2)
+	a := Arange(0, 40, 2)
 	if b := a.DivC(2).Equals(Arange(21)); !b.All().At(0) {
 		t.Log(b)
 		t.Log(a)
@@ -69,7 +69,7 @@ func TestDivC(t *testing.T) {
 }
 
 func TestPowC(t *testing.T) {
-	a := Arange(0, 42, 2)
+	a := Arange(0, 40, 2)
 	if b := a.PowC(0).Equals(Full(1, 21)); !b.All().At(0) {
 		t.Log(b)
 		t.Log(a)
@@ -92,9 +92,10 @@ func TestAdd(t *testing.T) {
 		t.Fail()
 	}
 	runtime.GC()
-	if c := Arange(20).Reshape(2, 10).Add(b.Reshape(2, 10)); c.Equals(Arange(0, 40, 2).Reshape(2, 10)).All().At(0) == false {
+	if c := Arange(20).Reshape(2, 10).Add(b.Reshape(2, 10)); !c.Equals(Arange(0, 38, 2).Reshape(2, 10)).All().At(0) {
 		t.Log("Addition on multiple axis failed.  Expected 0-40 with increment by 2.")
 		t.Log("Recieved:", c)
+		t.Log(Arange(0, 38, 2).Reshape(2, 10))
 		t.Fail()
 	}
 	runtime.GC()
@@ -112,11 +113,11 @@ func TestAdd(t *testing.T) {
 	}
 	runtime.GC()
 	a.AddC(1)
-	tst := Arange(20).Reshape(2, 2, 5).Add(Arange(1, 6))
+	tst := Arange(20).Reshape(2, 2, 5).Add(Arange(1, 5))
 	runtime.GC()
 	if e := a.Equals(tst); !e.All().At(0) {
 		t.Log(e.data)
-		t.Log(Arange(1, 6))
+		t.Log(Arange(1, 5))
 		t.Log(Arange(20))
 		t.Log(a.Flatten())
 		t.Log(tst.Flatten())
@@ -179,8 +180,8 @@ func TestSubtr(t *testing.T) {
 
 func TestMult(t *testing.T) {
 	a := Arange(1, 100, .5)
-	if len(a.data) != (100-1)/.5 {
-		t.Log("Expected:", (100-1)/.5, "Got:", len(a.data))
+	if len(a.data) != (100-1)/.5+1 {
+		t.Log("Expected:", (100-1)/.5+1, "Got:", len(a.data))
 		t.FailNow()
 	}
 
@@ -200,8 +201,8 @@ func TestMult(t *testing.T) {
 
 func TestDiv(t *testing.T) {
 	a := Arange(1, 100, .5)
-	if len(a.data) != (100-1)/.5 {
-		t.Log("Expected:", (100-1)/.5, "Got:", len(a.data))
+	if len(a.data) != (100-1)/.5+1 {
+		t.Log("Expected:", (100-1)/.5+1, "Got:", len(a.data))
 		t.FailNow()
 	}
 
@@ -219,15 +220,19 @@ func TestDiv(t *testing.T) {
 }
 
 func TestPow(t *testing.T) {
-	a := Arange(1, 100, .5)
-	if len(a.data) != (100-1)/.5 {
-		t.Log("Expected:", (100-1)/.5, "Got:", len(a.data))
+	a := Arange(1, 100.5, .5)
+	if len(a.data) != (100.5-1)/.5+1 {
+		t.Log("Expected:", (100.5-1)/.5+1, "Got:", len(a.data))
 		t.FailNow()
 	}
 
-	a = a.Reshape(2, 33, 3).Pow(Full(0, 3))
-	if e := a.Equals(Full(1, 2, 10, 10)); e.All().At(0) {
+	a = a.Reshape(2, 25, 4).Pow(Full(0, 4))
+	if e := a.Equals(Full(1, 2, 25, 4)); !e.All().At(0) {
 		t.Log(e)
+		t.Fail()
+	}
+	if a.HasErr() {
+		t.Log(a.GetErr())
 		t.Fail()
 	}
 
@@ -239,9 +244,9 @@ func TestPow(t *testing.T) {
 }
 
 func TestFMA12(t *testing.T) {
-	a := Arange(1, 100, .5)
-	if len(a.data) != (100-1)/.5 {
-		t.Log("Expected:", (100-1)/.5, "Got:", len(a.data))
+	a := Arange(1, 100.5, .5)
+	if len(a.data) != (100.5-1)/.5+1 {
+		t.Log("Expected:", (100.5-1)/.5+1, "Got:", len(a.data))
 		t.FailNow()
 	}
 
@@ -252,8 +257,8 @@ func TestFMA12(t *testing.T) {
 		t.Fail()
 	}
 
-	b = a.C().Reshape(2, 3, 33).FMA12(2, Arange(33))
-	c = a.C().Reshape(2, 3, 33).MultC(2).Add(Arange(33))
+	b = a.C().Reshape(2, 4, 25).FMA12(2, Arange(25))
+	c = a.C().Reshape(2, 4, 25).MultC(2).Add(Arange(25))
 	if e := b.Equals(c); !e.All().At(0) {
 		t.Log(a, "\n", b, "\n", c)
 		t.Fail()
@@ -267,9 +272,9 @@ func TestFMA12(t *testing.T) {
 }
 
 func TestFMA21(t *testing.T) {
-	a := Arange(1, 100, .5)
-	if len(a.data) != (100-1)/.5 {
-		t.Log("Expected:", (100-1)/.5, "Got:", len(a.data))
+	a := Arange(1, 100.5, .5)
+	if len(a.data) != (100.5-1)/.5+1 {
+		t.Log("Expected:", (100.5-1)/.5+1, "Got:", len(a.data))
 		t.FailNow()
 	}
 
@@ -280,8 +285,8 @@ func TestFMA21(t *testing.T) {
 		t.Fail()
 	}
 
-	b = a.C().Reshape(2, 3, 33).FMA21(2, Arange(33))
-	c = a.C().Reshape(2, 3, 33).Mult(Arange(33)).AddC(2)
+	b = a.C().Reshape(2, 4, 25).FMA21(2, Arange(25))
+	c = a.C().Reshape(2, 4, 25).Mult(Arange(25)).AddC(2)
 	if e := b.Equals(c); !e.All().At(0) {
 		t.Log(a, "\n", b, "\n", c)
 		t.Fail()

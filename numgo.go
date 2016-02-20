@@ -136,9 +136,9 @@ func Arange(vals ...float64) (a *Array64) {
 		return newArray64(0)
 	case 1:
 		if vals[0] <= 0 {
-			start, stop, step = vals[0], 0, -1
+			start = vals[0]
 		} else {
-			stop = vals[0]
+			stop = vals[0] - 1
 		}
 	case 2:
 		if vals[1] < vals[0] {
@@ -147,18 +147,18 @@ func Arange(vals ...float64) (a *Array64) {
 		start, stop = vals[0], vals[1]
 	default:
 		if vals[1] < vals[0] && vals[2] >= 0 || vals[1] > vals[0] && vals[2] <= 0 {
-			a = new(Array64)
-			a.err = ShapeError
+			a = &Array64{err: ShapeError}
 			if debug {
 				a.debug = fmt.Sprintf("Arange received illegal values %v", vals)
 				a.stack = string(stackBuf[:runtime.Stack(stackBuf, false)])
 			}
-			return
+			return a
+
 		}
 		start, stop, step = vals[0], vals[1], vals[2]
 	}
 
-	a = NewArray64(nil, int((stop-start)/step))
+	a = NewArray64(nil, int((stop-start)/step)+1)
 	for i, v := 0, start; i < len(a.data); i, v = i+1, v+step {
 		a.data[i] = v
 	}
@@ -171,8 +171,7 @@ func Arange(vals ...float64) (a *Array64) {
 // Negative size values will generate an error and return a nil value.
 func Identity(size int) (r *Array64) {
 	if size < 0 {
-		r = NewArray64(nil, 0)
-		r.err = NegativeAxis
+		r = &Array64{err: NegativeAxis}
 		if debug {
 			r.debug = fmt.Sprintf("Negative dimension received by Identity: %d", size)
 			r.stack = string(stackBuf[:runtime.Stack(stackBuf, false)])
@@ -181,7 +180,7 @@ func Identity(size int) (r *Array64) {
 	}
 
 	r = NewArray64(nil, size, size)
-	for i := uint64(0); i < r.strides[0]; i = +r.strides[1] + r.strides[2] {
+	for i := uint64(0); i < r.strides[0]; i += r.strides[1] + r.strides[2] {
 		r.data[i] = 1
 	}
 	return
