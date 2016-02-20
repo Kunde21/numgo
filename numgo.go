@@ -349,9 +349,6 @@ func (a *Array64) UnmarshalJSON(b []byte) error {
 	})
 
 	err := json.Unmarshal(b, tmpA)
-	if err != nil {
-		return err
-	}
 
 	a.shape = tmpA.Shape
 	a.data = tmpA.Data
@@ -371,5 +368,5 @@ func (a *Array64) UnmarshalJSON(b []byte) error {
 	}
 	a.strides[0] = tmp
 
-	return nil
+	return err
 }

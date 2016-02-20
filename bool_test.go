@@ -1,6 +1,7 @@
 package numgo
 
 import (
+	"encoding/json"
 	"fmt"
 	"math/rand"
 	"strings"
@@ -12,7 +13,7 @@ func init() {
 }
 
 func rnd_bool() (sz []bool) {
-	sz = make([]bool, rand.Intn(100)+1)
+	sz = make([]bool, rand.Intn(100)+10)
 	for i := range sz {
 		sz[i] = rand.Intn(1) == 1
 	}
@@ -93,6 +94,7 @@ func TestFullb(t *testing.T) {
 }
 
 func TestShapesB(t *testing.T) {
+	t.Parallel()
 	shp := []int{3, 3, 4, 7}
 	a := NewArrayB(nil, shp...)
 	for i, v := range a.shape {
@@ -162,6 +164,7 @@ func TestReshapeB(t *testing.T) {
 }
 
 func TestCb(t *testing.T) {
+	t.Parallel()
 	for i := 0; i < 20; i++ {
 		a := NewArrayB(rnd_bool())
 		b := a.C()
@@ -181,6 +184,7 @@ func TestCb(t *testing.T) {
 }
 
 func TestAtb(t *testing.T) {
+	t.Parallel()
 	a := fullb(true, 5, 5, 5)
 
 	for i := 0; i < 20; i++ {
@@ -206,6 +210,7 @@ func TestAtb(t *testing.T) {
 }
 
 func TestSliceElementb(t *testing.T) {
+	t.Parallel()
 	a := Fullb(true, 5, 5, 5)
 	for i := 0; i < 20; i++ {
 		x, y := rand.Intn(6), rand.Intn(6)
@@ -234,6 +239,7 @@ func TestSliceElementb(t *testing.T) {
 }
 
 func TestSubArrb(t *testing.T) {
+	t.Parallel()
 	a := newArrayB(5, 5, 5)
 	g, b := false, false
 
@@ -271,6 +277,7 @@ func TestSubArrb(t *testing.T) {
 }
 
 func TestSetb(t *testing.T) {
+	t.Parallel()
 	a := NewArrayB(nil, 5, 5, 5)
 
 	for i := 0; i < 20; i++ {
@@ -299,6 +306,297 @@ func TestSetb(t *testing.T) {
 	if e, d, s := a.GetDebug(); e != InvIndexError {
 		t.Log("InvIndexError failed.  Received", e)
 		t.Log(d, "\n", s)
+		t.Fail()
+	}
+}
+
+func TestSetSliceElementb(t *testing.T) {
+	t.Parallel()
+	a := NewArrayB(nil, 5, 5, 3, 5)
+
+	for i := 0; i < 20; i++ {
+		x, y, z := rand.Intn(6), rand.Intn(6), rand.Intn(4)
+		val := rnd_bool()[:5]
+		v := a.SetSliceElement(val, x, y, z)
+		if !a.HasErr() {
+			for j, k := range v.SliceElement(x, y, z) {
+				if k != val[j] {
+					t.Logf("Value %d failed.  Expected: %v Received: %v", i, v.At(x, y, z), val)
+					t.Log(x, y, z)
+					t.Fail()
+				}
+			}
+		}
+		if e := a.GetErr(); (x > 4 || y > 4 || z > 2) && e != IndexError {
+			t.Log("Error failed.  Expected IndexErr Received", e)
+			t.Log(x, y, z)
+			t.Fail()
+		}
+	}
+
+	_ = a.Reshape(0).SetSliceElement(nil, 1, 1, 1)
+	if e, d, s := a.GetDebug(); e != ReshapeError {
+		t.Log("ReshapeError failed.  Received", e)
+		t.Log(d, "\n", s)
+		t.Fail()
+	}
+	_ = a.SetSliceElement(nil, 0, 0, 0, 0)
+	if e, d, s := a.GetDebug(); e != InvIndexError {
+		t.Log("InvIndexError failed.  Received", e)
+		t.Log(d, "\n", s)
+		t.Fail()
+	}
+}
+
+func TestSetSubArrb(t *testing.T) {
+	a := NewArrayB(nil, 5, 5, 3, 5)
+
+	b := Fullb(true, 3, 5)
+	a.SetSubArr(b, 0, 1)
+	if a.HasErr() {
+		t.Log(a.GetErr())
+		t.Fail()
+	}
+	for i := range a.data {
+		if i >= 15 && i < 30 && !a.data[i] {
+			t.Log("Failed at:", i, a.data[i])
+			t.Fail()
+		}
+		if !(i >= 15 && i < 30) && a.data[i] {
+			t.Log("Not 0 Failed at:", i, a.data[i])
+			t.Fail()
+		}
+	}
+	a.SetSubArr(b, 0)
+	for i := range a.data {
+		if i >= 0 && i < 5*15 && !a.data[i] {
+			t.Log("Failed 2 at:", i, a.data[i])
+			t.Fail()
+		}
+		if !(i >= 0 && i < 5*15) && a.data[i] {
+			t.Log("Not 0 Failed 2 at:", i, a.data[i])
+			t.Fail()
+		}
+	}
+	a.SetSubArr(b, 1, 1, 1)
+	if e := a.GetErr(); e != InvIndexError {
+		t.Log("Did not error correctly.  Expected InvIndexError, got ", e)
+		t.Fail()
+	}
+
+	a.SetSubArr(b.Reshape(5, 3), 0, 1)
+	if e := a.GetErr(); e != ShapeError {
+		t.Log("Did not error correctly.  Expected ShapeError, got ", e)
+		t.Fail()
+	}
+	b.err = DivZeroError
+	a.SetSubArr(b.Reshape(3, 5), 0, 1)
+	if e := a.GetErr(); e != DivZeroError {
+		t.Log("Did not error correctly.  Expected DivZeroError, got ", e)
+		t.Fail()
+	}
+	b.err, a = nil, nil
+	a.SetSubArr(b, 0, 1)
+	if e := a.GetErr(); e != NilError {
+		t.Log("Did not error correctly.  Expected NilError, got ", e)
+		t.Fail()
+	}
+}
+
+func TestResizeb(t *testing.T) {
+	a := NewArrayB(nil, 5, 5, 3, 5)
+
+	a.Resize(-1)
+	if e := a.GetErr(); e != NegativeAxis {
+		t.Log("Negative axis failed to error", e)
+		t.Fail()
+	}
+	a.Resize(5, 3, 2, -10)
+	if e := a.GetErr(); e != NegativeAxis {
+		t.Log("Negative axis failed to error", e)
+		t.Fail()
+	}
+
+	a.Set(true, 0, 0, 0, 2).Resize(5, 5)
+	if a.HasErr() {
+		t.Log("Error in set/resize", a.GetErr())
+		t.Fail()
+	}
+	_ = a.At(0, 0, 0, 2)
+	if e := a.GetErr(); e != InvIndexError {
+		t.Log("Bad Error after resize", e)
+		t.Fail()
+	}
+	if c := a.At(0, 2); !c {
+		t.Log("Data didn't move correctly in reduction.  Expected 1, got", c)
+		t.Fail()
+	}
+	if c := a.Resize(5, 5, 3).At(0, 0, 2); !c {
+		t.Log("Data didn't move correctly in small expansion.  Expected 1, got", c)
+		t.Fail()
+	}
+	if c := a.Resize(5, 5, 3, 5, 10).At(0, 0, 0, 0, 2); !c {
+		t.Log("Data didn't move correctly in large expansion.  Expected 1, got", c)
+		t.Fail()
+	}
+	a.Resize().At(0)
+	if e := a.GetErr(); e != IndexError {
+		t.Log("Did not error correctly.  Expected IndexError, got ", e)
+		t.Fail()
+	}
+
+	a.err = DivZeroError
+	if e := a.Resize(10).GetErr(); e != DivZeroError {
+		t.Log("Error didn't pass through correctly.  Expected DivZeroError, got", e)
+		t.Fail()
+	}
+}
+
+func TestAppendb(t *testing.T) {
+	a := NewArrayB(nil, 1, 2, 3, 4, 5)
+	b := Fullb(true, 120)
+
+	a.Append(nil, 1)
+	if e := a.GetErr(); e != NilError {
+		t.Log("Expected NilError, received", e)
+		t.Fail()
+	}
+
+	a.Append(b, 1)
+	if e := a.GetErr(); e != ShapeError {
+		t.Log("Expected ShapeError, received", e)
+		t.Fail()
+	}
+
+	a.Append(b, 5)
+	if e := a.GetErr(); e != IndexError {
+		t.Log("Expected IndexError, received", e)
+		t.Fail()
+	}
+
+	a.Append(nil, -1)
+	if e := a.GetErr(); e != IndexError {
+		t.Log("Expected IndexError, received", e)
+		t.Fail()
+	}
+
+	a.Append(b.Reshape(5, 4, 3, 2, 1), 1)
+	if e := a.GetErr(); e != ShapeError {
+		t.Log("Expected ShapeError, received", e)
+		t.Fail()
+	}
+
+	a.Append(b.Reshape(1, 2, 1, 3, 4, 5), 2)
+	if e := a.GetErr(); e != ShapeError {
+		t.Log("Expected ShapeError, received", e)
+		t.Fail()
+	}
+
+	a.Append(b.Reshape(1, 2, 3, 4, 5), 2)
+	if e := a.GetErr(); e != nil {
+		t.Log("Unexpected Error: ", e)
+		t.Fail()
+	}
+	if a.shape[2] != 6 {
+		t.Log("Shape updated incorrectly.  Expected 6, got", a.shape[2])
+		t.Fail()
+	}
+
+	a.Resize(1, 2, 3, 4, 5).Append(b, 0)
+	if e := a.GetErr(); e != nil {
+		t.Log("Unexpected Error: ", e)
+		t.Fail()
+	}
+	if a.shape[0] != 2 {
+		t.Log("Shape updated incorrectly.  Expected 2, got", a.shape[0])
+		t.Fail()
+	}
+
+	a.err = DivZeroError
+	a.Append(b, 0)
+	if e := a.GetErr(); e != DivZeroError {
+		t.Log("Expected DivZeroError, received", e)
+		t.Fail()
+	}
+}
+
+func TestJSONb(t *testing.T) {
+	//t.Parallel()
+
+	tests := []*Arrayb{
+		NewArrayB(nil, 0),
+		fullb(true, 10),
+		newArrayB(10).Reshape(2, 2),
+		Fullb(false, 10),
+		Fullb(true, 10),
+	}
+	for i, v := range tests {
+		b, err := json.Marshal(v)
+		if err != nil {
+			t.Log("Marshal Error in test", i, ":", err)
+			t.Fail()
+			continue
+		}
+		tmp := new(Arrayb)
+		err = json.Unmarshal(b, tmp)
+		if err != nil {
+			t.Log("Unmarshal Errorin test", i, ":", err)
+			t.Fail()
+			continue
+		}
+
+		e1, e2 := v.GetErr(), tmp.GetErr()
+		if e1 != e2 {
+			t.Log("Error mismatch in test", i)
+			t.Log("From:", e1)
+			t.Log("To:", e2)
+			t.Fail()
+		}
+
+		if e := tmp.Equals(v); e1 == nil && !e.All().At(0) {
+			t.Log("Value changedin test", i)
+			t.Log(string(b))
+			t.Log(v)
+			t.Log(tmp)
+			t.Fail()
+		}
+	}
+
+	var v *Arrayb
+	b, err := json.Marshal(v)
+	if err != nil {
+		t.Log("Marshal Error in nil test:", err)
+		t.Fail()
+	}
+	tmp := new(Arrayb)
+	err = json.Unmarshal(b, tmp)
+	if err != nil {
+		t.Log("Unmarshal Error in nil test:", err)
+		t.Fail()
+	}
+
+	e1, e2 := v.GetErr(), tmp.GetErr()
+	if e1 != e2 {
+		t.Log("Error mismatch in nil test")
+		t.Log("From:", e1)
+		t.Log("To:", e2)
+		t.Fail()
+	}
+
+	b, err = json.Marshal(newArrayB(10))
+	v = nil
+	e1 = json.Unmarshal(b, v)
+	if e1 == nil {
+		t.Log("Empty unmarshal didn't return error:")
+		t.Log("Res:", v)
+		t.Fail()
+	}
+
+	v = new(Arrayb)
+	e1 = json.Unmarshal([]byte(`{"junk": "This will not pass."}`), v)
+	if e1 != nil || v.err != NilError {
+		t.Log("Error unmarshal didn't error correctly:")
+		t.Log(v)
 		t.Fail()
 	}
 }

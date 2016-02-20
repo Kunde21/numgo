@@ -107,14 +107,14 @@ func (a *Array64) GreaterEq(b *Array64) (r *Arrayb) {
 func (a *Array64) compValid(b *Array64, mthd string) (r *Arrayb) {
 
 	switch {
-	case a == nil:
+	case a == nil || a.data == nil && a.err == nil:
 		r = &Arrayb{err: NilError}
 		if debug {
 			r.debug = fmt.Sprintf("Nil pointer received by %s", mthd)
 			r.stack = string(stackBuf[:runtime.Stack(stackBuf, false)])
 		}
 		return r
-	case b == nil:
+	case b == nil || b.data == nil && b.err == nil:
 		r = &Arrayb{err: NilError}
 		if debug {
 			r.debug = fmt.Sprintf("Array received by %s is a Nil Pointer.", mthd)
@@ -365,14 +365,14 @@ func (a *Arrayb) NotEq(b *Arrayb) (r *Arrayb) {
 func (a *Arrayb) compValid(b *Arrayb, mthd string) (r *Arrayb) {
 
 	switch {
-	case a == nil:
+	case a == nil || a.data == nil && a.err == nil:
 		r = &Arrayb{err: NilError}
 		if debug {
 			r.debug = fmt.Sprintf("Nil pointer received by %s", mthd)
 			r.stack = string(stackBuf[:runtime.Stack(stackBuf, false)])
 		}
 		return r
-	case b == nil:
+	case b == nil || b.data == nil && b.err == nil:
 		r = &Arrayb{err: NilError}
 		if debug {
 			r.debug = fmt.Sprintf("Array received by %s is a Nil Pointer.", mthd)

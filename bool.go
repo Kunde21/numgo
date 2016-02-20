@@ -264,8 +264,9 @@ func (a *Arrayb) Set(val bool, index ...int) *Arrayb {
 // SetSliceElement sets the element group at one axis above the leaf elements.
 // Source Array is returned, for function-chaining design.
 func (a *Arrayb) SetSliceElement(vals []bool, index ...int) *Arrayb {
+	idx := a.valIdx(index, "SetSliceElement")
 	switch {
-	case a == nil || a.err != nil:
+	case a.HasErr():
 		return a
 	case len(a.shape)-1 != len(index):
 		if debug {
@@ -274,52 +275,34 @@ func (a *Arrayb) SetSliceElement(vals []bool, index ...int) *Arrayb {
 		}
 		fallthrough
 	case uint64(len(vals)) != a.shape[len(a.shape)-1]:
-		a.err = ShapeError
+		a.err = InvIndexError
 		if debug {
 			a.debug = fmt.Sprintf("Incorrect slice length received by SetSliceElement().  Shape: %v  Index: %v", a.shape, len(index))
 			a.stack = string(stackBuf[:runtime.Stack(stackBuf, false)])
 		}
 		return a
 	}
-	idx := uint64(0)
-	for i, v := range index {
-		if uint64(v) > a.shape[i] || v < 0 {
-			a.err = IndexError
-			if debug {
-				a.debug = fmt.Sprintf("Index received by SetSliceElement() does not exist shape: %v index: %v", a.shape, index)
-				a.stack = string(stackBuf[:runtime.Stack(stackBuf, false)])
-			}
 
-			return a
-		}
-		idx += uint64(v) * a.strides[i+1]
-	}
-
-	copy(a.data[idx:idx+a.strides[len(a.strides)-2]], vals)
+	copy(a.data[idx:idx+a.strides[len(a.strides)-2]], vals[:a.strides[len(a.strides)-2]])
 	return a
 }
 
 // SetSubArr sets the array below a given index to the values in vals.
 // Values will be broadcast up multiple axes if the shapes match.
 func (a *Arrayb) SetSubArr(vals *Arrayb, index ...int) *Arrayb {
+	idx := a.valIdx(index, "SetSubArr")
 	switch {
-	case a == nil || a.err != nil:
+	case a.HasErr():
 		return a
-	case vals == nil:
-		a.err = NilError
-		if debug {
-			a.debug = "Input array value received by SetE is a Nil pointer."
-			a.stack = string(stackBuf[:runtime.Stack(stackBuf, false)])
-		}
-		return a
-	case vals.err != nil:
-		a.err = vals.err
+	case vals.HasErr():
+		a.err = vals.GetErr()
 		if debug {
 			a.debug = "Array received by SetSubArr() is in error."
 			a.stack = string(stackBuf[:runtime.Stack(stackBuf, false)])
 		}
+		return a
 	case len(vals.shape)+len(index) > len(a.shape):
-		a.err = ShapeError
+		a.err = InvIndexError
 		if debug {
 			a.debug = fmt.Sprintf("Array received by SetSubArr() cant be broadcast.  Shape: %v  Vals shape: %v index: %v", a.shape, vals.shape, index)
 			a.stack = string(stackBuf[:runtime.Stack(stackBuf, false)])
@@ -327,7 +310,7 @@ func (a *Arrayb) SetSubArr(vals *Arrayb, index ...int) *Arrayb {
 		return a
 	}
 
-	for i, j := len(a.shape)-1, len(vals.shape)-1; i >= 0; i, j = i-1, j-1 {
+	for i, j := len(a.shape)-1, len(vals.shape)-1; j >= 0; i, j = i-1, j-1 {
 		if a.shape[i] != vals.shape[j] {
 			a.err = ShapeError
 			if debug {
@@ -338,20 +321,7 @@ func (a *Arrayb) SetSubArr(vals *Arrayb, index ...int) *Arrayb {
 		}
 	}
 
-	idx := uint64(0)
-	for i, v := range index {
-		if uint64(v) > a.shape[i] || v < 0 {
-			a.err = IndexError
-			if debug {
-				a.debug = fmt.Sprintf("Index received by SetSubArr() out of range.  Shape: %v  Index: %v", a.shape, index)
-				a.stack = string(stackBuf[:runtime.Stack(stackBuf, false)])
-			}
-			return a
-		}
-		idx += uint64(v) * a.strides[i+1]
-	}
-
-	if len(vals.shape)-len(index)-len(a.shape) == 0 {
+	if len(a.shape)-len(index)-len(vals.shape) == 0 {
 		copy(a.data[idx:idx+uint64(len(vals.data))], vals.data)
 		return a
 	}
@@ -374,40 +344,57 @@ func (a *Arrayb) SetSubArr(vals *Arrayb, index ...int) *Arrayb {
 // Element location in the underlying slice will not be adjusted to the new shape.
 func (a *Arrayb) Resize(shape ...int) *Arrayb {
 	switch {
-	case a == nil || a.err != nil:
+	case a.HasErr():
 		return a
 	case len(shape) == 0:
-		return newArrayB(0)
+		tmp := newArrayB(0)
+		a.shape, a.strides = tmp.shape, tmp.strides
+		a.data = tmp.data
+		return a
 	}
 
 	var sz uint64 = 1
-	a.shape = make([]uint64, len(shape))
-	for i, v := range shape {
-		if v < 0 {
-			a.err = NegativeAxis
-			if debug {
-				a.debug = fmt.Sprintf("Negative axis length received by Resize.  Shape: %v", shape)
-				a.stack = string(stackBuf[:runtime.Stack(stackBuf, false)])
-			}
-			return a
+	for _, v := range shape {
+		if v >= 0 {
+			sz *= uint64(v)
+			continue
 		}
-		sz *= uint64(v)
-		a.shape[i] = uint64(v)
+
+		a.err = NegativeAxis
+		if debug {
+			a.debug = fmt.Sprintf("Negative axis length received by Resize.  Shape: %v", shape)
+			a.stack = string(stackBuf[:runtime.Stack(stackBuf, false)])
+		}
+		return a
 	}
 
-	if sz > a.strides[0] {
-		a.data = append(a.data, make([]bool, sz-a.strides[0])...)
+	ln, cp := len(shape), cap(a.shape)
+	if ln > cp {
+		a.shape = append(a.shape[:cp], make([]uint64, ln-cp)...)
+	} else {
+		a.shape = a.shape[:ln]
+	}
+
+	ln, cp = ln+1, cap(a.strides)
+	if ln > cp {
+		a.strides = append(a.strides[:cp], make([]uint64, ln-cp)...)
+	} else {
+		a.strides = a.strides[:ln]
+	}
+
+	a.strides[ln-1] = 1
+	for i := ln - 2; i >= 0; i-- {
+		a.shape[i] = uint64(shape[i])
+		a.strides[i] = a.shape[i] * a.strides[i+1]
+	}
+
+	cp = cap(a.data)
+	if sz > uint64(cp) {
+		a.data = append(a.data[:cp], make([]bool, sz-uint64(cp))...)
 	} else {
 		a.data = a.data[:sz]
 	}
 
-	a.strides = make([]uint64, len(shape)+1)
-	a.strides[0] = sz
-	sz = 1
-	for i := len(a.strides) - 1; i > 0; i-- {
-		a.strides[i] = sz
-		sz *= a.shape[i-1]
-	}
 	return a
 }
 
@@ -417,7 +404,7 @@ func (a *Arrayb) Resize(shape ...int) *Arrayb {
 // All axes must be the same except the appending axis.
 func (a *Arrayb) Append(val *Arrayb, axis int) *Arrayb {
 	switch {
-	case a == nil || a.err != nil:
+	case a.HasErr():
 		return a
 	case axis >= len(a.shape) || axis < 0:
 		a.err = IndexError
@@ -426,12 +413,13 @@ func (a *Arrayb) Append(val *Arrayb, axis int) *Arrayb {
 			a.stack = string(stackBuf[:runtime.Stack(stackBuf, false)])
 		}
 		return a
-	case val.err != nil:
-		a.err = val.err
+	case val.HasErr():
+		a.err = val.GetErr()
 		if debug {
 			a.debug = "Array received by Append() is in error."
 			a.stack = string(stackBuf[:runtime.Stack(stackBuf, false)])
 		}
+		return a
 	case len(a.shape) != len(val.shape):
 		a.err = ShapeError
 		if debug {
@@ -452,20 +440,26 @@ func (a *Arrayb) Append(val *Arrayb, axis int) *Arrayb {
 		}
 	}
 
-	a.data = append(a.data, val.data...)
-
-	as, vs := a.strides[axis], val.strides[axis+1]
-	for i, j := a.strides[0]-as, val.strides[0]-vs; i >= 0; i, j = i-as, j-vs {
-		copy(a.data[i+j+as:i+j+as+vs], val.data[j:j+vs])
-		copy(a.data[i+j:i+j+as], a.data[i:i+as])
+	ln := len(a.data) + len(val.data)
+	var dat []bool
+	cp := cap(a.data)
+	if ln > cp {
+		dat = append(a.data, make([]bool, ln-cp)...)
+	} else {
+		dat = a.data[:ln]
 	}
 
+	as, vs := a.strides[axis+1], val.strides[axis+1]
+	for i, j := a.strides[0], val.strides[0]; i > 0; i, j = i-as, j-vs {
+		copy(dat[i+j-vs:i+j], val.data[j-vs:j])
+		copy(dat[i+j-as-vs:i+j-vs], a.data[i-as:i])
+	}
+
+	a.data = dat
 	a.shape[axis] += val.shape[axis]
 
-	tmp := a.strides[axis+1]
 	for i := axis; i >= 0; i-- {
-		tmp *= a.shape[i]
-		a.strides[i] = tmp
+		a.strides[i] = a.strides[axis+1] * a.shape[i]
 	}
 
 	return a
@@ -474,9 +468,6 @@ func (a *Arrayb) Append(val *Arrayb, axis int) *Arrayb {
 // MarshalJSON fulfills the json.Marshaler Interface for encoding data.
 // Custom Unmarshaler is needed to encode/send unexported values.
 func (a *Arrayb) MarshalJSON() ([]byte, error) {
-	if a == nil {
-		return nil, NilError
-	}
 	return json.Marshal(struct {
 		Shape []uint64 `json:"shape"`
 		Data  []bool   `json:"data"`
@@ -492,10 +483,6 @@ func (a *Arrayb) MarshalJSON() ([]byte, error) {
 // Custom Unmarshaler is needed to load/decode unexported values and build strides.
 func (a *Arrayb) UnmarshalJSON(b []byte) error {
 
-	if a == nil {
-		return NilError
-	}
-
 	tmpA := new(struct {
 		Shape []uint64 `json:"shape"`
 		Data  []bool   `json:"data"`
@@ -503,13 +490,15 @@ func (a *Arrayb) UnmarshalJSON(b []byte) error {
 	})
 
 	err := json.Unmarshal(b, tmpA)
-	if err != nil {
-		return err
-	}
 
 	a.shape = tmpA.Shape
 	a.data = tmpA.Data
 	a.err = decodeErr(tmpA.Err)
+	if a.data == nil && a.err == nil {
+		a.err = NilError
+		a.strides = nil
+		return nil
+	}
 
 	a.strides = make([]uint64, len(a.shape)+1)
 	tmp := uint64(1)
@@ -519,9 +508,10 @@ func (a *Arrayb) UnmarshalJSON(b []byte) error {
 	}
 	a.strides[0] = tmp
 
-	return nil
+	return err
 }
 
+// helper function to validate index inputs
 func (a *Arrayb) valIdx(index []int, mthd string) (idx uint64) {
 	if a.HasErr() {
 		return 0
