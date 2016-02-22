@@ -140,7 +140,7 @@ func (a *Array64) SetSubArr(vals *Array64, index ...int) *Array64 {
 	case a.HasErr():
 		return a
 	case vals.HasErr():
-		a.err = vals.GetErr()
+		a.err = vals.getErr()
 		if debug {
 			a.debug = "Array received by SetSubArr() is in error."
 			a.stack = string(stackBuf[:runtime.Stack(stackBuf, false)])

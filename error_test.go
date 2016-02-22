@@ -76,6 +76,9 @@ func TestGetErr(t *testing.T) {
 	case a.GetErr() != NilError:
 		t.Log("a failed", a.GetErr())
 		t.Fail()
+	case a.getErr() != NilError:
+		t.Log("a failed", a.GetErr())
+		t.Fail()
 	case b.GetErr() != NilError:
 		t.Log("b failed", b.GetErr())
 		t.Fail()

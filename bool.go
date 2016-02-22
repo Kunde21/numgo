@@ -154,7 +154,7 @@ func (a *Arrayb) String() (s string) {
 // This must not change the size of the array.
 // Incorrect dimensions will return a nil pointer
 func (a *Arrayb) Reshape(shape ...int) *Arrayb {
-	if a == nil || a.err != nil {
+	if a.HasErr() {
 		return a
 	}
 
@@ -295,7 +295,7 @@ func (a *Arrayb) SetSubArr(vals *Arrayb, index ...int) *Arrayb {
 	case a.HasErr():
 		return a
 	case vals.HasErr():
-		a.err = vals.GetErr()
+		a.err = vals.getErr()
 		if debug {
 			a.debug = "Array received by SetSubArr() is in error."
 			a.stack = string(stackBuf[:runtime.Stack(stackBuf, false)])
@@ -414,7 +414,7 @@ func (a *Arrayb) Append(val *Arrayb, axis int) *Arrayb {
 		}
 		return a
 	case val.HasErr():
-		a.err = val.GetErr()
+		a.err = val.getErr()
 		if debug {
 			a.debug = "Array received by Append() is in error."
 			a.stack = string(stackBuf[:runtime.Stack(stackBuf, false)])

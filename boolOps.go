@@ -216,9 +216,7 @@ func (a *Arrayb) Any(axis ...int) *Arrayb {
 
 		j := uint64(1)
 		for ; j < uint64(len(t))/maj; j++ {
-			a := t[j*min : (j+1)*min]
-			b := t[j*maj : j*maj+min]
-			copy(a, b)
+			copy(t[j*min:(j+1)*min], t[j*maj:j*maj+min])
 		}
 
 		t = append(t[:0], t[0:j*min]...)

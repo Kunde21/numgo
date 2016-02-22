@@ -82,6 +82,13 @@ func (a *Array64) GetErr() (err error) {
 	return
 }
 
+func (a *Array64) getErr() error {
+	if a == nil || (a.data == nil && a.err == nil) {
+		return NilError
+	}
+	return a.err
+}
+
 // GetDebug returns and clears the error object from the array object.  The returned debug string
 // will include the function that generated the error and the arguments that caused it.
 //
@@ -181,6 +188,13 @@ func (a *Arrayb) GetErr() (err error) {
 	err = a.err
 	a.err, a.debug = nil, ""
 	return
+}
+
+func (a *Arrayb) getErr() error {
+	if a == nil || (a.data == nil && a.err == nil) {
+		return NilError
+	}
+	return a.err
 }
 
 // GetDebug returns and clears the error object from the array object.  The returned debug string

@@ -12,7 +12,7 @@ func init() {
 	debug = true
 }
 
-func rnd_bool() (sz []bool) {
+func rndBool() (sz []bool) {
 	sz = make([]bool, rand.Intn(100)+10)
 	for i := range sz {
 		sz[i] = rand.Intn(1) == 1
@@ -166,7 +166,7 @@ func TestReshapeB(t *testing.T) {
 func TestCb(t *testing.T) {
 	t.Parallel()
 	for i := 0; i < 20; i++ {
-		a := NewArrayB(rnd_bool())
+		a := NewArrayB(rndBool())
 		b := a.C()
 		if v := a.strides[0] - a.C().strides[0]; v != 0 {
 			t.Log("Size Changed", v)
@@ -316,7 +316,7 @@ func TestSetSliceElementb(t *testing.T) {
 
 	for i := 0; i < 20; i++ {
 		x, y, z := rand.Intn(6), rand.Intn(6), rand.Intn(4)
-		val := rnd_bool()[:5]
+		val := rndBool()[:5]
 		v := a.SetSliceElement(val, x, y, z)
 		if !a.HasErr() {
 			for j, k := range v.SliceElement(x, y, z) {
@@ -521,7 +521,7 @@ func TestAppendb(t *testing.T) {
 }
 
 func TestJSONb(t *testing.T) {
-	//t.Parallel()
+	t.Parallel()
 
 	tests := []*Arrayb{
 		NewArrayB(nil, 0),
