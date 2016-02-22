@@ -37,23 +37,21 @@ axisR:
 	for k := 0; k < len(axis); k++ {
 		v, wd, st := a.shape[axis[k]], a.strides[axis[k]], a.strides[axis[k]+1]
 		if st == 1 {
-			for k := uint64(0); k < ln/wd; k++ {
-				a.data[k] = a.data[k*wd]
-				for i := uint64(1); i < wd; i++ {
-					a.data[k] += a.data[i+k*wd]
-				}
-			}
+			hadd(wd, a.data)
 			ln /= v
+			a.data = a.data[:ln]
 			continue
 		}
 
 		for w := uint64(0); w < ln; w += wd {
+			t := a.data[w/wd*st : (w/wd+1)*st]
+			copy(t, a.data[w:w+st])
 			for i := uint64(1); i*st+1 < wd; i++ {
-				vadd(a.data[w:w+st], a.data[w+(i)*st:w+(i+1)*st])
+				vadd(t, a.data[w+(i)*st:w+(i+1)*st])
 			}
-			copy(a.data[w/wd*st:(w/wd+1)*st], a.data[w:w+st])
 		}
 		ln /= v
+		a.data = a.data[:ln]
 	}
 	a.shape = n
 

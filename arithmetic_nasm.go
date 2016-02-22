@@ -43,6 +43,22 @@ func add(a, b []float64) {
 	}
 }
 
+func vadd(a, b []float64) {
+	for i := range a {
+		a[i] += b[i]
+	}
+}
+
+func hadd(st uint64, a []float64) {
+	ln := len(a)
+	for k := 0; k < ln/st; k++ {
+		a.data[k] = a.data[k*st]
+		for _, v := range a.data[k*st : (k+1)*st] {
+			a.data += v
+		}
+	}
+}
+
 func subtr(a, b []float64) {
 	lna, lnb := len(a), len(b)
 	for i, j := 0, 0; i < lna; i, j = i+1, j+1 {

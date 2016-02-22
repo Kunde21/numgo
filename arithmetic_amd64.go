@@ -2,15 +2,12 @@
 
 package numgo
 
-import "fmt"
-
 var (
-	avxSupt, avx2Supt, fmaSupt bool
+	sse3Supt, avxSupt, avx2Supt, fmaSupt bool
 )
 
 func init() {
 	initasm()
-	fmt.Println("AVX", avxSupt, "AVX2", avx2Supt, "FMA", fmaSupt)
 }
 
 func initasm()
@@ -24,7 +21,10 @@ func multC(c float64, d []float64)
 func divC(c float64, d []float64)
 
 func add(a, b []float64)
+
 func vadd(a, b []float64)
+
+func hadd(st uint64, a []float64)
 
 func subtr(a, b []float64)
 

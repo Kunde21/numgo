@@ -20,6 +20,17 @@ fma:
 	MOVQ $1, AX
 	CPUID
 
+	ANDL $0x1, CX
+	CMPL CX, $0x1
+	JNE nosse3
+	MOVB $1, ·sse3Supt(SB)
+	JMP sse3
+nosse3:
+	MOVB $0, ·sse3Supt(SB)
+sse3:	
+	MOVQ $1, AX
+	CPUID
+
 	// Detect AVX and AVX2 as per 14.7.1  Detection of AVX2 chapter of [1]
 	// [1] 64-ia-32-architectures-software-developer-manual-325462.pdf
 	// http://www.intel.com/content/dam/www/public/us/en/documents/manuals/64-ia-32-architectures-software-developer-manual-325462.pdf
@@ -423,6 +434,99 @@ vadd_avx_loop:
 vadd_exit:
 	RET
 
+// func hadd(st uint64, a []float64)
+// req:  len(a) == len(b)
+TEXT ·hadd(SB), NOSPLIT, $0
+	// a data ptr
+	MOVQ a_base+8(FP), R8
+	MOVQ R8, R9
+
+	// a len
+	MOVQ a_len+16(FP), SI
+	MOVQ st+0(FP), CX
+	MOVQ CX,  DI
+	ANDQ $1, DI
+	
+
+	CMPQ CX, $1
+	JE hadd_exit
+	CMPQ SI, $0
+	JE   hadd_exit
+	CMPQ CX, $8
+	JG hadd_big_stride
+	CMPQ ·sse3Supt(SB), $1
+	JE hadd_sse3_head
+
+hadd_big_stride:
+	// AVX vs SSE
+	CMPQ ·avxSupt(SB), $1
+	//JE   hadd_avx_head
+	CMPQ ·sse3Supt(SB), $1
+	JE hadd_sse3_head
+hadd_head:
+	PXOR X0, X0
+	MOVQ CX, DI
+	SUBQ $1, DI
+hadd_loop:
+	ADDPD (R8), X0
+	ADDQ $16, R8
+	SUBQ $2, DI
+	JG hadd_loop
+	JZ hadd_tail
+	MOVAPD X0, X1
+	UNPCKHPD X1, X0
+	ADDPD X1,X0
+	MOVQ X0, (R9)
+	ADDQ $8, R9
+	SUBQ CX, SI
+	JG hadd_head
+	JMP hadd_exit
+hadd_tail:
+	ADDSD (R8), X0
+	MOVAPD X0, X1
+	UNPCKHPD X1, X0
+	ADDPD X1,X0
+	MOVQ X0, (R9)
+	ADDQ $8, R9
+	SUBQ CX, SI
+	JZ hadd_exit
+	MOVQ 8(R8), X0
+	MOVQ CX, DI
+	SUBQ $2, DI
+	ADDQ $16, R8
+	JMP hadd_loop
+hadd_sse3_head:
+	PXOR X0, X0
+	MOVQ CX, DI
+	SUBQ $1, DI
+hadd_sse3_loop:
+	ADDPD (R8), X0
+	ADDQ $16, R8
+	SUBQ $2, DI
+	JG hadd_sse3_loop
+	JZ hadd_sse3_tail
+	HADDPD X0, X0
+	MOVQ X0, (R9)
+	ADDQ $8, R9
+	SUBQ CX, SI
+	JG hadd_sse3_head
+	JMP hadd_exit
+hadd_sse3_tail:
+	ADDSD (R8), X0
+	HADDPD X0, X0
+	MOVQ X0, (R9)
+	ADDQ $8, R9
+	SUBQ CX, SI
+	JZ hadd_exit
+	MOVQ 8(R8), X0
+	MOVQ CX, DI
+	SUBQ $2, DI
+	ADDQ $16, R8
+	JMP hadd_sse3_loop
+hadd_exit:	
+	RET
+
+	
 // func subtr(a,b []float64)
 TEXT ·subtr(SB), NOSPLIT, $0
 	// a data ptr
