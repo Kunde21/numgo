@@ -505,7 +505,8 @@ hadd_sse3_loop:
 	SUBQ $2, DI
 	JG hadd_sse3_loop
 	JZ hadd_sse3_tail
-	HADDPD X0, X0
+	BYTE $0x66; BYTE $0x0F; BYTE $0x7C; BYTE $0xC0
+	// HADDPD X0, X0  //Added in 1.6
 	MOVQ X0, (R9)
 	ADDQ $8, R9
 	SUBQ CX, SI
@@ -513,7 +514,8 @@ hadd_sse3_loop:
 	JMP hadd_exit
 hadd_sse3_tail:
 	ADDSD (R8), X0
-	HADDPD X0, X0
+	BYTE $0x66; BYTE $0x0F; BYTE $0x7C; BYTE $0xC0
+	// HADDPD X0, X0  //Added in 1.6
 	MOVQ X0, (R9)
 	ADDQ $8, R9
 	SUBQ CX, SI
