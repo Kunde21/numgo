@@ -190,7 +190,11 @@ func TestNonzero(t *testing.T) {
 		a := RandArray64(0, 100, sz).Append(NewArray64(nil, sz...), y)
 		if j, k := a.C().Nonzero(x, y, z), a.C().Map(maskz).NaNCount(x, y, z); !j.Equals(k).All().At(0) {
 			t.Logf("Test %d failed with x: %v y: %v z: %v\n", i, x, y, z)
-			t.Fail()
+			t.Log("Expected:\n", k)
+			t.Log("Received:\n", j)
+			t.Log(j.GetDebug())
+			t.Log(a.count(x, y, z))
+			t.FailNow()
 		}
 		if a.C().Nonzero().Equals(a.C().Count()).At(0) {
 			i--
@@ -312,5 +316,17 @@ func BenchmarkMean(b *testing.B) {
 		a.Mean(5, 3, 7, 8)
 	}
 	b.StopTimer()
+	runtime.GC()
+}
+
+func BenchmarkC(t *testing.B) {
+	a := Arange(2*3*4*5*6*7*8*9*10*11).Reshape(2, 3, 4, 5, 6, 7, 8, 9, 10, 11)
+
+	t.ResetTimer()
+	t.ReportAllocs()
+	for i := 0; i < t.N; i++ {
+		_ = a.C()
+	}
+	t.StopTimer()
 	runtime.GC()
 }

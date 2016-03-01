@@ -35,6 +35,9 @@ axisR:
 
 	ln := a.strides[0]
 	for k := 0; k < len(axis); k++ {
+		if a.shape[axis[k]] == 1 {
+			continue
+		}
 		v, wd, st := a.shape[axis[k]], a.strides[axis[k]], a.strides[axis[k]+1]
 		if st == 1 {
 			hadd(wd, a.data)
@@ -120,6 +123,25 @@ cntAx:
 	return full(float64(cnt), tAxis...)
 }
 
+// count is an internal function
+func (a *Array64) count(axis ...int) float64 {
+	if len(axis) == 0 {
+		return float64(a.strides[0])
+	}
+
+	cnt := uint64(1)
+cntAx:
+	for i, v := range a.shape {
+		for _, w := range axis {
+			if i == w {
+				cnt *= v
+				continue cntAx
+			}
+		}
+	}
+	return float64(cnt)
+}
+
 // NaNCount calculates the number of values along a given axes.
 // Empty call gives the total number of elements.
 func (a *Array64) NaNCount(axis ...int) *Array64 {
@@ -146,8 +168,7 @@ func (a *Array64) Mean(axis ...int) *Array64 {
 	case a.valAxis(&axis, "Mean"):
 		return a
 	}
-	c := a.Count(axis...).At(0)
-	return a.C().Sum(axis...).DivC(c)
+	return a.C().Sum(axis...).DivC(a.count(axis...))
 }
 
 // NaNMean calculates the mean across the given axes.
@@ -162,17 +183,14 @@ func (a *Array64) NaNMean(axis ...int) *Array64 {
 
 // Nonzero counts the number of non-zero elements are in the array
 func (a *Array64) Nonzero(axis ...int) *Array64 {
-	if a.valAxis(&axis, "Sum") {
+	if a.valAxis(&axis, "Nonzero") {
 		return a
 	}
 
-	cnz := func(d []float64) (r float64) {
-		for _, v := range d {
-			if v != 0 {
-				r++
-			}
+	return a.Map(func(d float64) float64 {
+		if d == 0 {
+			return 0
 		}
-		return
-	}
-	return a.Fold(cnz, axis...)
+		return 1
+	}).Sum(axis...)
 }

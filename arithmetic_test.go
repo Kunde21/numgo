@@ -11,11 +11,12 @@ func init() {
 }
 
 func TestAddC(t *testing.T) {
+	t.Parallel()
 	a := Arange(21)
 
 	if b := a.AddC(2).Equals(Arange(2, 22)); !b.All().At(0) {
-		t.Log(b)
-		t.Log(a)
+		t.Log(Arange(2, 200003).shape)
+		t.Log(a.shape)
 		t.Fail()
 	}
 	a.Reshape(10, 10).AddC(1)
@@ -26,6 +27,7 @@ func TestAddC(t *testing.T) {
 }
 
 func TestSubtrC(t *testing.T) {
+	t.Parallel()
 	a := Arange(21)
 	if b := a.SubtrC(2).Equals(Arange(-2, 18)); !b.All().At(0) {
 		t.Log(b)
@@ -40,6 +42,7 @@ func TestSubtrC(t *testing.T) {
 }
 
 func TestMultC(t *testing.T) {
+	t.Parallel()
 	a := Arange(21)
 
 	if b := a.MultC(2).Equals(Arange(0, 40, 2)); !b.All().At(0) {
@@ -55,6 +58,7 @@ func TestMultC(t *testing.T) {
 }
 
 func TestDivC(t *testing.T) {
+	t.Parallel()
 	a := Arange(0, 40, 2)
 	if b := a.DivC(2).Equals(Arange(21)); !b.All().At(0) {
 		t.Log(b)
@@ -69,6 +73,7 @@ func TestDivC(t *testing.T) {
 }
 
 func TestPowC(t *testing.T) {
+	t.Parallel()
 	a := Arange(0, 40, 2)
 	if b := a.PowC(0).Equals(Full(1, 21)); !b.All().At(0) {
 		t.Log(b)
@@ -83,6 +88,7 @@ func TestPowC(t *testing.T) {
 }
 
 func TestAdd(t *testing.T) {
+	t.Parallel()
 	a, b := Arange(20), Arange(20)
 	a.Add(b)
 	runtime.GC()
@@ -133,6 +139,7 @@ func TestAdd(t *testing.T) {
 }
 
 func TestSubtr(t *testing.T) {
+	t.Parallel()
 	a := Arange(20).Reshape(2, 10).Subtr(Arange(10))
 	runtime.GC()
 	for i := 0; i < 2; i++ {
@@ -179,6 +186,7 @@ func TestSubtr(t *testing.T) {
 }
 
 func TestMult(t *testing.T) {
+	t.Parallel()
 	a := Arange(1, 100, .5)
 	if len(a.data) != (100-1)/.5+1 {
 		t.Log("Expected:", (100-1)/.5+1, "Got:", len(a.data))
@@ -200,6 +208,7 @@ func TestMult(t *testing.T) {
 }
 
 func TestDiv(t *testing.T) {
+	t.Parallel()
 	a := Arange(1, 100, .5)
 	if len(a.data) != (100-1)/.5+1 {
 		t.Log("Expected:", (100-1)/.5+1, "Got:", len(a.data))
@@ -220,6 +229,7 @@ func TestDiv(t *testing.T) {
 }
 
 func TestPow(t *testing.T) {
+	t.Parallel()
 	a := Arange(1, 100.5, .5)
 	if len(a.data) != (100.5-1)/.5+1 {
 		t.Log("Expected:", (100.5-1)/.5+1, "Got:", len(a.data))
@@ -244,6 +254,7 @@ func TestPow(t *testing.T) {
 }
 
 func TestFMA12(t *testing.T) {
+	t.Parallel()
 	a := Arange(1, 100.5, .5)
 	if len(a.data) != (100.5-1)/.5+1 {
 		t.Log("Expected:", (100.5-1)/.5+1, "Got:", len(a.data))
@@ -272,6 +283,7 @@ func TestFMA12(t *testing.T) {
 }
 
 func TestFMA21(t *testing.T) {
+	t.Parallel()
 	a := Arange(1, 100.5, .5)
 	if len(a.data) != (100.5-1)/.5+1 {
 		t.Log("Expected:", (100.5-1)/.5+1, "Got:", len(a.data))
@@ -300,6 +312,7 @@ func TestFMA21(t *testing.T) {
 }
 
 func TestValRith(t *testing.T) {
+	t.Parallel()
 	var a, b *Array64
 	if !a.valRith(b, "") {
 		t.Fail()
@@ -336,7 +349,7 @@ func TestValRith(t *testing.T) {
 }
 
 func BenchmarkSubtrC(b *testing.B) {
-	a := Arange(5003)
+	a := Arange(500003)
 
 	b.ResetTimer()
 	b.ReportAllocs()
@@ -347,7 +360,7 @@ func BenchmarkSubtrC(b *testing.B) {
 }
 
 func BenchmarkAddC_AVX(b *testing.B) {
-	a := Arange(5003)
+	a := Arange(500003)
 
 	b.ResetTimer()
 	b.ReportAllocs()
@@ -362,7 +375,7 @@ func BenchmarkAddC_noAVX(b *testing.B) {
 		b.Skip()
 	}
 	avxSupt = false
-	a := Arange(5003)
+	a := Arange(500003)
 
 	b.ResetTimer()
 	b.ReportAllocs()
@@ -375,7 +388,7 @@ func BenchmarkAddC_noAVX(b *testing.B) {
 }
 
 func BenchmarkMultC(b *testing.B) {
-	a := Arange(5003)
+	a := Arange(500003)
 
 	b.ResetTimer()
 	b.ReportAllocs()
@@ -387,7 +400,7 @@ func BenchmarkMultC(b *testing.B) {
 }
 
 func BenchmarkDivC(b *testing.B) {
-	a := Arange(5003)
+	a := Arange(500003)
 
 	b.ResetTimer()
 	b.ReportAllocs()
@@ -514,5 +527,22 @@ func BenchmarkFMA12_noFMA(b *testing.B) {
 	}
 	b.StopTimer()
 	fmaSupt = tmp
+	runtime.GC()
+}
+
+func BenchmarkFMA21_FMAB(b *testing.B) {
+	a := Arange(0, 1000000, .5).Resize(2, 2, 500, 1000)
+	if len(a.data) != (1000000)/.5 {
+		b.Log("Expected:", (1000000)/.5, "Got:", len(a.data))
+		b.FailNow()
+	}
+	c := Arange(1000)
+
+	b.ResetTimer()
+	b.ReportAllocs()
+	for i := 0; i < b.N; i++ {
+		a.FMA21(2, c)
+	}
+	b.StopTimer()
 	runtime.GC()
 }
