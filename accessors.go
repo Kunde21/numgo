@@ -20,9 +20,19 @@ func (a *Array64) C() (b *Array64) {
 		return a
 	}
 
-	b = newArray64(a.shape...)
+	b = &Array64{
+		shape:   make([]uint64, len(a.shape)),
+		strides: make([]uint64, len(a.strides)),
+		data:    make([]float64, a.strides[0]),
+		err:     nil,
+		debug:   "",
+		stack:   "",
+	}
+
+	copy(b.shape, a.shape)
+	copy(b.strides, a.strides)
 	copy(b.data, a.data)
-	return
+	return b
 }
 
 // At returns the element at the given index.
@@ -251,7 +261,7 @@ func (a *Array64) Append(val *Array64, axis int) *Array64 {
 	switch {
 	case a.HasErr():
 		return a
-	case axis >= len(a.shape) || axis < 0:
+	case axis >= len(a.shape), axis < 0:
 		a.err = IndexError
 		if debug {
 			a.debug = fmt.Sprintf("Axis received by Append() out of range.  Shape: %v  Axis: %v", a.shape, axis)
@@ -304,7 +314,7 @@ func (a *Array64) Append(val *Array64, axis int) *Array64 {
 	a.shape[axis] += val.shape[axis]
 
 	for i := axis; i >= 0; i-- {
-		a.strides[i] = a.strides[axis+1] * a.shape[i]
+		a.strides[i] = a.strides[i+1] * a.shape[i]
 	}
 
 	return a
