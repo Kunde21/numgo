@@ -398,8 +398,32 @@ func BenchmarkDivC(b *testing.B) {
 	runtime.GC()
 }
 
-func BenchmarkAdd(b *testing.B) {
+func BenchmarkAddEq(b *testing.B) {
+	a, n := NewArray64(nil, 10, 10, 10, 12), Arange(12000).Reshape(10, 10, 10, 12)
+
+	b.ResetTimer()
+	b.ReportAllocs()
+	for i := 0; i < b.N; i++ {
+		a.Add(n)
+	}
+	b.StopTimer()
+	runtime.GC()
+}
+
+func BenchmarkAdd1(b *testing.B) {
 	a, n := NewArray64(nil, 10, 10, 10, 12), Arange(12)
+
+	b.ResetTimer()
+	b.ReportAllocs()
+	for i := 0; i < b.N; i++ {
+		a.Add(n)
+	}
+	b.StopTimer()
+	runtime.GC()
+}
+
+func BenchmarkAdd2(b *testing.B) {
+	a, n := NewArray64(nil, 10, 10, 10, 12), Arange(120).Reshape(10, 12)
 
 	b.ResetTimer()
 	b.ReportAllocs()
@@ -412,6 +436,18 @@ func BenchmarkAdd(b *testing.B) {
 
 func BenchmarkSubtr(b *testing.B) {
 	a, n := NewArray64(nil, 10, 10, 10, 12), Arange(12)
+
+	b.ResetTimer()
+	b.ReportAllocs()
+	for i := 0; i < b.N; i++ {
+		a.Subtr(n)
+	}
+	b.StopTimer()
+	runtime.GC()
+}
+
+func BenchmarkSubtrEq(b *testing.B) {
+	a, n := NewArray64(nil, 10, 10, 10, 12), Arange(12000).Reshape(10, 10, 10, 12)
 
 	b.ResetTimer()
 	b.ReportAllocs()
