@@ -86,7 +86,7 @@ TEXT ·addC(SB), NOSPLIT, $0
 	CMPB ·avxSupt(SB), $1
 	JE   AVX_AC
 	CMPB ·avx2Supt(SB), $1
-	JE   AVX2_AC
+	JE  AVX2_AC
 
 	// load multiplier
 	MOVSD  (R9), X0
@@ -114,11 +114,13 @@ AVX_ACLOOP:
 	// VADDPD (R10),Y0,Y1
 	BYTE $0xC4; BYTE $0xC1; BYTE $0x7D; BYTE $0x58; BYTE $0x0A
 
-	// VMOVDQU Y1, (R10)
+	// VMOVDQA Y1, (R10)
 	BYTE $0xC4; BYTE $0xC1; BYTE $0x7E; BYTE $0x7F; BYTE $0x0A
 	ADDQ $32, R10
 	SUBQ $4, SI
 	JGE  AVX_ACLOOP
+	//VZEROUPPER
+	BYTE $0xC5; BYTE $0xF8; BYTE $0x77
 
 ACTAIL:  // Catch len % 4 == 0
 	ADDQ $4, SI
@@ -183,17 +185,12 @@ SCEND:
 
 // func multC(c float64, d []float64)
 TEXT ·multC(SB), NOSPLIT, $0
-	// data ptr
-	MOVQ d+8(FP), R10
-
-	// n = data len
+	MOVQ d_base+8(FP), R10
 	MOVQ d_len+16(FP), SI
 
 	// zero len return
 	CMPQ SI, $0
 	JE   MCEND
-
-	// check tail
 	SUBQ $4, SI
 	JL   MCTAIL
 
@@ -256,7 +253,7 @@ DCLOOP:  // load d[i] | d[i+1]
 	MOVUPD X2, 16(R10)
 	ADDQ   $32, R10
 	SUBQ   $4, SI
-	JGE    DCLOOP
+	JGE    DCLOOP 
 
 DCTAIL:
 	ADDQ $4, SI
@@ -352,7 +349,6 @@ TEXT ·vadd(SB), NOSPLIT, $0
 
 	// a len
 	MOVQ a_len+8(FP), SI
-	MOVQ SI, DI
 
 	// b data ptr
 	MOVQ b_base+24(FP), R9
@@ -366,22 +362,24 @@ TEXT ·vadd(SB), NOSPLIT, $0
 	JL   vadd_tail
 
 	// AVX vs SSE
-	CMPQ ·avxSupt(SB), $1
+	CMPB ·avxSupt(SB), $1
 	JE   vadd_avx_loop
 
 vadd_loop:
-	MOVUPD (R8), X0
 	MOVUPD (R9), X1
-	MOVUPD 16(R8), X2
 	MOVUPD 16(R9), X3
-	MOVUPD 32(R8), X4
 	MOVUPD 32(R9), X5
-	MOVUPD 48(R8), X6
 	MOVUPD 48(R9), X7
+	
+	MOVUPD (R8), X0
 	ADDPD  X1, X0
+	MOVUPD 16(R8), X2
 	ADDPD  X3, X2
+	MOVUPD 32(R8), X4
 	ADDPD  X5, X4
+	MOVUPD 48(R8), X6
 	ADDPD  X7, X6
+	
 	MOVUPD X0, (R8)
 	MOVUPD X2, 16(R8)
 	MOVUPD X4, 32(R8)
@@ -407,22 +405,24 @@ vadd_tail_loop:
 	JMP   vadd_exit
 	
 vadd_avx_loop:
-	//VMOVDQA (R9), Y0
+	//VMOVDQU (R9), Y0
 	BYTE $0xC4; BYTE $0xC1; BYTE $0x7E; BYTE $0x6F; BYTE $0x01
-	//VMOVDQA 32(R9), Y1
+	//VMOVDQU 32(R9), Y1
 	BYTE $0xC4; BYTE $0xC1; BYTE $0x7E; BYTE $0x6F; BYTE $0x49; BYTE $0x20
 
-	// VADDPD (R10),Y0,Y0
-	BYTE $0xC4; BYTE $0xC1; BYTE $0x7D; BYTE $0x58; BYTE $0x02
+	// VADDPD (R8),Y0,Y0
+	BYTE $0xC4; BYTE $0xC1; BYTE $0x7D; BYTE $0x58; BYTE $0x00
 	// VADDPD 32(R10),Y1,Y1
-	BYTE $0xC4; BYTE $0xC1; BYTE $0x75; BYTE $0x58; BYTE $0x4A; BYTE $0x20
+	BYTE $0xC4; BYTE $0xC1; BYTE $0x75; BYTE $0x58; BYTE $0x48; BYTE $0x20
 
-	//VMOVDQA Y0, (R10)
-	BYTE $0xC4; BYTE $0xC1; BYTE $0x7E; BYTE $0x7F; BYTE $0x01
-	//VMOVDQA Y1, 32(R10)
-	BYTE $0xC4; BYTE $0xC1; BYTE $0x7E; BYTE $0x7F; BYTE $0x49; BYTE $0x20
+	//VMOVDQA Y0, (R8)
+	BYTE $0xC4; BYTE $0xC1; BYTE $0x7E; BYTE $0x7F; BYTE $0x00
+	//VMOVDQA Y1, 32(R8)
+	BYTE $0xC4; BYTE $0xC1; BYTE $0x7E; BYTE $0x7F; BYTE $0x48; BYTE $0x20
 
-	ADDQ $64, R10
+	
+	ADDQ $64, R8
+	ADDQ $64, R9
 	SUBQ $8, SI
 	JGE  vadd_avx_loop
 	//VZEROUPPER
@@ -454,14 +454,14 @@ TEXT ·hadd(SB), NOSPLIT, $0
 	JE   hadd_exit
 	CMPQ CX, $8
 	JG hadd_big_stride
-	CMPQ ·sse3Supt(SB), $1
+	CMPB ·sse3Supt(SB), $1
 	JE hadd_sse3_head
 
 hadd_big_stride:
 	// AVX vs SSE
-	CMPQ ·avxSupt(SB), $1
+	CMPB ·avxSupt(SB), $1
 	//JE   hadd_avx_head
-	CMPQ ·sse3Supt(SB), $1
+	CMPB ·sse3Supt(SB), $1
 	JE hadd_sse3_head
 hadd_head:
 	PXOR X0, X0

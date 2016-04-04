@@ -123,22 +123,18 @@ cntAx:
 	return full(float64(cnt), tAxis...)
 }
 
-// count is an internal function
+// count is an internal function for scalar count
+// TODO:  Make public?
 func (a *Array64) count(axis ...int) float64 {
 	if len(axis) == 0 {
 		return float64(a.strides[0])
 	}
 
 	cnt := uint64(1)
-cntAx:
-	for i, v := range a.shape {
-		for _, w := range axis {
-			if i == w {
-				cnt *= v
-				continue cntAx
-			}
-		}
+	for _, w := range axis {
+		cnt *= a.shape[w]
 	}
+
 	return float64(cnt)
 }
 

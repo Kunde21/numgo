@@ -3,7 +3,7 @@
 package numgo
 
 var (
-	avxSupt, avx2Supt, fmaSupt bool
+	sse3Supt, avxSupt, avx2Supt, fmaSupt bool
 )
 
 func initasm() {
@@ -50,11 +50,11 @@ func vadd(a, b []float64) {
 }
 
 func hadd(st uint64, a []float64) {
-	ln := len(a)
-	for k := 0; k < ln/st; k++ {
-		a.data[k] = a.data[k*st]
-		for _, v := range a.data[k*st : (k+1)*st] {
-			a.data += v
+	ln := uint64(len(a))
+	for k := uint64(0); k < ln/st; k++ {
+		a[k] = a[k*st]
+		for i := uint64(1); i < st; i++ {
+			a[k] += a[k*st+i]
 		}
 	}
 }

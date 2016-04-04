@@ -53,6 +53,7 @@ func TestC(t *testing.T) {
 }
 
 func TestAt(t *testing.T) {
+	t.Parallel()
 	a := Arange(125).Reshape(5, 5, 5)
 
 	for i := 0; i < 20; i++ {
@@ -74,6 +75,18 @@ func TestAt(t *testing.T) {
 	if e := a.GetErr(); e != InvIndexError {
 		t.Log("Error failed.  Expected InvIndexErr Received", e)
 		t.Fail()
+	}
+
+	for i := 0; i < 5; i++ {
+		for j := 0; j < 5; j++ {
+			for k := 0; k < 5; k++ {
+				if a.at([]uint64{uint64(i), uint64(j), uint64(k)}) != a.At(i, j, k) {
+					t.Log("at failed for index", i, j, k)
+					t.Log(a.at([]uint64{uint64(i), uint64(j), uint64(k)}), "!=", a.At(i, j, k))
+					t.Fail()
+				}
+			}
+		}
 	}
 }
 

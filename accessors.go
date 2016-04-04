@@ -46,6 +46,14 @@ func (a *Array64) At(index ...int) float64 {
 	return a.data[idx]
 }
 
+func (a *Array64) at(index []uint64) float64 {
+	var idx uint64
+	for i, v := range index {
+		idx += v * a.strides[i+1]
+	}
+	return a.data[idx]
+}
+
 func (a *Array64) valIdx(index []int, mthd string) (idx uint64) {
 	if a.HasErr() {
 		return 0

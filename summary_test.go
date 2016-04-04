@@ -15,6 +15,7 @@ func init() {
 }
 
 func TestSum(t *testing.T) {
+	t.Parallel()
 	sz := []int{7, 3, 4, 5, 6}
 	a := Arange(10).Reshape(2, 5).Sum(0)
 	for i, v := range a.data {
@@ -50,6 +51,7 @@ func BenchmarkSum(b *testing.B) {
 }
 
 func TestNaNSum(t *testing.T) {
+	t.Parallel()
 	mask := func(i int, v float64) MapFunc {
 		return func(d float64) float64 {
 			if int(d)%i == 0 && d != 0 {
@@ -84,25 +86,44 @@ func TestNaNSum(t *testing.T) {
 }
 
 func TestCount(t *testing.T) {
+	t.Parallel()
 	for _, v := range Arange(10).Reshape(2, 5).Count(0).data {
 		if v != 2 {
 			t.Log("Incorrect count. Expected: 2 Received:", v)
 			t.Fail()
 		}
 	}
+
 	for _, v := range Arange(3*4*5*6*7).Reshape(7, 3, 4, 5, 6).Count(3, 4).data {
 		if v != 30 {
 			t.Log("Incorrect count. Expected: 30 Received:", v)
 			t.Fail()
 		}
 	}
+
 	if e := Arange(100).Reshape(0).Count(1).GetErr(); e != ReshapeError {
 		t.Log("Error failed", e)
 		t.Fail()
 	}
+
+	for i, v := range []struct {
+		a  *Array64
+		ax []int
+	}{
+		{NewArray64(nil, 1, 2, 3, 4, 5), []int{2, 3}},
+		{NewArray64(nil, 2, 4, 6, 8), []int{0, 1, 2}},
+		{NewArray64(nil, 2, 4, 8, 16), []int{}},
+	} {
+		if a, b := v.a.count(v.ax...), v.a.Count(v.ax...).data[0]; a != b {
+			t.Log("Counts differed in test", i)
+			t.Log(a, "!=", b)
+			t.Fail()
+		}
+	}
 }
 
 func TestNaNCount(t *testing.T) {
+	t.Parallel()
 	mask := func(i int, v float64) MapFunc {
 		return func(d float64) float64 {
 			if int(d)%i == 0 && d != 0 {
@@ -136,6 +157,7 @@ func TestNaNCount(t *testing.T) {
 }
 
 func TestMean(t *testing.T) {
+	t.Parallel()
 	a := Arange(3*4*5*6*7).Reshape(7, 3, 4, 5, 6)
 	if tmp := a.Count().At(0); tmp != 3*4*5*6*7 {
 		t.Log("Incorrect size.  Expected ", 3*4*5*6*7, "Received ", tmp)
@@ -163,6 +185,7 @@ func TestMean(t *testing.T) {
 }
 
 func TestNanMean(t *testing.T) {
+	t.Parallel()
 	a := Arange(2*3*4*5).Reshape(2, 3, 4, 5)
 	if !a.Mean(1, 3).Equals(a.NaNMean(1, 3)).All().data[0] {
 		t.Log("NaNMean producing different results than Mean")
@@ -177,6 +200,7 @@ func TestNanMean(t *testing.T) {
 }
 
 func TestNonzero(t *testing.T) {
+	t.Parallel()
 	maskz := func(d float64) float64 {
 		if d == 0 {
 			return math.NaN()
@@ -208,6 +232,7 @@ func TestNonzero(t *testing.T) {
 }
 
 func TestFoldMean(t *testing.T) {
+	t.Parallel()
 	a := Arange(2*3*4*5*6*7*8*9*10*11).Reshape(2, 3, 4, 5, 6, 7, 8, 9, 10, 11)
 	sm := func(d []float64) (r float64) {
 		i := 0
@@ -224,6 +249,7 @@ func TestFoldMean(t *testing.T) {
 }
 
 func TestCollapse(t *testing.T) {
+	t.Parallel()
 	a := Arange(2*3*4*5).Reshape(2, 3, 4, 5)
 	sm := func(d []float64) (r float64) {
 		for _, v := range d {

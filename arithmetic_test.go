@@ -1,6 +1,7 @@
 package numgo
 
 import (
+	"fmt"
 	"math"
 	"runtime"
 	"testing"
@@ -8,6 +9,7 @@ import (
 
 func init() {
 	debug = true
+	fmt.Println("AVX:", avxSupt, "AVX2:", avx2Supt, "SSE3:", sse3Supt, "FMA:", fmaSupt)
 }
 
 func TestAddC(t *testing.T) {
@@ -22,6 +24,22 @@ func TestAddC(t *testing.T) {
 	a.Reshape(10, 10).AddC(1)
 	if !a.HasErr() {
 		t.Log(a.GetErr())
+		t.Fail()
+	}
+
+	if !avxSupt {
+		return
+	}
+	avxSupt = false
+	if b := Arange(50).AddC(6); !Arange(6, 55).Equals(b).All().At(0) {
+		t.Log("NoAvx Failed")
+		t.Log(b)
+		t.Fail()
+	}
+	avxSupt = true
+	if b := Arange(50).AddC(6); !Arange(6, 55).Equals(b).All().At(0) {
+		t.Log("AVX Failed")
+		t.Log(b)
 		t.Fail()
 	}
 }
