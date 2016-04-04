@@ -61,7 +61,7 @@ dotp_end:
 	MOVQ	X0, ret+48(FP)
 	RET
 dotp_sse3:
-	//BYTE $0x66; BYTE $0x0F; BYTE $0x7C; BYTE $0xC0
-	HADDPD X0, X0  //Added in 1.6
+	BYTE $0x66; BYTE $0x0F; BYTE $0x7C; BYTE $0xC0
+	//HADDPD X0, X0  //Added in 1.6
 	MOVQ	X0, ret+48(FP)
 	RET
