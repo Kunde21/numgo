@@ -52,6 +52,39 @@ func TestC(t *testing.T) {
 	}
 }
 
+func TestShape(t *testing.T) {
+	var a *Array64
+	for i := 0; i < 20; i++ {
+		sz := rnd()
+		a = NewArray64(nil, sz...)
+		for i, v := range a.Shape() {
+			if a.shape[i] != v {
+				t.Log("Change at", i, "was", a.shape[i], "is", v)
+				t.Fail()
+			}
+		}
+		ch := rand.Intn(len(sz))
+		sh := a.Shape()
+		sh[ch] -= 1
+		for i, v := range a.shape {
+			if sh[i] != v && i != ch {
+				t.Log("Change at", i, "was", a.shape[i], "is", v)
+				t.Fail()
+			}
+			if sh[i] == v && i == ch {
+				t.Log("Change propagated at", i, "was", a.shape[i], "is", v)
+				t.Fail()
+			}
+		}
+	}
+	sh := a.Reshape(-1).Shape()
+	if !a.HasErr() || sh != nil {
+		t.Log("Shape() error handling incorrect")
+		t.Log("Shape:", sh, "Err:", a.getErr())
+		t.Fail()
+	}
+}
+
 func TestAt(t *testing.T) {
 	t.Parallel()
 	a := Arange(125).Reshape(5, 5, 5)

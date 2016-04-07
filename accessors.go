@@ -35,6 +35,14 @@ func (a *Array64) C() (b *Array64) {
 	return b
 }
 
+// Shape returns a copy of the array shape
+func (a *Array64) Shape() []uint64 {
+	if a.HasErr() {
+		return nil
+	}
+	return append([]uint64{}, a.shape...)
+}
+
 // At returns the element at the given index.
 // There should be one index per axis.  Generates a ShapeError if incorrect index.
 func (a *Array64) At(index ...int) float64 {
