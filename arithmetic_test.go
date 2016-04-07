@@ -17,7 +17,7 @@ func TestAddC(t *testing.T) {
 	a := Arange(21)
 
 	if b := a.AddC(2).Equals(Arange(2, 22)); !b.All().At(0) {
-		t.Log(Arange(2, 200003).shape)
+		t.Log(Arange(2, 23).shape)
 		t.Log(a.shape)
 		t.Fail()
 	}
@@ -154,6 +154,20 @@ func TestAdd(t *testing.T) {
 		t.Fail()
 	}
 	runtime.GC()
+
+	a, b = NewArray64(nil, 4, 4, 5), Arange(16).Reshape(4, 4, 1)
+	a.Add(b)
+	if a.HasErr() {
+		t.Log("Broadcasting down failed", a.GetErr())
+		t.Fail()
+	} else {
+		for i, v := range a.data {
+			if v != float64(i/5) {
+				t.Log("Unexpected value at", i, "Expected", float64(i/5))
+				t.Fail()
+			}
+		}
+	}
 }
 
 func TestSubtr(t *testing.T) {
@@ -200,7 +214,19 @@ func TestSubtr(t *testing.T) {
 		t.Log(a.GetErr())
 		t.Fail()
 	}
-
+	a, b := NewArray64(nil, 4, 4, 5), Arange(16).Reshape(4, 4, 1)
+	a.Subtr(b)
+	if a.HasErr() {
+		t.Log("Broadcasting down failed", a.GetErr())
+		t.Fail()
+	} else {
+		for i, v := range a.data {
+			if v != -float64(i/5) {
+				t.Log("Unexpected value at", i, "Expected", -float64(i/5))
+				t.Fail()
+			}
+		}
+	}
 }
 
 func TestMult(t *testing.T) {
@@ -222,6 +248,19 @@ func TestMult(t *testing.T) {
 	if !a.HasErr() {
 		t.Log(a.GetErr())
 		t.Fail()
+	}
+	a, b := NewArray64(nil, 4, 4, 5), Arange(16).Reshape(4, 4, 1)
+	a.Add(b).Mult(b)
+	if a.HasErr() {
+		t.Log("Broadcasting down failed", a.GetErr())
+		t.Fail()
+	} else {
+		for i, v := range a.data {
+			if v != float64((i/5)*(i/5)) {
+				t.Log("Unexpected value at", i, "Got", v, "Expected", float64((i/5)*(i/5)))
+				t.Fail()
+			}
+		}
 	}
 }
 
