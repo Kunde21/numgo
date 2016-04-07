@@ -1,6 +1,9 @@
 package numgo
 
-import "testing"
+import (
+	"math"
+	"testing"
+)
 
 func TestDotProd(t *testing.T) {
 	a, b := Arange(11), Arange(11).AddC(1)
@@ -12,21 +15,23 @@ func TestDotProd(t *testing.T) {
 		e error
 	}{
 		{a, b, 440, nil},
+		{a.C().Resize(2, 5), b.C().Resize(2, 4), math.NaN(), ShapeError},
 		{a.C().Resize(10), b.C().Resize(10), 330, nil},
+		{a.C().Resize(2, 5), b.C().Resize(2, 5), 0, nil},
 	} {
-		if c := v.a.DotProd(v.b); c.At(0) != v.c {
+		if c := v.a.DotProd(v.b); c.At(0) != v.c && math.IsNaN(c.At(0)) != math.IsNaN(v.c) {
 			t.Log("Test", i, "Expected", v.c, "Got", c.At(0))
 			t.Fail()
 		}
 		fmaSupt = false
 
-		if c := v.a.DotProd(v.b); c.At(0) != v.c {
+		if c := v.a.DotProd(v.b); c.At(0) != v.c && math.IsNaN(c.At(0)) != math.IsNaN(v.c) {
 			t.Log("Test", i, "No FMA expected", v.c, "Got", c.At(0))
 			t.Fail()
 		}
 		fmaSupt = fmaSet
 
-		if c := a.GetErr(); c != v.e {
+		if c := v.a.GetErr(); c != v.e {
 			t.Log("Error test", i, "Expected", v.e, "Got", c)
 			t.Fail()
 		}
