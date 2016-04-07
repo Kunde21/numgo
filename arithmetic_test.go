@@ -333,35 +333,41 @@ func TestValRith(t *testing.T) {
 	t.Parallel()
 	var a, b *Array64
 	if !a.valRith(b, "") {
+		t.Log("Nil not caught")
 		t.Fail()
 	}
 
 	a = NewArray64(nil, 0)
 	if !a.valRith(b, "") {
+		t.Log("Nil var not caught")
 		t.Fail()
 	}
 
 	_ = a.GetErr()
 	b = &Array64{err: DivZeroError}
 	if !a.valRith(b, "") {
+		t.Log("Var in error not caught")
 		t.Fail()
 	}
 
 	_ = a.GetErr()
 	b = NewArray64(nil, 2, 2, 2)
 	if !a.valRith(b, "") {
+		t.Log("Larger var not caught")
 		t.Fail()
 	}
 
 	_ = a.GetErr()
 	a = NewArray64(nil, 2, 2, 4)
 	if !a.valRith(b, "") {
+		t.Log("Axis mismatch not caught")
 		t.Fail()
 	}
 
 	_ = a.GetErr()
 	a.Resize(2, 2, 2)
 	if a.valRith(b, "") {
+		t.Log("Correct values failed", a.GetErr())
 		t.Fail()
 	}
 }

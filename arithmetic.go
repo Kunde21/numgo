@@ -7,6 +7,12 @@ import (
 	"sync"
 )
 
+var nan float64
+
+func init() {
+	nan = math.NaN()
+}
+
 // Add performs element-wise addition
 // Arrays must be the same size or able to broadcast.
 // This will modify the source array.
@@ -15,7 +21,15 @@ func (a *Array64) Add(b *Array64) *Array64 {
 		return a
 	}
 
-	add(a.data, b.data)
+	if b.shape[len(b.shape)-1] == a.shape[len(a.shape)-1] {
+		add(a.data, b.data)
+		return a
+	}
+
+	st := a.strides[len(a.strides)-1] * a.shape[len(a.shape)-1]
+	for i := uint64(0); i < uint64(len(b.data)); i++ {
+		addC(b.data[i], a.data[i*st:(i+1)*st])
+	}
 	return a
 }
 
@@ -37,7 +51,15 @@ func (a *Array64) Subtr(b *Array64) *Array64 {
 		return a
 	}
 
-	subtr(a.data, b.data)
+	if b.shape[len(b.shape)-1] == a.shape[len(a.shape)-1] {
+		subtr(a.data, b.data)
+		return a
+	}
+
+	st := a.strides[len(a.strides)-1] * a.shape[len(a.shape)-1]
+	for i := uint64(0); i < uint64(len(b.data)); i++ {
+		subtrC(b.data[i], a.data[i*st:(i+1)*st])
+	}
 	return a
 }
 
@@ -59,7 +81,15 @@ func (a *Array64) Mult(b *Array64) *Array64 {
 		return a
 	}
 
-	mult(a.data, b.data)
+	if b.shape[len(b.shape)-1] == a.shape[len(a.shape)-1] {
+		mult(a.data, b.data)
+		return a
+	}
+
+	st := a.strides[len(a.strides)-1] * a.shape[len(a.shape)-1]
+	for i := uint64(0); i < uint64(len(b.data)); i++ {
+		multC(b.data[i], a.data[i*st:(i+1)*st])
+	}
 	return a
 }
 
@@ -82,7 +112,21 @@ func (a *Array64) Div(b *Array64) *Array64 {
 		return a
 	}
 
-	div(a.data, b.data)
+	if b.shape[len(b.shape)-1] == a.shape[len(a.shape)-1] {
+		div(a.data, b.data)
+		return a
+	}
+
+	st := a.strides[len(a.strides)-1] * a.shape[len(a.shape)-1]
+	for i := uint64(0); i < uint64(len(b.data)); i++ {
+		for j := i * st; j < (i+1)*st; j++ {
+			if b.data[i] == 0 {
+				a.data[j] = nan
+			} else {
+				a.data[j] /= b.data[i]
+			}
+		}
+	}
 	return a
 }
 
@@ -98,11 +142,12 @@ func (a *Array64) DivC(b float64) *Array64 {
 			a.debug = "Division by zero encountered in DivC()"
 			a.stack = string(stackBuf[:runtime.Stack(stackBuf, false)])
 		}
+		return a
 	}
 
 	for i := 0; i < len(a.data); i++ {
 		if b == 0 {
-			a.data[i] = math.NaN()
+			a.data[i] = nan
 		} else {
 			a.data[i] /= b
 		}
@@ -118,12 +163,22 @@ func (a *Array64) Pow(b *Array64) *Array64 {
 		return a
 	}
 
-	lna, lnb := len(a.data), len(b.data)
-	for i, j := 0, 0; i < lna; i, j = i+1, j+1 {
-		if j >= lnb {
-			j = 0
+	if b.shape[len(b.shape)-1] == a.shape[len(a.shape)-1] {
+		lna, lnb := len(a.data), len(b.data)
+		for i, j := 0, 0; i < lna; i, j = i+1, j+1 {
+			if j >= lnb {
+				j = 0
+			}
+			a.data[i] = math.Pow(a.data[i], b.data[j])
 		}
-		a.data[i] = math.Pow(a.data[i], b.data[j])
+		return a
+	}
+
+	st := a.strides[len(a.strides)-1] * a.shape[len(a.shape)-1]
+	for i := uint64(0); i < uint64(len(b.data)); i++ {
+		for j := i * st; j < (i+1)*st; j++ {
+			a.data[j] = math.Pow(a.data[j], b.data[i])
+		}
 	}
 	return a
 }
@@ -190,6 +245,7 @@ func (a *Array64) FMA21(x float64, b *Array64) *Array64 {
 
 // valAr needs to be called before
 func (a *Array64) valRith(b *Array64, mthd string) bool {
+	var flag bool
 	switch {
 	case a.HasErr():
 		return true
@@ -208,23 +264,34 @@ func (a *Array64) valRith(b *Array64, mthd string) bool {
 		}
 		return true
 	case len(a.shape) < len(b.shape):
-		a.err = ShapeError
-		if debug {
-			a.debug = fmt.Sprintf("Array received by %s() can not be broadcast.  Shape: %v  Val shape: %v", mthd, a.shape, b.shape)
-			a.stack = string(stackBuf[:runtime.Stack(stackBuf, false)])
-		}
-		return true
+		goto shape
 	}
 
 	for i, j := len(b.shape)-1, len(a.shape)-1; i >= 0; i, j = i-1, j-1 {
 		if a.shape[j] != b.shape[i] {
-			a.err = ShapeError
-			if debug {
-				a.debug = fmt.Sprintf("Array received by %s() can not be broadcast.  Shape: %v  Val shape: %v", mthd, a.shape, b.shape)
-				a.stack = string(stackBuf[:runtime.Stack(stackBuf, false)])
-			}
-			return true
+			flag = true
+			break
 		}
 	}
+	if !flag {
+		goto valid
+	}
+	if len(b.shape) != len(a.shape) || b.shape[len(b.shape)-1] != 1 {
+		goto shape
+	}
+	for i := 0; i < len(a.shape)-1; i++ {
+		if a.shape[i] != b.shape[i] {
+			goto shape
+		}
+	}
+valid:
 	return false
+shape:
+	a.err = ShapeError
+	if debug {
+		a.debug = fmt.Sprintf("Array received by %s() can not be broadcast.  Shape: %v  Val shape: %v",
+			mthd, a.shape, b.shape)
+		a.stack = string(stackBuf[:runtime.Stack(stackBuf, false)])
+	}
+	return true
 }
