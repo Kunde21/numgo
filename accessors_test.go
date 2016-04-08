@@ -65,7 +65,7 @@ func TestShape(t *testing.T) {
 		}
 		ch := rand.Intn(len(sz))
 		sh := a.Shape()
-		sh[ch] -= 1
+		sh[ch]--
 		for i, v := range a.shape {
 			if sh[i] != v && i != ch {
 				t.Log("Change at", i, "was", a.shape[i], "is", v)
