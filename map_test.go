@@ -2,7 +2,7 @@ package numgo
 
 import "testing"
 
-func TestcleanAxis(t *testing.T) {
+func TestCleanAxis(t *testing.T) {
 
 	tests := []struct {
 		a, b []int
@@ -21,6 +21,40 @@ func TestcleanAxis(t *testing.T) {
 				t.Logf("Test %d failed.  Expected %v received %v\n", i, v.b, clean)
 				t.Fail()
 				break
+			}
+		}
+	}
+}
+
+func TestValAxis(t *testing.T) {
+	t.Parallel()
+tests:
+	for i, v := range []struct {
+		a      *Array64
+		ax, re []int
+		err    error
+	}{
+		{new(Array64), []int{0}, []int{0}, NilError},
+		{Arange(10), []int{0}, []int{}, nil},
+		{Arange(10), []int{1}, []int{1}, IndexError},
+		{Arange(10).Reshape(2, 5), []int{1, -1}, []int{1, -1}, IndexError},
+		{Arange(10).Reshape(2, 5), []int{1, 0}, []int{}, nil},
+		{&Array64{err: DivZeroError}, []int{}, []int{}, DivZeroError},
+	} {
+		if v.a.valAxis(&v.ax, "Test"); v.a.getErr() != v.err {
+			t.Log("Error mismatch.  Expected", v.err, "Got", v.a.getErr())
+			t.Fail()
+		}
+		if len(v.ax) != len(v.re) {
+			t.Log("Length incorrect.  Expected", v.re, "Got", v.ax)
+			t.Fail()
+			continue tests
+		}
+		for idx, ax := range v.ax {
+			if ax != v.re[idx] {
+				t.Log("Result incorrect.  Expected", v.re, "Got", v.ax)
+				t.Fail()
+				continue tests
 			}
 		}
 	}

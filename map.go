@@ -40,7 +40,7 @@ func cleanAxis(axis *[]int) *[]int {
 func (a *Array64) valAxis(axis *[]int, mthd string) bool {
 	axis = cleanAxis(axis)
 	switch {
-	case a == nil || a.err != nil:
+	case a.HasErr():
 		return true
 	case len(*axis) > len(a.shape):
 		a.err = ShapeError
@@ -60,8 +60,10 @@ func (a *Array64) valAxis(axis *[]int, mthd string) bool {
 			return true
 		}
 	}
+	if len(*axis) == len(a.shape) {
+		*axis = (*axis)[:0]
+	}
 	return false
-
 }
 
 // collapse will reorganize data by putting element dataset in continuous sections of data slice.
