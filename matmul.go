@@ -5,6 +5,8 @@ package numgo
 // - Cross Product
 // - Tensor Product
 
+// DotProd calculates the dot (scalar) product of two vectors.
+// NOTE: Only implemented on 1-D arrays, and other sizes are NOOP
 func (a *Array64) DotProd(b *Array64) *Array64 {
 	switch {
 	case a.valRith(b, "DotProd"):
