@@ -42,17 +42,17 @@ tests:
 		{&Array64{err: DivZeroError}, []int{}, []int{}, DivZeroError},
 	} {
 		if v.a.valAxis(&v.ax, "Test"); v.a.getErr() != v.err {
-			t.Log("Error mismatch.  Expected", v.err, "Got", v.a.getErr())
+			t.Log("Error mismatch.", i, "Expected", v.err, "Got", v.a.getErr())
 			t.Fail()
 		}
 		if len(v.ax) != len(v.re) {
-			t.Log("Length incorrect.  Expected", v.re, "Got", v.ax)
+			t.Log("Length incorrect.", i, "Expected", v.re, "Got", v.ax)
 			t.Fail()
 			continue tests
 		}
 		for idx, ax := range v.ax {
 			if ax != v.re[idx] {
-				t.Log("Result incorrect.  Expected", v.re, "Got", v.ax)
+				t.Log("Result incorrect.", i, "Expected", v.re, "Got", v.ax)
 				t.Fail()
 				continue tests
 			}
