@@ -5,44 +5,36 @@
 // func initasm()(a,a2 bool)
 // pulled from runtime/asm_amd64.s
 TEXT ·initasm(SB), NOSPLIT, $0
-	MOVQ $1, AX
-	CPUID
-	ANDL $0x18001000, CX
-	CMPL CX, $0x18001000
-	JNE  nofma
-	MOVB $1, ·fmaSupt(SB) // set numgo·fmaSupt
-	JMP  fma
+	MOVQ $1, R15
 
-nofma:
-	MOVB $0, ·fmaSupt(SB)
-
-fma:
 	MOVQ $1, AX
 	CPUID
 
 	ANDL $0x1, CX
 	CMPL CX, $0x1
-	JNE nosse3
-	MOVB $1, ·sse3Supt(SB)
-	JMP sse3
-nosse3:
-	MOVB $0, ·sse3Supt(SB)
-sse3:	
+	CMOVQEQ R15, R9
+	MOVB R9, ·sse3Supt(SB)
+	XORQ R9, R9
+
 	MOVQ $1, AX
 	CPUID
+	ANDL $0x18001000, CX
+	CMPL CX, $0x18001000
+	CMOVQEQ R15, R9
+	MOVB R9, ·fmaSupt(SB) // set numgo·fmaSupt
+	XORQ R9, R9
 
-	// Detect AVX and AVX2 as per 14.7.1  Detection of AVX2 chapter of [1]
-	// [1] 64-ia-32-architectures-software-developer-manual-325462.pdf
-	// http://www.intel.com/content/dam/www/public/us/en/documents/manuals/64-ia-32-architectures-software-developer-manual-325462.pdf
-	ANDL $0x18000000, CX // check for OSXSAVE and AVX bits
+	ANDL $0x18000000, CX 
 	CMPL CX, $0x18000000
 	JNE  noavx
 
 	// For XGETBV, OSXSAVE bit is required and sufficient
-	MOVL $0, CX
+	MOVQ $0, CX
 
 	// Check for FMA capability
+	// XGETBV
 	BYTE $0x0F; BYTE $0x01; BYTE $0xD0
+	
 	ANDL $6, AX
 	CMPL AX, $6                        // Check for OS support of YMM registers
 	JNE  noavx
@@ -50,18 +42,18 @@ sse3:
 
 	// Check for AVX2 capability
 	MOVL $7, AX
-	MOVL $0, CX
+	XORQ CX, CX
 	CPUID
 	ANDL $0x20, BX         // check for AVX2 bit
 	CMPL BX, $0x20
-	JNE  noavx2
-	MOVB $1, ·avx2Supt(SB) // set numgo·avx2Supt
+	CMOVQEQ R15, R9
+	MOVB R9, ·avx2Supt(SB) // set numgo·avx2Supt
+	XORQ R9, R9
 	RET
 
 noavx:
+	MOVB $0, ·fmaSupt(SB) // set numgo·fmaSupt
 	MOVB $0, ·avxSupt(SB) // set numgo·avxSupt
-
-noavx2:
 	MOVB $0, ·avx2Supt(SB) // set numgo·avx2Supt
 	RET
 
@@ -116,6 +108,7 @@ AVX_ACLOOP:
 
 	// VMOVDQA Y1, (R10)
 	BYTE $0xC4; BYTE $0xC1; BYTE $0x7E; BYTE $0x7F; BYTE $0x0A
+	
 	ADDQ $32, R10
 	SUBQ $4, SI
 	JGE  AVX_ACLOOP
