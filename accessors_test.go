@@ -292,10 +292,10 @@ func TestSetSubArr(t *testing.T) {
 		t.Log("Did not error correctly.  Expected ShapeError, got ", e)
 		t.Fail()
 	}
-	b.err = DivZeroError
+	b.err = InvIndexError
 	a.SetSubArr(b.Reshape(3, 5), 0, 1)
-	if e := a.GetErr(); e != DivZeroError {
-		t.Log("Did not error correctly.  Expected DivZeroError, got ", e)
+	if e := a.GetErr(); e != InvIndexError {
+		t.Log("Did not error correctly.  Expected InvIndexError, got ", e)
 		t.Fail()
 	}
 	b.err, a = nil, nil
@@ -348,9 +348,9 @@ func TestResize(t *testing.T) {
 		t.Fail()
 	}
 
-	a.err = DivZeroError
-	if e := a.Resize(10).GetErr(); e != DivZeroError {
-		t.Log("Error didn't pass through correctly.  Expected DivZeroError, got", e)
+	a.err = InvIndexError
+	if e := a.Resize(10).GetErr(); e != InvIndexError {
+		t.Log("Error didn't pass through correctly.  Expected InvIndexError, got", e)
 		t.Fail()
 	}
 }
@@ -415,10 +415,10 @@ func TestAppend(t *testing.T) {
 		t.Fail()
 	}
 
-	a.err = DivZeroError
+	a.err = InvIndexError
 	a.Append(b, 0)
-	if e := a.GetErr(); e != DivZeroError {
-		t.Log("Expected DivZeroError, received", e)
+	if e := a.GetErr(); e != InvIndexError {
+		t.Log("Expected InvIndexError, received", e)
 		t.Fail()
 	}
 

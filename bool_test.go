@@ -113,7 +113,7 @@ func TestStringB(t *testing.T) {
 	}{
 		{nil, "<nil>"},
 		{newArrayB(0), "[]"},
-		{&Arrayb{err: DivZeroError}, "Error: " + DivZeroError.s},
+		{&Arrayb{err: InvIndexError}, "Error: " + InvIndexError.s},
 		{Fullb(true, 10), fmt.Sprint(Fullb(true, 10).data)},
 		{Fullb(false, 10).Reshape(2, 5), "[[false false false false false] \n [false false false false false]]"},
 		{Fullb(true, 20).Reshape(2, 2, 5), "[[[true true true true true]  \n  [true true true true true]] \n\n [[true true true true true]  \n  [true true true true true]]]"},
@@ -140,7 +140,7 @@ func TestReshapeB(t *testing.T) {
 		{Fullb(false, 10), []int{2, 5}, nil},
 		{Fullb(false, 11), []int{2, 5}, ReshapeError},
 		{Fullb(false, 10), []int{2, -5}, NegativeAxis},
-		{&Arrayb{err: DivZeroError}, []int{0}, DivZeroError},
+		{&Arrayb{err: InvIndexError}, []int{0}, InvIndexError},
 		{nil, []int{1}, NilError},
 	}
 
@@ -389,10 +389,10 @@ func TestSetSubArrb(t *testing.T) {
 		t.Log("Did not error correctly.  Expected ShapeError, got ", e)
 		t.Fail()
 	}
-	b.err = DivZeroError
+	b.err = InvIndexError
 	a.SetSubArr(b.Reshape(3, 5), 0, 1)
-	if e := a.GetErr(); e != DivZeroError {
-		t.Log("Did not error correctly.  Expected DivZeroError, got ", e)
+	if e := a.GetErr(); e != InvIndexError {
+		t.Log("Did not error correctly.  Expected InvIndexError, got ", e)
 		t.Fail()
 	}
 	b.err, a = nil, nil
@@ -445,9 +445,9 @@ func TestResizeb(t *testing.T) {
 		t.Fail()
 	}
 
-	a.err = DivZeroError
-	if e := a.Resize(10).GetErr(); e != DivZeroError {
-		t.Log("Error didn't pass through correctly.  Expected DivZeroError, got", e)
+	a.err = InvIndexError
+	if e := a.Resize(10).GetErr(); e != InvIndexError {
+		t.Log("Error didn't pass through correctly.  Expected InvIndexError, got", e)
 		t.Fail()
 	}
 }
@@ -512,10 +512,10 @@ func TestAppendb(t *testing.T) {
 		t.Fail()
 	}
 
-	a.err = DivZeroError
+	a.err = InvIndexError
 	a.Append(b, 0)
-	if e := a.GetErr(); e != DivZeroError {
-		t.Log("Expected DivZeroError, received", e)
+	if e := a.GetErr(); e != InvIndexError {
+		t.Log("Expected InvIndexError, received", e)
 		t.Fail()
 	}
 }

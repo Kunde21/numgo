@@ -25,8 +25,6 @@ var (
 	NegativeAxis = &ngError{"NegativeAxis: Negative axis length received."}
 	// IndexError flags any attempt to index out of range
 	IndexError = &ngError{"IndexError: Index or Axis out of range."}
-	// DivZeroError flags division by zero
-	DivZeroError = &ngError{"DivZeroError: Division by zero encountered."}
 	// InvIndexError flags Negative or illegal indexes
 	InvIndexError = &ngError{"InvIndexError: Invalid or illegal index received."}
 	// FoldMapError catches panics within Fold/FoldCC/Map calls.
@@ -126,12 +124,10 @@ func encodeErr(err error) int8 {
 		return 4
 	case IndexError:
 		return 5
-	case DivZeroError:
-		return 6
 	case InvIndexError:
-		return 7
+		return 6
 	case FoldMapError:
-		return 8
+		return 7
 	}
 	return -1
 }
@@ -152,10 +148,8 @@ func decodeErr(err int8) (a error) {
 	case 5:
 		a = IndexError
 	case 6:
-		a = DivZeroError
-	case 7:
 		a = InvIndexError
-	case 8:
+	case 7:
 		a = FoldMapError
 	default:
 		a = &ngError{fmt.Sprintf("Unknown error Unmarshaled: %d", err)}

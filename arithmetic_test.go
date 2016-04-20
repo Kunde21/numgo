@@ -407,7 +407,7 @@ func TestValRith(t *testing.T) {
 	}{
 		{a, b, NilError, "Nil not caught"},
 		{NewArray64(nil, 0), b, NilError, "Nil var not caught"},
-		{NewArray64(nil, 0), &Array64{err: DivZeroError}, DivZeroError, "Var in error not caught"},
+		{NewArray64(nil, 0), &Array64{err: InvIndexError}, InvIndexError, "Var in error not caught"},
 		{NewArray64(nil, 0), NewArray64(nil, 2, 2, 2), ShapeError, "Larger var not caught"},
 		{NewArray64(nil, 2, 2, 4), NewArray64(nil, 2, 2, 2), ShapeError, "Axis mismatch not caught"},
 		{NewArray64(nil, 2, 2, 2), NewArray64(nil, 2, 2, 2), nil, "Correct values failed"},

@@ -36,7 +36,7 @@ func TestEncodeDecode(t *testing.T) {
 		ReshapeError,
 		NegativeAxis,
 		IndexError,
-		DivZeroError,
+		InvIndexError,
 		InvIndexError,
 		FoldMapError,
 	} {
@@ -90,13 +90,13 @@ func TestGetErr(t *testing.T) {
 		t.Fail()
 	}
 
-	d.err = DivZeroError
-	if e := d.GetErr(); e != DivZeroError {
+	d.err = InvIndexError
+	if e := d.GetErr(); e != InvIndexError {
 		t.Log("Error storage failed", e)
 		t.Fail()
 	}
-	c.err = DivZeroError
-	if e := c.GetErr(); e != DivZeroError {
+	c.err = InvIndexError
+	if e := c.GetErr(); e != InvIndexError {
 		t.Log("Error storage failed", e)
 		t.Fail()
 	}
