@@ -399,43 +399,30 @@ func TestFMA21(t *testing.T) {
 func TestValRith(t *testing.T) {
 	t.Parallel()
 	var a, b *Array64
-	if !a.valRith(b, "") {
-		t.Log("Nil not caught")
-		t.Fail()
-	}
 
-	a = NewArray64(nil, 0)
-	if !a.valRith(b, "") {
-		t.Log("Nil var not caught")
-		t.Fail()
-	}
-
-	_ = a.GetErr()
-	b = &Array64{err: DivZeroError}
-	if !a.valRith(b, "") {
-		t.Log("Var in error not caught")
-		t.Fail()
-	}
-
-	_ = a.GetErr()
-	b = NewArray64(nil, 2, 2, 2)
-	if !a.valRith(b, "") {
-		t.Log("Larger var not caught")
-		t.Fail()
-	}
-
-	_ = a.GetErr()
-	a = NewArray64(nil, 2, 2, 4)
-	if !a.valRith(b, "") {
-		t.Log("Axis mismatch not caught")
-		t.Fail()
-	}
-
-	_ = a.GetErr()
-	a.Resize(2, 2, 2)
-	if a.valRith(b, "") {
-		t.Log("Correct values failed", a.GetErr())
-		t.Fail()
+	for i, v := range []struct {
+		a, b *Array64
+		err  error
+		msg  string
+	}{
+		{a, b, NilError, "Nil not caught"},
+		{NewArray64(nil, 0), b, NilError, "Nil var not caught"},
+		{NewArray64(nil, 0), &Array64{err: DivZeroError}, DivZeroError, "Var in error not caught"},
+		{NewArray64(nil, 0), NewArray64(nil, 2, 2, 2), ShapeError, "Larger var not caught"},
+		{NewArray64(nil, 2, 2, 4), NewArray64(nil, 2, 2, 2), ShapeError, "Axis mismatch not caught"},
+		{NewArray64(nil, 2, 2, 2), NewArray64(nil, 2, 2, 2), nil, "Correct values failed"},
+		{NewArray64(nil, 2, 2, 4), NewArray64(nil, 2, 2, 1), nil, "Broadcast down failed"},
+		{NewArray64(nil, 2, 2, 4), NewArray64(nil, 2, 3, 1), ShapeError, "Broadcast down fault passed"},
+	} {
+		if v.a.valRith(v.b, "") != v.a.HasErr() {
+			t.Log(i, v.msg, v.a.GetErr())
+			t.Fail()
+		}
+		if v.a.getErr() != v.err {
+			t.Log(i, "Error mismatch:", v.a.GetErr())
+			t.Log(i, "Expected:", v.err)
+			t.Fail()
+		}
 	}
 }
 
