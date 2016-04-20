@@ -9,7 +9,7 @@ import (
 
 func init() {
 	debug = true
-	fmt.Println("AVX:", avxSupt, "AVX2:", avx2Supt, "SSE3:", sse3Supt, "FMA:", fmaSupt)
+	fmt.Println("SSE3:", sse3Supt, "AVX:", avxSupt, "FMA:", fmaSupt, "AVX2:", avx2Supt)
 }
 
 func TestAddC(t *testing.T) {
@@ -83,7 +83,8 @@ func TestDivC(t *testing.T) {
 		t.Log(a)
 		t.Fail()
 	}
-	a.DivC(0)
+
+	a.Reshape(-1).DivC(0)
 	if !a.HasErr() {
 		t.Log(a.GetErr())
 		t.Fail()
@@ -283,6 +284,19 @@ func TestDiv(t *testing.T) {
 		t.Log(a.GetErr())
 		t.Fail()
 	}
+	a, b := NewArray64(nil, 4, 4, 5), Arange(1, 16).Reshape(4, 4, 1)
+	a.Add(b).Div(b)
+	if a.HasErr() {
+		t.Log("Broadcasting down failed", a.GetErr())
+		t.Fail()
+	} else {
+		for i, v := range a.data {
+			if v != 1 {
+				t.Log("Unexpected value at", i, "Got", v, "Expected", 1)
+				t.Fail()
+			}
+		}
+	}
 }
 
 func TestPow(t *testing.T) {
@@ -302,12 +316,26 @@ func TestPow(t *testing.T) {
 		t.Log(a.GetErr())
 		t.Fail()
 	}
-
 	a.Reshape(10, 10).Pow(Arange(5))
 	if !a.HasErr() {
 		t.Log(a.GetErr())
 		t.Fail()
 	}
+
+	a, b := NewArray64(nil, 4, 4, 5), Arange(16).Reshape(4, 4, 1)
+	a.Add(b).Pow(b)
+	if a.HasErr() {
+		t.Log("Broadcasting down failed", a.GetErr())
+		t.Fail()
+	} else {
+		for i, v := range a.data {
+			if v != math.Pow(float64(i/5), float64(i/5)) {
+				t.Log("Unexpected value at", i, "Got", v, "Expected", math.Pow(float64(i/5), float64(i/5)))
+				t.Fail()
+			}
+		}
+	}
+
 }
 
 func TestFMA12(t *testing.T) {

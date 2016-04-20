@@ -105,7 +105,8 @@ func (a *Array64) MultC(b float64) *Array64 {
 
 // Div performs element-wise division
 // Arrays must be the same size or able to broadcast.
-// Division by zero will result in a math.NaN() values.
+// Division by zero conforms to IEEE 754
+// 0/0 = NaN, +x/0 = +Inf, -x/0 = -Inf
 // This will modify the source array.
 func (a *Array64) Div(b *Array64) *Array64 {
 	if a.valRith(b, "Div") {
@@ -119,39 +120,21 @@ func (a *Array64) Div(b *Array64) *Array64 {
 
 	st := a.strides[len(a.strides)-1] * a.shape[len(a.shape)-1]
 	for i := uint64(0); i < uint64(len(b.data)); i++ {
-		for j := i * st; j < (i+1)*st; j++ {
-			if b.data[i] == 0 {
-				a.data[j] = nan
-			} else {
-				a.data[j] /= b.data[i]
-			}
-		}
+		divC(b.data[i], a.data[i*st:(i+1)*st])
 	}
 	return a
 }
 
 // DivC divides all elements of the array by a constant.
-// Division by zero will result in a math.NaN() values.
+// Division by zero conforms to IEEE 754
+// 0/0 = NaN, +x/0 = +Inf, -x/0 = -Inf
 func (a *Array64) DivC(b float64) *Array64 {
 	switch {
 	case a.HasErr():
 		return a
-	case b == 0:
-		a.err = DivZeroError
-		if debug {
-			a.debug = "Division by zero encountered in DivC()"
-			a.stack = string(stackBuf[:runtime.Stack(stackBuf, false)])
-		}
-		return a
 	}
 
-	for i := 0; i < len(a.data); i++ {
-		if b == 0 {
-			a.data[i] = nan
-		} else {
-			a.data[i] /= b
-		}
-	}
+	divC(b, a.data)
 	return a
 }
 
@@ -274,7 +257,7 @@ func (a *Array64) valRith(b *Array64, mthd string) bool {
 		}
 	}
 	if !flag {
-		goto valid
+		return false
 	}
 	if len(b.shape) != len(a.shape) || b.shape[len(b.shape)-1] != 1 {
 		goto shape
@@ -284,7 +267,6 @@ func (a *Array64) valRith(b *Array64, mthd string) bool {
 			goto shape
 		}
 	}
-valid:
 	return false
 shape:
 	a.err = ShapeError
