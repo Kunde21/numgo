@@ -15,10 +15,7 @@ func (a *Array64) Equals(b *Array64) (r *Arrayb) {
 	}
 
 	r = a.comp(b, func(i, j float64) bool {
-		if i == j || math.IsNaN(i) && math.IsNaN(j) {
-			return true
-		}
-		return false
+		return i == j || math.IsNaN(i) && math.IsNaN(j)
 	})
 	return
 }
@@ -31,10 +28,7 @@ func (a *Array64) NotEq(b *Array64) (r *Arrayb) {
 	}
 
 	r = a.comp(b, func(i, j float64) bool {
-		if i != j && !(math.IsNaN(i) && math.IsNaN(j)) {
-			return true
-		}
-		return false
+		return i != j && !(math.IsNaN(i) && math.IsNaN(j))
 	})
 	return
 }
@@ -47,10 +41,7 @@ func (a *Array64) Less(b *Array64) (r *Arrayb) {
 	}
 
 	r = a.comp(b, func(i, j float64) bool {
-		if i < j {
-			return true
-		}
-		return false
+		return i < j
 	})
 	return
 }
@@ -63,10 +54,7 @@ func (a *Array64) LessEq(b *Array64) (r *Arrayb) {
 	}
 
 	r = a.comp(b, func(i, j float64) bool {
-		if i <= j {
-			return true
-		}
-		return false
+		return i <= j
 	})
 	return
 }
@@ -79,10 +67,7 @@ func (a *Array64) Greater(b *Array64) (r *Arrayb) {
 	}
 
 	r = a.comp(b, func(i, j float64) bool {
-		if i > j {
-			return true
-		}
-		return false
+		return i > j
 	})
 	return
 }
@@ -95,10 +80,7 @@ func (a *Array64) GreaterEq(b *Array64) (r *Arrayb) {
 	}
 
 	r = a.comp(b, func(i, j float64) bool {
-		if i >= j {
-			return true
-		}
-		return false
+		return i >= j
 	})
 	return
 
@@ -187,24 +169,21 @@ func (a *Arrayb) Any(axis ...int) *Arrayb {
 
 	sort.IntSlice(axis).Sort()
 	n := make([]uint64, len(a.shape)-len(axis))
+axis:
 	for i, t := 0, 0; i < len(a.shape); i++ {
-		tmp := false
 		for _, w := range axis {
 			if i == w {
-				tmp = true
-				break
+				continue axis
 			}
 		}
-		if !tmp {
-			n[t] = a.shape[i]
-			t++
-		}
+		n[t] = a.shape[i]
+		t++
 	}
 
 	t := a.data
 	for i := 0; i < len(axis); i++ {
 
-		maj, min := a.strides[axis[i]], a.strides[axis[i]+1]
+		maj, min := a.strides[axis[i]], a.strides[axis[i]]/a.shape[axis[i]]
 
 		for j := uint64(0); j+maj <= uint64(len(t)); j += maj {
 			for k := j; k < j+min; k++ {
@@ -252,24 +231,21 @@ func (a *Arrayb) All(axis ...int) *Arrayb {
 
 	sort.IntSlice(axis).Sort()
 	n := make([]uint64, len(a.shape)-len(axis))
+axis:
 	for i, t := 0, 0; i < len(a.shape); i++ {
-		tmp := false
 		for _, w := range axis {
 			if i == w {
-				tmp = true
-				break
+				continue axis
 			}
 		}
-		if !tmp {
-			n[t] = a.shape[i]
-			t++
-		}
+		n[t] = a.shape[i]
+		t++
 	}
 
 	t := a.data
 	for i := 0; i < len(axis); i++ {
 
-		maj, min := a.strides[axis[i]], a.strides[axis[i]+1]
+		maj, min := a.strides[axis[i]], a.strides[axis[i]]/a.shape[axis[i]]
 
 		for j := uint64(0); j+maj <= uint64(len(t)); j += maj {
 			for k := j; k < j+min; k++ {
@@ -336,10 +312,7 @@ func (a *Arrayb) Equals(b *Arrayb) (r *Arrayb) {
 	}
 
 	r = a.comp(b, func(i, j bool) bool {
-		if i == j {
-			return true
-		}
-		return false
+		return i == j
 	})
 	return
 }
@@ -352,10 +325,7 @@ func (a *Arrayb) NotEq(b *Arrayb) (r *Arrayb) {
 	}
 
 	r = a.comp(b, func(i, j bool) bool {
-		if i != j {
-			return true
-		}
-		return false
+		return i != j
 	})
 	return
 }
