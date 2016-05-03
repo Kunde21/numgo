@@ -1,6 +1,6 @@
 //+build !amd64 noasm appengine
 
-package numgo
+package asm
 
 var (
 	sse3Supt, avxSupt, avx2Supt, fmaSupt bool
@@ -9,31 +9,31 @@ var (
 func initasm() {
 }
 
-func addC(c float64, d []float64) {
+func AddC(c float64, d []float64) {
 	for i := range d {
 		d[i] += c
 	}
 }
 
-func subtrC(c float64, d []float64) {
+func SubtrC(c float64, d []float64) {
 	for i := range d {
 		d[i] -= c
 	}
 }
 
-func multC(c float64, d []float64) {
+func MultC(c float64, d []float64) {
 	for i := range d {
 		d[i] *= c
 	}
 }
 
-func divC(c float64, d []float64) {
+func DivC(c float64, d []float64) {
 	for i := range d {
 		d[i] /= c
 	}
 }
 
-func add(a, b []float64) {
+func Add(a, b []float64) {
 	lna, lnb := len(a), len(b)
 	for i, j := 0, 0; i < lna; i, j = i+1, j+1 {
 		if j >= lnb {
@@ -43,13 +43,13 @@ func add(a, b []float64) {
 	}
 }
 
-func vadd(a, b []float64) {
+func Vadd(a, b []float64) {
 	for i := range a {
 		a[i] += b[i]
 	}
 }
 
-func hadd(st uint64, a []float64) {
+func Hadd(st uint64, a []float64) {
 	ln := uint64(len(a))
 	for k := uint64(0); k < ln/st; k++ {
 		a[k] = a[k*st]
@@ -59,7 +59,7 @@ func hadd(st uint64, a []float64) {
 	}
 }
 
-func subtr(a, b []float64) {
+func Subtr(a, b []float64) {
 	lna, lnb := len(a), len(b)
 	for i, j := 0, 0; i < lna; i, j = i+1, j+1 {
 		if j >= lnb {
@@ -69,7 +69,7 @@ func subtr(a, b []float64) {
 	}
 }
 
-func mult(a, b []float64) {
+func Mult(a, b []float64) {
 	lna, lnb := len(a), len(b)
 	for i, j := 0, 0; i < lna; i, j = i+1, j+1 {
 		if j >= lnb {
@@ -79,7 +79,7 @@ func mult(a, b []float64) {
 	}
 }
 
-func div(a, b []float64) {
+func Div(a, b []float64) {
 	lna, lnb := len(a), len(b)
 	for i, j := 0, 0; i < lna; i, j = i+1, j+1 {
 		if j >= lnb {
@@ -89,7 +89,7 @@ func div(a, b []float64) {
 	}
 }
 
-func fma12(a float64, x, b []float64) {
+func Fma12(a float64, x, b []float64) {
 	lnx, lnb := len(x), len(b)
 	for i, j := 0, 0; i < lnx; i, j = i+1, j+1 {
 		if j >= lnb {
@@ -99,7 +99,7 @@ func fma12(a float64, x, b []float64) {
 	}
 }
 
-func fma21(a float64, x, b []float64) {
+func Fma21(a float64, x, b []float64) {
 	lnx, lnb := len(x), len(b)
 	for i, j := 0, 0; i < lnx; i, j = i+1, j+1 {
 		if j >= lnb {

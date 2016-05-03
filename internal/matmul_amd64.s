@@ -3,21 +3,21 @@
 #define NOSPLIT 7
 
 // func dotProd(a,b []float64) (float64)
-TEXT ·dotProd(SB), NOSPLIT, $0
+TEXT ·DotProd(SB), NOSPLIT, $0
 	// a data ptr
-	MOVQ a_base+0(FP), R8
-	MOVQ a_len+8(FP), SI
-	MOVQ b_base+24(FP), R9
-	MOVQ $0, DI
-	PXOR X0, X0
+	MOVQ 	a_base+0(FP), R8
+	MOVQ 	a_len+8(FP), SI
+	MOVQ 	b_base+24(FP), R9
+	XORQ 	DI, DI
+	PXOR 	X0, X0
 	
 	// zero len return
-	CMPQ  SI, $0
-	JE   dotp_end
+	CMPQ  	SI, $0
+	JE   	dotp_end
 
 	// check tail
-	SUBQ $2, SI
-	JL   dotp_tail
+	SUBQ 	$2, SI
+	JL   	dotp_tail
 
 	CMPB	·fmaSupt(SB), $1
 	JE 	dotp_fma_loop
@@ -30,13 +30,13 @@ dotp_loop:
 	CMPQ	DI, SI
 	JLE	dotp_loop
 dotp_tail:
-	ADDQ $1, SI
-	CMPQ DI, SI
-	JNE   dotp_end
-	MOVSD (R8)(DI*8), X1
-	MULSD (R9)(DI*8), X1
-	ADDSD X1, X0
-	JMP dotp_end
+	ADDQ 	$1, SI
+	CMPQ 	DI, SI
+	JNE   	dotp_end
+	MOVSD 	(R8)(DI*8), X1
+	MULSD 	(R9)(DI*8), X1
+	ADDSD 	X1, X0
+	JMP 	dotp_end
 
 dotp_fma_loop:
 	MOVOU 	(R8)(DI*8), X1
@@ -58,10 +58,10 @@ dotp_end:
 	MOVAPD	X0, X1
 	UNPCKHPD X1, X0
 	ADDPD 	X1, X0
-	MOVQ	X0, ret+48(FP)
+	MOVSD	X0, ret+48(FP)
 	RET
 dotp_sse3:
 	BYTE $0x66; BYTE $0x0F; BYTE $0x7C; BYTE $0xC0
 	//HADDPD X0, X0  //Added in 1.6
-	MOVQ	X0, ret+48(FP)
+	MOVSD	X0, ret+48(FP)
 	RET

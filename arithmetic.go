@@ -5,6 +5,8 @@ import (
 	"math"
 	"runtime"
 	"sync"
+
+	"github.com/Kunde21/numgo/internal"
 )
 
 var nan float64
@@ -22,13 +24,13 @@ func (a *Array64) Add(b *Array64) *Array64 {
 	}
 
 	if b.shape[len(b.shape)-1] == a.shape[len(a.shape)-1] {
-		add(a.data, b.data)
+		asm.Add(a.data, b.data)
 		return a
 	}
 
 	st := a.strides[len(a.strides)-1] * a.shape[len(a.shape)-1]
 	for i := uint64(0); i < uint64(len(b.data)); i++ {
-		addC(b.data[i], a.data[i*st:(i+1)*st])
+		asm.AddC(b.data[i], a.data[i*st:(i+1)*st])
 	}
 	return a
 }
@@ -39,7 +41,7 @@ func (a *Array64) AddC(b float64) *Array64 {
 		return a
 	}
 
-	addC(b, a.data)
+	asm.AddC(b, a.data)
 	return a
 }
 
@@ -52,13 +54,13 @@ func (a *Array64) Subtr(b *Array64) *Array64 {
 	}
 
 	if b.shape[len(b.shape)-1] == a.shape[len(a.shape)-1] {
-		subtr(a.data, b.data)
+		asm.Subtr(a.data, b.data)
 		return a
 	}
 
 	st := a.strides[len(a.strides)-1] * a.shape[len(a.shape)-1]
 	for i := uint64(0); i < uint64(len(b.data)); i++ {
-		subtrC(b.data[i], a.data[i*st:(i+1)*st])
+		asm.SubtrC(b.data[i], a.data[i*st:(i+1)*st])
 	}
 	return a
 }
@@ -69,7 +71,7 @@ func (a *Array64) SubtrC(b float64) *Array64 {
 		return a
 	}
 
-	subtrC(b, a.data)
+	asm.SubtrC(b, a.data)
 	return a
 }
 
@@ -82,13 +84,13 @@ func (a *Array64) Mult(b *Array64) *Array64 {
 	}
 
 	if b.shape[len(b.shape)-1] == a.shape[len(a.shape)-1] {
-		mult(a.data, b.data)
+		asm.Mult(a.data, b.data)
 		return a
 	}
 
 	st := a.strides[len(a.strides)-1] * a.shape[len(a.shape)-1]
 	for i := uint64(0); i < uint64(len(b.data)); i++ {
-		multC(b.data[i], a.data[i*st:(i+1)*st])
+		asm.MultC(b.data[i], a.data[i*st:(i+1)*st])
 	}
 	return a
 }
@@ -99,7 +101,7 @@ func (a *Array64) MultC(b float64) *Array64 {
 		return a
 	}
 
-	multC(b, a.data)
+	asm.MultC(b, a.data)
 	return a
 }
 
@@ -114,13 +116,13 @@ func (a *Array64) Div(b *Array64) *Array64 {
 	}
 
 	if b.shape[len(b.shape)-1] == a.shape[len(a.shape)-1] {
-		div(a.data, b.data)
+		asm.Div(a.data, b.data)
 		return a
 	}
 
 	st := a.strides[len(a.strides)-1] * a.shape[len(a.shape)-1]
 	for i := uint64(0); i < uint64(len(b.data)); i++ {
-		divC(b.data[i], a.data[i*st:(i+1)*st])
+		asm.DivC(b.data[i], a.data[i*st:(i+1)*st])
 	}
 	return a
 }
@@ -134,7 +136,7 @@ func (a *Array64) DivC(b float64) *Array64 {
 		return a
 	}
 
-	divC(b, a.data)
+	asm.DivC(b, a.data)
 	return a
 }
 
@@ -191,7 +193,7 @@ func (a *Array64) FMA12(x float64, b *Array64) *Array64 {
 		cmp.Add(mul)
 		for k := 0; k < mul; k++ {
 			go func(m int) {
-				fma12(x, a.data[m:m+len(b.data)], b.data)
+				asm.Fma12(x, a.data[m:m+len(b.data)], b.data)
 				cmp.Done()
 			}(k * len(b.data))
 		}
@@ -199,7 +201,7 @@ func (a *Array64) FMA12(x float64, b *Array64) *Array64 {
 		return a
 	}
 
-	fma12(x, a.data, b.data)
+	asm.Fma12(x, a.data, b.data)
 	return a
 }
 
@@ -214,7 +216,7 @@ func (a *Array64) FMA21(x float64, b *Array64) *Array64 {
 		cmp.Add(mul)
 		for k := 0; k < mul; k++ {
 			go func(m int) {
-				fma21(x, a.data[m:m+len(b.data)], b.data)
+				asm.Fma21(x, a.data[m:m+len(b.data)], b.data)
 				cmp.Done()
 			}(k * len(b.data))
 		}
@@ -222,7 +224,7 @@ func (a *Array64) FMA21(x float64, b *Array64) *Array64 {
 		return a
 	}
 
-	fma21(x, a.data, b.data)
+	asm.Fma21(x, a.data, b.data)
 	return a
 }
 

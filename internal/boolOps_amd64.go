@@ -1,5 +1,5 @@
 //+build !noasm,!appengine
 
-package numgo
+package asm
 
 func findBool(vals []bool, find bool) (flg bool)

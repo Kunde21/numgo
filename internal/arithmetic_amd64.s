@@ -58,7 +58,7 @@ noavx:
 	RET
 
 // func AddC(c float64, d []float64)
-TEXT ·addC(SB), NOSPLIT, $0
+TEXT ·AddC(SB), NOSPLIT, $0
 	// data ptr
 	MOVQ d+8(FP), R10
 
@@ -131,7 +131,7 @@ ACEND:
 	RET
 
 // func subtrC(c float64, d []float64)
-TEXT ·subtrC(SB), NOSPLIT, $0
+TEXT ·SubtrC(SB), NOSPLIT, $0
 	// data ptr
 	MOVQ d+8(FP), R10
 
@@ -177,7 +177,7 @@ SCEND:
 	RET
 
 // func multC(c float64, d []float64)
-TEXT ·multC(SB), NOSPLIT, $0
+TEXT ·MultC(SB), NOSPLIT, $0
 	MOVQ d_base+8(FP), R10
 	MOVQ d_len+16(FP), SI
 
@@ -218,7 +218,7 @@ MCEND:
 	RET
 
 // func divC(c float64, d []float64)
-TEXT ·divC(SB), NOSPLIT, $0
+TEXT ·DivC(SB), NOSPLIT, $0
 	// data ptr
 	MOVQ d+8(FP), R10
 
@@ -264,7 +264,7 @@ DCEND:
 	RET
 
 // func add(a,b []float64)
-TEXT ·add(SB), NOSPLIT, $0
+TEXT ·Add(SB), NOSPLIT, $0
 	// a data ptr
 	MOVQ a_base+0(FP), R8
 
@@ -336,7 +336,7 @@ AEND:
 
 // func vadd(a,b[]float64)
 // req:  len(a) == len(b)
-TEXT ·vadd(SB), NOSPLIT, $0
+TEXT ·Vadd(SB), NOSPLIT, $0
 	// a data ptr
 	MOVQ a_base+0(FP), R8
 
@@ -429,7 +429,7 @@ vadd_exit:
 
 // func hadd(st uint64, a []float64)
 // req:  len(a) == len(b)
-TEXT ·hadd(SB), NOSPLIT, $0
+TEXT ·Hadd(SB), NOSPLIT, $0
 	// a data ptr
 	MOVQ a_base+8(FP), R8
 	MOVQ R8, R9
@@ -523,7 +523,7 @@ hadd_exit:
 
 	
 // func subtr(a,b []float64)
-TEXT ·subtr(SB), NOSPLIT, $0
+TEXT ·Subtr(SB), NOSPLIT, $0
 	// a data ptr
 	MOVQ a_base+0(FP), R8
 
@@ -595,7 +595,7 @@ SEND:
 	RET
 
 // func mult(a,b []float64)
-TEXT ·mult(SB), NOSPLIT, $0
+TEXT ·Mult(SB), NOSPLIT, $0
 	// a data ptr
 	MOVQ a_base+0(FP), R8
 
@@ -667,7 +667,7 @@ MEND:
 	RET
 
 // func div(a,b []float64)
-TEXT ·div(SB), NOSPLIT, $0
+TEXT ·Div(SB), NOSPLIT, $0
 	// a data ptr
 	MOVQ a_base+0(FP), R8
 
@@ -738,7 +738,7 @@ DEND:
 
 // func fma12(a float64, x,b []float64)
 // x[i] = a*x[i]+b[i]
-TEXT ·fma12(SB), NOSPLIT, $0
+TEXT ·Fma12(SB), NOSPLIT, $0
 	// a ptr
 	MOVSD  a+0(FP), X2
 	SHUFPD $0, X2, X2
@@ -849,7 +849,7 @@ F12END:
 
 // func fma21(a float64, x,b []float64)
 // x[i] = x[i]*b[i]+a
-TEXT ·fma21(SB), NOSPLIT, $0
+TEXT ·Fma21(SB), NOSPLIT, $0
 	// a ptr
 	MOVSD  a+0(FP), X2
 	SHUFPD $0, X2, X2

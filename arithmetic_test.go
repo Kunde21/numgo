@@ -1,7 +1,6 @@
 package numgo
 
 import (
-	"fmt"
 	"math"
 	"runtime"
 	"testing"
@@ -9,7 +8,7 @@ import (
 
 func init() {
 	debug = true
-	fmt.Println("SSE3:", sse3Supt, "AVX:", avxSupt, "FMA:", fmaSupt, "AVX2:", avx2Supt)
+	//fmt.Println("SSE3:", sse3Supt, "AVX:", avxSupt, "FMA:", fmaSupt, "AVX2:", avx2Supt)
 }
 
 func TestAddC(t *testing.T) {
@@ -27,7 +26,7 @@ func TestAddC(t *testing.T) {
 		t.Fail()
 	}
 
-	if !avxSupt {
+	/*if !avxSupt {
 		return
 	}
 	avxSupt = false
@@ -41,7 +40,7 @@ func TestAddC(t *testing.T) {
 		t.Log("AVX Failed")
 		t.Log(b)
 		t.Fail()
-	}
+	}*/
 }
 
 func TestSubtrC(t *testing.T) {
@@ -448,6 +447,7 @@ func BenchmarkAddC_AVX(b *testing.B) {
 	runtime.GC()
 }
 
+/*
 func BenchmarkAddC_noAVX(b *testing.B) {
 	if !avxSupt {
 		b.Skip()
@@ -463,7 +463,7 @@ func BenchmarkAddC_noAVX(b *testing.B) {
 	b.StopTimer()
 	avxSupt = true
 	runtime.GC()
-}
+}*/
 
 func BenchmarkMultC(b *testing.B) {
 	a := Arange(500003)
@@ -622,6 +622,7 @@ func BenchmarkCopy(b *testing.B) {
 	runtime.GC()
 }
 
+/*
 func BenchmarkFMA12_noFMA(b *testing.B) {
 	if !fmaSupt {
 		b.Skip()
@@ -642,7 +643,7 @@ func BenchmarkFMA12_noFMA(b *testing.B) {
 	b.StopTimer()
 	fmaSupt = tmp
 	runtime.GC()
-}
+}*/
 
 func BenchmarkFMA21_FMAB(b *testing.B) {
 	a := Arange(0, 1000000, .5).Resize(2, 2, 500, 1000)

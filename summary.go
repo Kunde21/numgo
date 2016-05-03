@@ -3,6 +3,8 @@ package numgo
 import (
 	"math"
 	"sort"
+
+	"github.com/Kunde21/numgo/internal"
 )
 
 // Sum calculates the sum result array along a given axes.
@@ -40,7 +42,7 @@ axisR:
 		}
 		v, wd, st := a.shape[axis[k]], a.strides[axis[k]], a.strides[axis[k]+1]
 		if st == 1 {
-			hadd(wd, a.data)
+			asm.Hadd(wd, a.data)
 			ln /= v
 			a.data = a.data[:ln]
 			continue
@@ -50,7 +52,7 @@ axisR:
 			t := a.data[w/wd*st : (w/wd+1)*st]
 			copy(t, a.data[w:w+st])
 			for i := uint64(1); i*st+1 < wd; i++ {
-				vadd(t, a.data[w+(i)*st:w+(i+1)*st])
+				asm.Vadd(t, a.data[w+(i)*st:w+(i+1)*st])
 			}
 		}
 		ln /= v
@@ -177,7 +179,7 @@ func (a *Array64) NaNMean(axis ...int) *Array64 {
 	return a.NaNSum(axis...).Div(a.NaNCount(axis...))
 }
 
-// Nonzero counts the number of non-zero elements are in the array
+// Nonzero counts the number of non-zero elements in the array
 func (a *Array64) Nonzero(axis ...int) *Array64 {
 	if a.valAxis(&axis, "Nonzero") {
 		return a

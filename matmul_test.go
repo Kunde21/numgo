@@ -7,7 +7,7 @@ import (
 
 func TestDotProd(t *testing.T) {
 	a, b := Arange(11), Arange(11).AddC(1)
-	fmaSet := fmaSupt
+	//fmaSet := fmaSupt
 	for i, v := range []struct {
 		a *Array64
 		b *Array64
@@ -23,13 +23,13 @@ func TestDotProd(t *testing.T) {
 			t.Log("Test", i, "Expected", v.c, "Got", c.At(0))
 			t.Fail()
 		}
-		fmaSupt = false
+		/*fmaSupt = false
 
 		if c := v.a.DotProd(v.b); c.At(0) != v.c && math.IsNaN(c.At(0)) != math.IsNaN(v.c) {
 			t.Log("Test", i, "No FMA expected", v.c, "Got", c.At(0))
 			t.Fail()
 		}
-		fmaSupt = fmaSet
+		fmaSupt = fmaSet*/
 
 		if c := v.a.GetErr(); c != v.e {
 			t.Log("Error test", i, "Expected", v.e, "Got", c)
