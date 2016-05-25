@@ -4,11 +4,13 @@ import (
 	"math"
 	"runtime"
 	"testing"
+	"fmt"
+	"github.com/Kunde21/numgo/internal"
 )
 
 func init() {
 	debug = true
-	//fmt.Println("SSE3:", sse3Supt, "AVX:", avxSupt, "FMA:", fmaSupt, "AVX2:", avx2Supt)
+	fmt.Println("SSE3:", asm.Sse3Supt, "AVX:", asm.AvxSupt, "FMA:", asm.FmaSupt, "AVX2:", asm.Avx2Supt)
 }
 
 func TestAddC(t *testing.T) {
@@ -26,21 +28,21 @@ func TestAddC(t *testing.T) {
 		t.Fail()
 	}
 
-	/*if !avxSupt {
+	if !asm.AvxSupt {
 		return
 	}
-	avxSupt = false
+	asm.AvxSupt = false
 	if b := Arange(50).AddC(6); !Arange(6, 55).Equals(b).All().At(0) {
 		t.Log("NoAvx Failed")
 		t.Log(b)
 		t.Fail()
 	}
-	avxSupt = true
+	asm.AvxSupt = true
 	if b := Arange(50).AddC(6); !Arange(6, 55).Equals(b).All().At(0) {
 		t.Log("AVX Failed")
 		t.Log(b)
 		t.Fail()
-	}*/
+	}
 }
 
 func TestSubtrC(t *testing.T) {
@@ -447,12 +449,12 @@ func BenchmarkAddC_AVX(b *testing.B) {
 	runtime.GC()
 }
 
-/*
+
 func BenchmarkAddC_noAVX(b *testing.B) {
-	if !avxSupt {
+	if !asm.AvxSupt {
 		b.Skip()
 	}
-	avxSupt = false
+	asm.AvxSupt = false
 	a := Arange(500003)
 
 	b.ResetTimer()
@@ -461,9 +463,9 @@ func BenchmarkAddC_noAVX(b *testing.B) {
 		a.AddC(5)
 	}
 	b.StopTimer()
-	avxSupt = true
+	asm.AvxSupt = true
 	runtime.GC()
-}*/
+}
 
 func BenchmarkMultC(b *testing.B) {
 	a := Arange(500003)
@@ -622,13 +624,12 @@ func BenchmarkCopy(b *testing.B) {
 	runtime.GC()
 }
 
-/*
 func BenchmarkFMA12_noFMA(b *testing.B) {
-	if !fmaSupt {
+	if !asm.FmaSupt {
 		b.Skip()
 	}
-	tmp := fmaSupt
-	fmaSupt = false
+	tmp := asm.FmaSupt
+	asm.FmaSupt = false
 	a := Arange(1, 1000000, .5)
 	if len(a.data) != (1000000-1)/.5+1 {
 		b.Log("Expected:", (1000000-1)/.5+1, "Got:", len(a.data))
@@ -641,9 +642,9 @@ func BenchmarkFMA12_noFMA(b *testing.B) {
 		a.FMA12(2, a)
 	}
 	b.StopTimer()
-	fmaSupt = tmp
+	asm.FmaSupt = tmp
 	runtime.GC()
-}*/
+}
 
 func BenchmarkFMA21_FMAB(b *testing.B) {
 	a := Arange(0, 1000000, .5).Resize(2, 2, 500, 1000)

@@ -19,7 +19,7 @@ TEXT ·DotProd(SB), NOSPLIT, $0
 	SUBQ 	$2, SI
 	JL   	dotp_tail
 
-	CMPB	·fmaSupt(SB), $1
+	CMPB	·FmaSupt(SB), $1
 	JE 	dotp_fma_loop
 
 dotp_loop:
@@ -53,7 +53,7 @@ dotp_fma_tail:
 	// VMFADD231SD X1, (R9)(DI*8), X0 (x0 += x1*x2)
 	BYTE	$0xC4; BYTE $0xC2; BYTE $0xF1; BYTE $0xB9; BYTE $0x04; BYTE $0xF9
 dotp_end:
-	CMPB 	·sse3Supt(SB), $1
+	CMPB 	·Sse3Supt(SB), $1
 	JE	dotp_sse3
 	MOVAPD	X0, X1
 	UNPCKHPD X1, X0

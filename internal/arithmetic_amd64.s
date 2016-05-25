@@ -13,7 +13,7 @@ TEXT ·initasm(SB), NOSPLIT, $0
 	ANDL $0x1, CX
 	CMPL CX, $0x1
 	CMOVQEQ R15, R9
-	MOVB R9, ·sse3Supt(SB)
+	MOVB R9, ·Sse3Supt(SB)
 	XORQ R9, R9
 
 	MOVQ $1, AX
@@ -21,7 +21,7 @@ TEXT ·initasm(SB), NOSPLIT, $0
 	ANDL $0x18001000, CX
 	CMPL CX, $0x18001000
 	CMOVQEQ R15, R9
-	MOVB R9, ·fmaSupt(SB) // set numgo·fmaSupt
+	MOVB R9, ·FmaSupt(SB) // set numgo·fmaSupt
 	XORQ R9, R9
 
 	ANDL $0x18000000, CX 
@@ -38,7 +38,7 @@ TEXT ·initasm(SB), NOSPLIT, $0
 	ANDL $6, AX
 	CMPL AX, $6                        // Check for OS support of YMM registers
 	JNE  noavx
-	MOVB $1, ·avxSupt(SB)              // set numgo·avxSupt
+	MOVB $1, ·AvxSupt(SB)              // set numgo·avxSupt
 
 	// Check for AVX2 capability
 	MOVL $7, AX
@@ -47,14 +47,14 @@ TEXT ·initasm(SB), NOSPLIT, $0
 	ANDL $0x20, BX         // check for AVX2 bit
 	CMPL BX, $0x20
 	CMOVQEQ R15, R9
-	MOVB R9, ·avx2Supt(SB) // set numgo·avx2Supt
+	MOVB R9, ·Avx2Supt(SB) // set numgo·avx2Supt
 	XORQ R9, R9
 	RET
 
 noavx:
-	MOVB $0, ·fmaSupt(SB) // set numgo·fmaSupt
-	MOVB $0, ·avxSupt(SB) // set numgo·avxSupt
-	MOVB $0, ·avx2Supt(SB) // set numgo·avx2Supt
+	MOVB $0, ·FmaSupt(SB) // set numgo·fmaSupt
+	MOVB $0, ·AvxSupt(SB) // set numgo·avxSupt
+	MOVB $0, ·Avx2Supt(SB) // set numgo·avx2Supt
 	RET
 
 // func AddC(c float64, d []float64)
@@ -75,9 +75,9 @@ TEXT ·AddC(SB), NOSPLIT, $0
 
 	// avx support test
 	LEAQ c+0(FP), R9
-	CMPB ·avxSupt(SB), $1
+	CMPB ·AvxSupt(SB), $1
 	JE   AVX_AC
-	CMPB ·avx2Supt(SB), $1
+	CMPB ·Avx2Supt(SB), $1
 	JE  AVX2_AC
 
 	// load multiplier
@@ -355,7 +355,7 @@ TEXT ·Vadd(SB), NOSPLIT, $0
 	JL   vadd_tail
 
 	// AVX vs SSE
-	CMPB ·avxSupt(SB), $1
+	CMPB ·AvxSupt(SB), $1
 	JE   vadd_avx_loop
 
 vadd_loop:
@@ -447,14 +447,14 @@ TEXT ·Hadd(SB), NOSPLIT, $0
 	JE   hadd_exit
 	CMPQ CX, $8
 	JG hadd_big_stride
-	CMPB ·sse3Supt(SB), $1
+	CMPB ·Sse3Supt(SB), $1
 	JE hadd_sse3_head
 
 hadd_big_stride:
 	// AVX vs SSE
-	CMPB ·avxSupt(SB), $1
+	CMPB ·AvxSupt(SB), $1
 	//JE   hadd_avx_head
-	CMPB ·sse3Supt(SB), $1
+	CMPB ·Sse3Supt(SB), $1
 	JE hadd_sse3_head
 hadd_head:
 	PXOR X0, X0

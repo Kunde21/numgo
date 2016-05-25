@@ -3,7 +3,7 @@
 package asm
 
 var (
-	sse3Supt, avxSupt, avx2Supt, fmaSupt bool
+	Sse3Supt, AvxSupt, Avx2Supt, FmaSupt bool
 )
 
 func init() {
