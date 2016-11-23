@@ -18,7 +18,7 @@ func (a *Array64) Sum(axis ...int) (r *Array64) {
 		for _, v := range a.data {
 			tot += v
 		}
-		return Full(tot, 1)
+		return NewFullArray64(tot, 1)
 	}
 
 	sort.IntSlice(axis).Sort()

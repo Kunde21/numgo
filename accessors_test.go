@@ -19,7 +19,7 @@ func rnd() (sz []int) {
 
 func TestFlatten(t *testing.T) {
 	for i := 0; i < 20; i++ {
-		a := RandArray64(rand.Float64()*100, rand.Float64()*100, rnd()...)
+		a := NewRandArray64(rand.Float64()*100, rand.Float64()*100, rnd()...)
 		if v := a.C().Count().Subtr(a.C().Flatten().Count()); v.At(0) != 0 {
 			t.Log("Size Changed", v)
 			t.Fail()
@@ -35,7 +35,7 @@ func TestFlatten(t *testing.T) {
 func TestC(t *testing.T) {
 	for i := 0; i < 20; i++ {
 		r := rnd()
-		a := RandArray64(rand.Float64()*100, rand.Float64()*100, r...)
+		a := NewRandArray64(rand.Float64()*100, rand.Float64()*100, r...)
 		b := a.C()
 		if v := a.Count().Subtr(a.C().Count()); v.At(0) != 0 {
 			t.Log("Size Changed", v)
@@ -219,7 +219,7 @@ func TestSetSliceElement(t *testing.T) {
 
 	for i := 0; i < 20; i++ {
 		x, y, z := rand.Intn(6), rand.Intn(6), rand.Intn(4)
-		val := RandArray64(5, 100, []int{5}...).SliceElement()
+		val := NewRandArray64(5, 100, []int{5}...).SliceElement()
 		v := a.SetSliceElement(val, x, y, z)
 		if !a.HasErr() {
 			for j, k := range v.SliceElement(x, y, z) {
