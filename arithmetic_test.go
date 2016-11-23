@@ -1,11 +1,11 @@
 package numgo
 
 import (
+	"fmt"
+	"github.com/Kunde21/numgo/internal"
 	"math"
 	"runtime"
 	"testing"
-	"fmt"
-	"github.com/Kunde21/numgo/internal"
 )
 
 func init() {
@@ -448,7 +448,6 @@ func BenchmarkAddC_AVX(b *testing.B) {
 	}
 	runtime.GC()
 }
-
 
 func BenchmarkAddC_noAVX(b *testing.B) {
 	if !asm.AvxSupt {

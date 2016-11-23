@@ -58,7 +58,7 @@ func TestShape(t *testing.T) {
 		sz := rnd()
 		a = NewArray64(nil, sz...)
 		for i, v := range a.Shape() {
-			if a.shape[i] != v {
+			if a.shape[i] != uint64(v) {
 				t.Log("Change at", i, "was", a.shape[i], "is", v)
 				t.Fail()
 			}
@@ -67,11 +67,11 @@ func TestShape(t *testing.T) {
 		sh := a.Shape()
 		sh[ch]--
 		for i, v := range a.shape {
-			if sh[i] != v && i != ch {
+			if uint64(sh[i]) != v && i != ch {
 				t.Log("Change at", i, "was", a.shape[i], "is", v)
 				t.Fail()
 			}
-			if sh[i] == v && i == ch {
+			if uint64(sh[i]) == v && i == ch {
 				t.Log("Change propagated at", i, "was", a.shape[i], "is", v)
 				t.Fail()
 			}

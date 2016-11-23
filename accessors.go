@@ -36,11 +36,15 @@ func (a *Array64) C() (b *Array64) {
 }
 
 // Shape returns a copy of the array shape
-func (a *Array64) Shape() []uint64 {
+func (a *Array64) Shape() []int {
 	if a.HasErr() {
 		return nil
 	}
-	return append([]uint64{}, a.shape...)
+	var res []int
+	for _, v := range a.shape {
+		res = append(res, int(v))
+	}
+	return res
 }
 
 // At returns the element at the given index.
