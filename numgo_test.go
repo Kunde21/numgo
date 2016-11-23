@@ -97,7 +97,7 @@ func TestShapes(t *testing.T) {
 
 func TestRandArray64(t *testing.T) {
 	t.Parallel()
-	a := RandArray64(0, 2, []int{2, 3, -7, 12})
+	a := RandArray64(0, 2, []int{2, 3, -7, 12}...)
 	if e := a.GetErr(); e != NegativeAxis {
 		t.Log("Expected NegativeAxis, got:", e)
 		t.Fail()
@@ -276,7 +276,7 @@ func TestJSON(t *testing.T) {
 	tests := []*Array64{
 		NewArray64(nil, 0),
 		Arange(10),
-		RandArray64(0, 2, []int{10, 10}).Div(Arange(10)),
+		RandArray64(0, 2, ([]int{10, 10})...).Div(Arange(10)),
 		Arange(10).Reshape(2, 2),
 		Full(math.NaN(), 10),
 		Full(math.Inf(1), 10),
