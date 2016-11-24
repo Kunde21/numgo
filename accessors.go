@@ -40,10 +40,12 @@ func (a *Array64) Shape() []int {
 	if a.HasErr() {
 		return nil
 	}
-	var res []int
+
+	res := make([]int, 0, len(a.shape))
 	for _, v := range a.shape {
 		res = append(res, int(v))
 	}
+
 	return res
 }
 
