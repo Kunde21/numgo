@@ -60,7 +60,7 @@ func TestNewArray64(t *testing.T) {
 func TestFull(t *testing.T) {
 	t.Parallel()
 	shp := []int{2, 3, 4}
-	a := NewFullArray64(1, shp...)
+	a := FullArray64(1, shp...)
 	if len(a.data) != 24 {
 		t.Logf("Length %d, expected %d\n", len(a.data), 24)
 		t.Fail()
@@ -78,7 +78,7 @@ func TestFull(t *testing.T) {
 		t.Log("Full creation has different results:", e)
 		t.Fail()
 	}
-	if e := NewFullArray64(0, shp...).Equals(full(0, 2, 3, 4)); !e.All().At(0) {
+	if e := FullArray64(0, shp...).Equals(full(0, 2, 3, 4)); !e.All().At(0) {
 		t.Log("Full creation has different results:", e)
 		t.Fail()
 	}
@@ -97,7 +97,7 @@ func TestShapes(t *testing.T) {
 
 func TestRandArray64(t *testing.T) {
 	t.Parallel()
-	a := NewRandArray64(0, 2, []int{2, 3, -7, 12}...)
+	a := RandArray64(0, 2, []int{2, 3, -7, 12}...)
 	if e := a.GetErr(); e != NegativeAxis {
 		t.Log("Expected NegativeAxis, got:", e)
 		t.Fail()
@@ -276,11 +276,11 @@ func TestJSON(t *testing.T) {
 	tests := []*Array64{
 		NewArray64(nil, 0),
 		Arange(10),
-		NewRandArray64(0, 2, ([]int{10, 10})...).Div(Arange(10)),
+		RandArray64(0, 2, ([]int{10, 10})...).Div(Arange(10)),
 		Arange(10).Reshape(2, 2),
-		NewFullArray64(math.NaN(), 10),
-		NewFullArray64(math.Inf(1), 10),
-		NewFullArray64(math.Inf(-1), 10),
+		FullArray64(math.NaN(), 10),
+		FullArray64(math.Inf(1), 10),
+		FullArray64(math.Inf(-1), 10),
 	}
 	for i, v := range tests {
 		b, err := json.Marshal(v)
