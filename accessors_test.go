@@ -19,7 +19,7 @@ func rnd() (sz []int) {
 
 func TestFlatten(t *testing.T) {
 	for i := 0; i < 20; i++ {
-		a := RandArray64(rand.Float64()*100, rand.Float64()*100, rnd())
+		a := RandArray64(rand.Float64()*100, rand.Float64()*100, rnd()...)
 		if v := a.C().Count().Subtr(a.C().Flatten().Count()); v.At(0) != 0 {
 			t.Log("Size Changed", v)
 			t.Fail()
@@ -35,7 +35,7 @@ func TestFlatten(t *testing.T) {
 func TestC(t *testing.T) {
 	for i := 0; i < 20; i++ {
 		r := rnd()
-		a := RandArray64(rand.Float64()*100, rand.Float64()*100, r)
+		a := RandArray64(rand.Float64()*100, rand.Float64()*100, r...)
 		b := a.C()
 		if v := a.Count().Subtr(a.C().Count()); v.At(0) != 0 {
 			t.Log("Size Changed", v)
@@ -58,7 +58,7 @@ func TestShape(t *testing.T) {
 		sz := rnd()
 		a = NewArray64(nil, sz...)
 		for i, v := range a.Shape() {
-			if a.shape[i] != v {
+			if a.shape[i] != uint64(v) {
 				t.Log("Change at", i, "was", a.shape[i], "is", v)
 				t.Fail()
 			}
@@ -67,11 +67,11 @@ func TestShape(t *testing.T) {
 		sh := a.Shape()
 		sh[ch]--
 		for i, v := range a.shape {
-			if sh[i] != v && i != ch {
+			if uint64(sh[i]) != v && i != ch {
 				t.Log("Change at", i, "was", a.shape[i], "is", v)
 				t.Fail()
 			}
-			if sh[i] == v && i == ch {
+			if uint64(sh[i]) == v && i == ch {
 				t.Log("Change propagated at", i, "was", a.shape[i], "is", v)
 				t.Fail()
 			}
@@ -219,7 +219,7 @@ func TestSetSliceElement(t *testing.T) {
 
 	for i := 0; i < 20; i++ {
 		x, y, z := rand.Intn(6), rand.Intn(6), rand.Intn(4)
-		val := RandArray64(5, 100, []int{5}).SliceElement()
+		val := RandArray64(5, 100, []int{5}...).SliceElement()
 		v := a.SetSliceElement(val, x, y, z)
 		if !a.HasErr() {
 			for j, k := range v.SliceElement(x, y, z) {

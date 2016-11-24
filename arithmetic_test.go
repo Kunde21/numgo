@@ -1,11 +1,11 @@
 package numgo
 
 import (
+	"fmt"
+	"github.com/Kunde21/numgo/internal"
 	"math"
 	"runtime"
 	"testing"
-	"fmt"
-	"github.com/Kunde21/numgo/internal"
 )
 
 func init() {
@@ -95,7 +95,7 @@ func TestDivC(t *testing.T) {
 func TestPowC(t *testing.T) {
 	t.Parallel()
 	a := Arange(0, 40, 2)
-	if b := a.PowC(0).Equals(Full(1, 21)); !b.All().At(0) {
+	if b := a.PowC(0).Equals(FullArray64(1, 21)); !b.All().At(0) {
 		t.Log(b)
 		t.Log(a)
 		t.Fail()
@@ -239,7 +239,7 @@ func TestMult(t *testing.T) {
 		t.FailNow()
 	}
 
-	a = Full(math.NaN(), 4, 4)
+	a = FullArray64(math.NaN(), 4, 4)
 	for _, v := range a.data {
 		if !math.IsNaN(v) {
 			t.Log("Expected NaN, got ", v)
@@ -275,7 +275,7 @@ func TestDiv(t *testing.T) {
 	}
 
 	a = a.C().Div(a)
-	if e := a.Equals(Full(1, 200)); e.All().At(0) {
+	if e := a.Equals(FullArray64(1, 200)); e.All().At(0) {
 		t.Log(e)
 		t.Fail()
 	}
@@ -308,8 +308,8 @@ func TestPow(t *testing.T) {
 		t.FailNow()
 	}
 
-	a = a.Reshape(2, 25, 4).Pow(Full(0, 4))
-	if e := a.Equals(Full(1, 2, 25, 4)); !e.All().At(0) {
+	a = a.Reshape(2, 25, 4).Pow(FullArray64(0, 4))
+	if e := a.Equals(FullArray64(1, 2, 25, 4)); !e.All().At(0) {
 		t.Log(e)
 		t.Fail()
 	}
@@ -448,7 +448,6 @@ func BenchmarkAddC_AVX(b *testing.B) {
 	}
 	runtime.GC()
 }
-
 
 func BenchmarkAddC_noAVX(b *testing.B) {
 	if !asm.AvxSupt {

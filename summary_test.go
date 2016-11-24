@@ -211,7 +211,7 @@ func TestNonzero(t *testing.T) {
 	sz, r := []int{4, 7, 3, 8, 2}, rand.Intn
 	for i := 0; i < 10; i++ {
 		x, y, z := r(len(sz)-1), r(len(sz)-1), r(len(sz)-1)
-		a := RandArray64(0, 100, sz).Append(NewArray64(nil, sz...), y)
+		a := RandArray64(0, 100, sz...).Append(NewArray64(nil, sz...), y)
 		if j, k := a.C().Nonzero(x, y, z), a.C().Map(maskz).NaNCount(x, y, z); !j.Equals(k).All().At(0) {
 			t.Logf("Test %d failed with x: %v y: %v z: %v\n", i, x, y, z)
 			t.Log("Expected:\n", k)
