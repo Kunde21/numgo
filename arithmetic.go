@@ -29,7 +29,7 @@ func (a *Array64) Add(b *Array64) *Array64 {
 	}
 
 	st := a.strides[len(a.strides)-1] * a.shape[len(a.shape)-1]
-	for i := int(0); i < int(len(b.data)); i++ {
+	for i := 0; i < len(b.data); i++ {
 		asm.AddC(b.data[i], a.data[i*st:(i+1)*st])
 	}
 	return a
@@ -59,7 +59,7 @@ func (a *Array64) Subtr(b *Array64) *Array64 {
 	}
 
 	st := a.strides[len(a.strides)-1] * a.shape[len(a.shape)-1]
-	for i := int(0); i < int(len(b.data)); i++ {
+	for i := 0; i < len(b.data); i++ {
 		asm.SubtrC(b.data[i], a.data[i*st:(i+1)*st])
 	}
 	return a
@@ -89,7 +89,7 @@ func (a *Array64) Mult(b *Array64) *Array64 {
 	}
 
 	st := a.strides[len(a.strides)-1] * a.shape[len(a.shape)-1]
-	for i := int(0); i < int(len(b.data)); i++ {
+	for i := 0; i < len(b.data); i++ {
 		asm.MultC(b.data[i], a.data[i*st:(i+1)*st])
 	}
 	return a
@@ -121,7 +121,7 @@ func (a *Array64) Div(b *Array64) *Array64 {
 	}
 
 	st := a.strides[len(a.strides)-1] * a.shape[len(a.shape)-1]
-	for i := int(0); i < int(len(b.data)); i++ {
+	for i := 0; i < len(b.data); i++ {
 		asm.DivC(b.data[i], a.data[i*st:(i+1)*st])
 	}
 	return a
@@ -160,7 +160,7 @@ func (a *Array64) Pow(b *Array64) *Array64 {
 	}
 
 	st := a.strides[len(a.strides)-1] * a.shape[len(a.shape)-1]
-	for i := int(0); i < int(len(b.data)); i++ {
+	for i := 0; i < len(b.data); i++ {
 		for j := i * st; j < (i+1)*st; j++ {
 			a.data[j] = math.Pow(a.data[j], b.data[i])
 		}
