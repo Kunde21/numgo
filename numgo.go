@@ -27,8 +27,8 @@ func NewArray64(data []float64, shape ...int) (a *Array64) {
 		switch {
 		case data != nil:
 			return &Array64{
-				shape:   []int{int(len(data))},
-				strides: []int{int(len(data)), 1},
+				shape:   []int{len(data)},
+				strides: []int{len(data), 1},
 				data:    data,
 				err:     nil,
 				debug:   "",
@@ -57,8 +57,8 @@ func NewArray64(data []float64, shape ...int) (a *Array64) {
 			}
 			return
 		}
-		sz *= int(v)
-		sh[i] = int(v)
+		sz *= v
+		sh[i] = v
 	}
 
 	a = &Array64{
@@ -85,7 +85,7 @@ func NewArray64(data []float64, shape ...int) (a *Array64) {
 func newArray64(shape ...int) (a *Array64) {
 	var sz int = 1
 	for _, v := range shape {
-		sz *= int(v)
+		sz *= v
 	}
 
 	a = &Array64{
@@ -175,7 +175,7 @@ func Arange(vals ...float64) (a *Array64) {
 		start, stop, step = vals[0], vals[1], vals[2]
 	}
 
-	a = NewArray64(nil, int((stop-start)/step)+1)
+	a = NewArray64(nil, int((stop-start)/(step))+1)
 	for i, v := 0, start; i < len(a.data); i, v = i+1, v+step {
 		a.data[i] = v
 	}
@@ -197,7 +197,7 @@ func Identity(size int) (r *Array64) {
 	}
 
 	r = NewArray64(nil, size, size)
-	for i := int(0); i < r.strides[0]; i += r.strides[1] + r.strides[2] {
+	for i := 0; i < r.strides[0]; i += r.strides[1] + r.strides[2] {
 		r.data[i] = 1
 	}
 	return
@@ -220,7 +220,7 @@ func (a *Array64) String() (s string) {
 
 	stride := a.shape[len(a.shape)-1]
 
-	for i, k := int(0), 0; i+stride <= int(len(a.data)); i, k = i+stride, k+1 {
+	for i, k := 0, 0; i+stride <= len(a.data); i, k = i+stride, k+1 {
 
 		t := ""
 		for j, v := range a.strides {
@@ -240,7 +240,7 @@ func (a *Array64) String() (s string) {
 		}
 
 		s += t + strings.Repeat(" ", len(a.shape)-len(t)-1)
-		if i+stride != int(len(a.data)) {
+		if i+stride != len(a.data) {
 			s += "\n"
 			if len(t) > 0 {
 				s += "\n"
@@ -269,11 +269,11 @@ func (a *Array64) Reshape(shape ...int) *Array64 {
 			}
 			return a
 		}
-		sz *= int(v)
-		sh[i] = int(v)
+		sz *= v
+		sh[i] = v
 	}
 
-	if sz != int(len(a.data)) {
+	if sz != len(a.data) {
 		a.err = ReshapeError
 		if debug {
 			a.debug = fmt.Sprintf("Reshape() can not change data size.  Dimensions: %v reshape: %v", a.shape, shape)
@@ -283,7 +283,7 @@ func (a *Array64) Reshape(shape ...int) *Array64 {
 	}
 
 	a.strides = make([]int, len(sh)+1)
-	tmp := int(1)
+	tmp := 1
 	for i := len(a.strides) - 1; i > 0; i-- {
 		a.strides[i] = tmp
 		tmp *= sh[i-1]
@@ -378,7 +378,7 @@ func (a *Array64) UnmarshalJSON(b []byte) error {
 	}
 
 	a.strides = make([]int, len(a.shape)+1)
-	tmp := int(1)
+	tmp := 1
 	for i := len(a.strides) - 1; i > 0; i-- {
 		a.strides[i] = tmp
 		tmp *= a.shape[i-1]
