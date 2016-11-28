@@ -11,7 +11,7 @@ func (a *Array64) Flatten() *Array64 {
 	if a.HasErr() {
 		return a
 	}
-	return a.Reshape(int(a.strides[0]))
+	return a.Reshape(a.strides[0])
 }
 
 // C will return a deep copy of the source array.
@@ -43,7 +43,7 @@ func (a *Array64) Shape() []int {
 
 	res := make([]int, 0, len(a.shape))
 	for _, v := range a.shape {
-		res = append(res, int(v))
+		res = append(res, v)
 	}
 
 	return res
@@ -81,7 +81,7 @@ func (a *Array64) valIdx(index []int, mthd string) (idx int) {
 		return 0
 	}
 	for i, v := range index {
-		if int(v) >= a.shape[i] || v < 0 {
+		if v >= a.shape[i] || v < 0 {
 			a.err = IndexError
 			if debug {
 				a.debug = fmt.Sprintf("Index received by %s() does not exist shape: %v index: %v", mthd, a.shape, index)
@@ -89,7 +89,7 @@ func (a *Array64) valIdx(index []int, mthd string) (idx int) {
 			}
 			return 0
 		}
-		idx += int(v) * a.strides[i+1]
+		idx += v * a.strides[i+1]
 	}
 	return
 }
@@ -151,7 +151,7 @@ func (a *Array64) SetSliceElement(vals []float64, index ...int) *Array64 {
 			a.stack = string(stackBuf[:runtime.Stack(stackBuf, false)])
 		}
 		fallthrough
-	case int(len(vals)) != a.shape[len(a.shape)-1]:
+	case len(vals) != a.shape[len(a.shape)-1]:
 		a.err = InvIndexError
 		if debug {
 			a.debug = fmt.Sprintf("Incorrect slice length received by SetSliceElement().  Shape: %v  Index: %v", a.shape, len(index))
@@ -199,17 +199,17 @@ func (a *Array64) SetSubArr(vals *Array64, index ...int) *Array64 {
 	}
 
 	if len(a.shape)-len(index)-len(vals.shape) == 0 {
-		copy(a.data[idx:idx+int(len(vals.data))], vals.data)
+		copy(a.data[idx:idx+len(vals.data)], vals.data)
 		return a
 	}
 
-	reps := int(1)
+	reps := 1
 	for i := len(index); i < len(a.shape)-len(vals.shape); i++ {
 		reps *= a.shape[i]
 	}
 
-	ln := int(len(vals.data))
-	for i := int(1); i <= reps; i++ {
+	ln := len(vals.data)
+	for i := 1; i <= reps; i++ {
 		copy(a.data[idx+ln*(i-1):idx+ln*i], vals.data)
 	}
 	return a
@@ -233,7 +233,7 @@ func (a *Array64) Resize(shape ...int) *Array64 {
 	var sz int = 1
 	for _, v := range shape {
 		if v >= 0 {
-			sz *= int(v)
+			sz *= v
 			continue
 		}
 
@@ -261,13 +261,13 @@ func (a *Array64) Resize(shape ...int) *Array64 {
 
 	a.strides[ln-1] = 1
 	for i := ln - 2; i >= 0; i-- {
-		a.shape[i] = int(shape[i])
+		a.shape[i] = shape[i]
 		a.strides[i] = a.shape[i] * a.strides[i+1]
 	}
 
 	cp = cap(a.data)
-	if sz > int(cp) {
-		a.data = append(a.data[:cp], make([]float64, sz-int(cp))...)
+	if sz > cp {
+		a.data = append(a.data[:cp], make([]float64, sz-cp)...)
 	} else {
 		a.data = a.data[:sz]
 	}
