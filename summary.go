@@ -48,10 +48,10 @@ axisR:
 			continue
 		}
 
-		for w := int(0); w < ln; w += wd {
+		for w := 0; w < ln; w += wd {
 			t := a.data[w/wd*st : (w/wd+1)*st]
 			copy(t, a.data[w:w+st])
-			for i := int(1); i*st+1 < wd; i++ {
+			for i := 1; i*st+1 < wd; i++ {
 				asm.Vadd(t, a.data[w+(i)*st:w+(i+1)*st])
 			}
 		}
@@ -60,7 +60,7 @@ axisR:
 	}
 	a.shape = n
 
-	tmp := int(1)
+	tmp := 1
 	for i := len(n); i > 0; i-- {
 		a.strides[i] = tmp
 		tmp *= n[i-1]
@@ -110,7 +110,7 @@ func (a *Array64) Count(axis ...int) *Array64 {
 	}
 
 	tAxis := make([]int, len(a.shape)-len(axis))
-	cnt := int(1)
+	cnt := 1
 cntAx:
 	for i, t := 0, 0; i < len(a.shape); i++ {
 		for _, w := range axis {
@@ -132,7 +132,7 @@ func (a *Array64) count(axis ...int) float64 {
 		return float64(a.strides[0])
 	}
 
-	cnt := int(1)
+	cnt := 1
 	for _, w := range axis {
 		cnt *= a.shape[w]
 	}
