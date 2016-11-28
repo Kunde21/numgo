@@ -11,9 +11,9 @@ import (
 
 // Array64 is an n-dimensional array of float64 data
 type Array64 struct {
-	shape        []uint64
-	strides      []int64
-	offset       []int64
+	shape        []int
+	strides      []int
+	offset       []int
 	data         []float64
 	err          error
 	debug, stack string

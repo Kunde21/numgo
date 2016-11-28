@@ -9,9 +9,9 @@ import (
 
 // Arrayb is an n-dimensional array of boolean values
 type Arrayb struct {
-	shape        []int64
-	strides      []uint64
-	offset       []int64
+	shape        []int
+	strides      []int
+	offset       []int
 	data         []bool
 	err          error
 	debug, stack string
