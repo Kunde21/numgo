@@ -27,8 +27,8 @@ func NewArray64(data []float64, shape ...int) (a *Array64) {
 		switch {
 		case data != nil:
 			return &Array64{
-				shape:   []uint64{uint64(len(data))},
-				strides: []uint64{uint64(len(data)), 1},
+				shape:   []int{int(len(data))},
+				strides: []int{int(len(data)), 1},
 				data:    data,
 				err:     nil,
 				debug:   "",
@@ -36,8 +36,8 @@ func NewArray64(data []float64, shape ...int) (a *Array64) {
 			}
 		default:
 			return &Array64{
-				shape:   []uint64{0},
-				strides: []uint64{0, 0},
+				shape:   []int{0},
+				strides: []int{0, 0},
 				data:    []float64{},
 				err:     nil,
 				debug:   "",
@@ -46,8 +46,8 @@ func NewArray64(data []float64, shape ...int) (a *Array64) {
 		}
 	}
 
-	var sz uint64 = 1
-	sh := make([]uint64, len(shape))
+	var sz int = 1
+	sh := make([]int, len(shape))
 	for i, v := range shape {
 		if v < 0 {
 			a = &Array64{err: NegativeAxis}
@@ -57,13 +57,13 @@ func NewArray64(data []float64, shape ...int) (a *Array64) {
 			}
 			return
 		}
-		sz *= uint64(v)
-		sh[i] = uint64(v)
+		sz *= int(v)
+		sh[i] = int(v)
 	}
 
 	a = &Array64{
 		shape:   sh,
-		strides: make([]uint64, len(shape)+1),
+		strides: make([]int, len(shape)+1),
 		data:    make([]float64, sz),
 		err:     nil,
 		debug:   "",
@@ -82,15 +82,15 @@ func NewArray64(data []float64, shape ...int) (a *Array64) {
 }
 
 // Internal function to create using the shape of another array
-func newArray64(shape ...uint64) (a *Array64) {
-	var sz uint64 = 1
+func newArray64(shape ...int) (a *Array64) {
+	var sz int = 1
 	for _, v := range shape {
-		sz *= uint64(v)
+		sz *= int(v)
 	}
 
 	a = &Array64{
 		shape:   shape,
-		strides: make([]uint64, len(shape)+1),
+		strides: make([]int, len(shape)+1),
 		data:    make([]float64, sz),
 		err:     nil,
 		debug:   "",
@@ -115,7 +115,7 @@ func FullArray64(val float64, shape ...int) (a *Array64) {
 	return a.AddC(val)
 }
 
-func full(val float64, shape ...uint64) (a *Array64) {
+func full(val float64, shape ...int) (a *Array64) {
 	a = newArray64(shape...)
 	if val == 0 {
 		return
@@ -197,7 +197,7 @@ func Identity(size int) (r *Array64) {
 	}
 
 	r = NewArray64(nil, size, size)
-	for i := uint64(0); i < r.strides[0]; i += r.strides[1] + r.strides[2] {
+	for i := int(0); i < r.strides[0]; i += r.strides[1] + r.strides[2] {
 		r.data[i] = 1
 	}
 	return
@@ -220,7 +220,7 @@ func (a *Array64) String() (s string) {
 
 	stride := a.shape[len(a.shape)-1]
 
-	for i, k := uint64(0), 0; i+stride <= uint64(len(a.data)); i, k = i+stride, k+1 {
+	for i, k := int(0), 0; i+stride <= int(len(a.data)); i, k = i+stride, k+1 {
 
 		t := ""
 		for j, v := range a.strides {
@@ -240,7 +240,7 @@ func (a *Array64) String() (s string) {
 		}
 
 		s += t + strings.Repeat(" ", len(a.shape)-len(t)-1)
-		if i+stride != uint64(len(a.data)) {
+		if i+stride != int(len(a.data)) {
 			s += "\n"
 			if len(t) > 0 {
 				s += "\n"
@@ -258,8 +258,8 @@ func (a *Array64) Reshape(shape ...int) *Array64 {
 		return a
 	}
 
-	var sz uint64 = 1
-	sh := make([]uint64, len(shape))
+	var sz int = 1
+	sh := make([]int, len(shape))
 	for i, v := range shape {
 		if v < 0 {
 			a.err = NegativeAxis
@@ -269,11 +269,11 @@ func (a *Array64) Reshape(shape ...int) *Array64 {
 			}
 			return a
 		}
-		sz *= uint64(v)
-		sh[i] = uint64(v)
+		sz *= int(v)
+		sh[i] = int(v)
 	}
 
-	if sz != uint64(len(a.data)) {
+	if sz != int(len(a.data)) {
 		a.err = ReshapeError
 		if debug {
 			a.debug = fmt.Sprintf("Reshape() can not change data size.  Dimensions: %v reshape: %v", a.shape, shape)
@@ -282,8 +282,8 @@ func (a *Array64) Reshape(shape ...int) *Array64 {
 		return a
 	}
 
-	a.strides = make([]uint64, len(sh)+1)
-	tmp := uint64(1)
+	a.strides = make([]int, len(sh)+1)
+	tmp := int(1)
 	for i := len(a.strides) - 1; i > 0; i-- {
 		a.strides[i] = tmp
 		tmp *= sh[i-1]
@@ -321,7 +321,7 @@ func (a *Array64) MarshalJSON() ([]byte, error) {
 
 	inf, nan, err := t.encode()
 	return json.Marshal(struct {
-		Shape []uint64  `json:"shape"`
+		Shape []int     `json:"shape"`
 		Data  []float64 `json:"data"`
 		Inf   []int64   `json:"inf,omitempty"`
 		Nan   []int64   `json:"nan,omitempty"`
@@ -358,7 +358,7 @@ func (a *Array64) decode(i, n []int64, err int8) {
 // Custom Unmarshaler is needed to load/decode unexported values and build strides.
 func (a *Array64) UnmarshalJSON(b []byte) error {
 	tmpA := new(struct {
-		Shape []uint64  `json:"shape"`
+		Shape []int     `json:"shape"`
 		Data  []float64 `json:"data"`
 		Inf   []int64   `json:"inf,omitempty"`
 		Nan   []int64   `json:"nan,omitempty"`
@@ -377,8 +377,8 @@ func (a *Array64) UnmarshalJSON(b []byte) error {
 		return nil
 	}
 
-	a.strides = make([]uint64, len(a.shape)+1)
-	tmp := uint64(1)
+	a.strides = make([]int, len(a.shape)+1)
+	tmp := int(1)
 	for i := len(a.strides) - 1; i > 0; i-- {
 		a.strides[i] = tmp
 		tmp *= a.shape[i-1]

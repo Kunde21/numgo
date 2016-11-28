@@ -168,7 +168,7 @@ func (a *Arrayb) Any(axis ...int) *Arrayb {
 	}
 
 	sort.IntSlice(axis).Sort()
-	n := make([]uint64, len(a.shape)-len(axis))
+	n := make([]int, len(a.shape)-len(axis))
 axis:
 	for i, t := 0, 0; i < len(a.shape); i++ {
 		for _, w := range axis {
@@ -185,7 +185,7 @@ axis:
 
 		maj, min := a.strides[axis[i]], a.strides[axis[i]]/a.shape[axis[i]]
 
-		for j := uint64(0); j+maj <= uint64(len(t)); j += maj {
+		for j := int(0); j+maj <= int(len(t)); j += maj {
 			for k := j; k < j+min; k++ {
 				for z := k + min; z < j+maj; z += min {
 					t[k] = t[k] || t[z]
@@ -193,8 +193,8 @@ axis:
 			}
 		}
 
-		j := uint64(1)
-		for ; j < uint64(len(t))/maj; j++ {
+		j := int(1)
+		for ; j < int(len(t))/maj; j++ {
 			copy(t[j*min:(j+1)*min], t[j*maj:j*maj+min])
 		}
 
@@ -203,7 +203,7 @@ axis:
 	a.data = t
 	a.shape = n
 
-	tmp := uint64(1)
+	tmp := int(1)
 	for i := len(n); i > 0; i-- {
 		a.strides[i] = tmp
 		tmp *= n[i-1]
@@ -230,7 +230,7 @@ func (a *Arrayb) All(axis ...int) *Arrayb {
 	}
 
 	sort.IntSlice(axis).Sort()
-	n := make([]uint64, len(a.shape)-len(axis))
+	n := make([]int, len(a.shape)-len(axis))
 axis:
 	for i, t := 0, 0; i < len(a.shape); i++ {
 		for _, w := range axis {
@@ -247,7 +247,7 @@ axis:
 
 		maj, min := a.strides[axis[i]], a.strides[axis[i]]/a.shape[axis[i]]
 
-		for j := uint64(0); j+maj <= uint64(len(t)); j += maj {
+		for j := int(0); j+maj <= int(len(t)); j += maj {
 			for k := j; k < j+min; k++ {
 				for z := k + min; z < j+maj; z += min {
 					t[k] = t[k] && t[z]
@@ -255,8 +255,8 @@ axis:
 			}
 		}
 
-		j := uint64(1)
-		for ; j < uint64(len(t))/maj; j++ {
+		j := int(1)
+		for ; j < int(len(t))/maj; j++ {
 			a := t[j*min : (j+1)*min]
 			b := t[j*maj : j*maj+min]
 			copy(a, b)
@@ -267,7 +267,7 @@ axis:
 	a.data = t
 	a.shape = n
 
-	tmp := uint64(1)
+	tmp := int(1)
 	for i := len(n); i > 0; i-- {
 		a.strides[i] = tmp
 		tmp *= n[i-1]

@@ -98,7 +98,7 @@ func TestShapesB(t *testing.T) {
 	shp := []int{3, 3, 4, 7}
 	a := NewArrayB(nil, shp...)
 	for i, v := range a.shape {
-		if uint64(shp[i]) != v {
+		if int(shp[i]) != v {
 			t.Log(a.shape, "!=", shp)
 			t.FailNow()
 		}
@@ -154,7 +154,7 @@ func TestReshapeB(t *testing.T) {
 			continue
 		}
 		for j, v := range tst.a.shape {
-			if v != uint64(tst.sh[j]) {
+			if v != int(tst.sh[j]) {
 				t.Log("Reshape incorrect in test", i, ", expected", tst.sh, "got", tst.a.shape)
 				t.Fail()
 				break
