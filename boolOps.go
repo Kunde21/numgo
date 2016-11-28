@@ -185,7 +185,7 @@ axis:
 
 		maj, min := a.strides[axis[i]], a.strides[axis[i]]/a.shape[axis[i]]
 
-		for j := int(0); j+maj <= int(len(t)); j += maj {
+		for j := 0; j+maj <= len(t); j += maj {
 			for k := j; k < j+min; k++ {
 				for z := k + min; z < j+maj; z += min {
 					t[k] = t[k] || t[z]
@@ -193,8 +193,8 @@ axis:
 			}
 		}
 
-		j := int(1)
-		for ; j < int(len(t))/maj; j++ {
+		j := 1
+		for ; j < len(t)/maj; j++ {
 			copy(t[j*min:(j+1)*min], t[j*maj:j*maj+min])
 		}
 
@@ -203,7 +203,7 @@ axis:
 	a.data = t
 	a.shape = n
 
-	tmp := int(1)
+	tmp := 1
 	for i := len(n); i > 0; i-- {
 		a.strides[i] = tmp
 		tmp *= n[i-1]
@@ -247,7 +247,7 @@ axis:
 
 		maj, min := a.strides[axis[i]], a.strides[axis[i]]/a.shape[axis[i]]
 
-		for j := int(0); j+maj <= int(len(t)); j += maj {
+		for j := 0; j+maj <= len(t); j += maj {
 			for k := j; k < j+min; k++ {
 				for z := k + min; z < j+maj; z += min {
 					t[k] = t[k] && t[z]
@@ -255,8 +255,8 @@ axis:
 			}
 		}
 
-		j := int(1)
-		for ; j < int(len(t))/maj; j++ {
+		j := 1
+		for ; j < len(t)/maj; j++ {
 			a := t[j*min : (j+1)*min]
 			b := t[j*maj : j*maj+min]
 			copy(a, b)
@@ -267,7 +267,7 @@ axis:
 	a.data = t
 	a.shape = n
 
-	tmp := int(1)
+	tmp := 1
 	for i := len(n); i > 0; i-- {
 		a.strides[i] = tmp
 		tmp *= n[i-1]
