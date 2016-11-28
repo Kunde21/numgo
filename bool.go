@@ -36,8 +36,8 @@ func NewArrayB(data []bool, shape ...int) (a *Arrayb) {
 			}
 			return
 		}
-		sz *= int(v)
-		sh[i] = int(v)
+		sz *= v
+		sh[i] = v
 	}
 
 	a.shape = sh
@@ -47,7 +47,7 @@ func NewArrayB(data []bool, shape ...int) (a *Arrayb) {
 	}
 
 	a.strides = make([]int, len(sh)+1)
-	tmp := int(1)
+	tmp := 1
 	for i := len(a.strides) - 1; i > 0; i-- {
 		a.strides[i] = tmp
 		tmp *= sh[i-1]
@@ -63,15 +63,15 @@ func newArrayB(shape ...int) (a *Arrayb) {
 	var sz int = 1
 	sh := make([]int, len(shape))
 	for i, v := range shape {
-		sz *= int(v)
-		sh[i] = int(v)
+		sz *= v
+		sh[i] = v
 	}
 
 	a.shape = sh
 	a.data = make([]bool, sz)
 
 	a.strides = make([]int, len(sh)+1)
-	tmp := int(1)
+	tmp := 1
 	for i := len(a.strides) - 1; i > 0; i-- {
 		a.strides[i] = tmp
 		tmp *= sh[i-1]
@@ -121,7 +121,7 @@ func (a *Arrayb) String() (s string) {
 	}
 
 	stride := a.strides[len(a.strides)-2]
-	for i, k := int(0), 0; i+stride <= int(len(a.data)); i, k = i+stride, k+1 {
+	for i, k := 0, 0; i+stride <= len(a.data); i, k = i+stride, k+1 {
 
 		t := ""
 		for j, v := range a.strides {
@@ -141,7 +141,7 @@ func (a *Arrayb) String() (s string) {
 		}
 
 		s += t + strings.Repeat(" ", len(a.shape)-len(t)-1)
-		if i+stride != int(len(a.data)) {
+		if i+stride != len(a.data) {
 			s += "\n"
 			if len(t) > 0 {
 				s += "\n"
@@ -170,11 +170,11 @@ func (a *Arrayb) Reshape(shape ...int) *Arrayb {
 			}
 			return a
 		}
-		sz *= int(v)
-		sh[i] = int(v)
+		sz *= v
+		sh[i] = v
 	}
 
-	if sz != int(len(a.data)) {
+	if sz != len(a.data) {
 		a.err = ReshapeError
 		if debug {
 			a.debug = fmt.Sprintf("Reshape() can not change data size.  Dimensions: %v reshape: %v", a.shape, shape)
@@ -184,7 +184,7 @@ func (a *Arrayb) Reshape(shape ...int) *Arrayb {
 	}
 
 	a.strides = make([]int, len(sh)+1)
-	tmp := int(1)
+	tmp := 1
 	for i := len(a.strides) - 1; i > 0; i-- {
 		a.strides[i] = tmp
 		tmp *= sh[i-1]
@@ -275,7 +275,7 @@ func (a *Arrayb) SetSliceElement(vals []bool, index ...int) *Arrayb {
 			a.stack = string(stackBuf[:runtime.Stack(stackBuf, false)])
 		}
 		fallthrough
-	case int(len(vals)) != a.shape[len(a.shape)-1]:
+	case len(vals) != a.shape[len(a.shape)-1]:
 		a.err = InvIndexError
 		if debug {
 			a.debug = fmt.Sprintf("Incorrect slice length received by SetSliceElement().  Shape: %v  Index: %v", a.shape, len(index))
@@ -323,17 +323,17 @@ func (a *Arrayb) SetSubArr(vals *Arrayb, index ...int) *Arrayb {
 	}
 
 	if len(a.shape)-len(index)-len(vals.shape) == 0 {
-		copy(a.data[idx:idx+int(len(vals.data))], vals.data)
+		copy(a.data[idx:idx+len(vals.data)], vals.data)
 		return a
 	}
 
-	reps := int(1)
+	reps := 1
 	for i := len(index); i < len(a.shape)-len(vals.shape); i++ {
 		reps *= a.shape[i]
 	}
 
-	ln := int(len(vals.data))
-	for i := int(1); i <= reps; i++ {
+	ln := len(vals.data)
+	for i := 1; i <= reps; i++ {
 		copy(a.data[idx+ln*(i-1):idx+ln*i], vals.data)
 	}
 	return a
@@ -357,7 +357,7 @@ func (a *Arrayb) Resize(shape ...int) *Arrayb {
 	var sz int = 1
 	for _, v := range shape {
 		if v >= 0 {
-			sz *= int(v)
+			sz *= v
 			continue
 		}
 
@@ -385,13 +385,13 @@ func (a *Arrayb) Resize(shape ...int) *Arrayb {
 
 	a.strides[ln-1] = 1
 	for i := ln - 2; i >= 0; i-- {
-		a.shape[i] = int(shape[i])
+		a.shape[i] = shape[i]
 		a.strides[i] = a.shape[i] * a.strides[i+1]
 	}
 
 	cp = cap(a.data)
-	if sz > int(cp) {
-		a.data = append(a.data[:cp], make([]bool, sz-int(cp))...)
+	if sz > cp {
+		a.data = append(a.data[:cp], make([]bool, sz-cp)...)
 	} else {
 		a.data = a.data[:sz]
 	}
@@ -502,7 +502,7 @@ func (a *Arrayb) UnmarshalJSON(b []byte) error {
 	}
 
 	a.strides = make([]int, len(a.shape)+1)
-	tmp := int(1)
+	tmp := 1
 	for i := len(a.strides) - 1; i > 0; i-- {
 		a.strides[i] = tmp
 		tmp *= a.shape[i-1]
@@ -526,7 +526,7 @@ func (a *Arrayb) valIdx(index []int, mthd string) (idx int) {
 		return 0
 	}
 	for i, v := range index {
-		if int(v) >= a.shape[i] || v < 0 {
+		if v >= a.shape[i] || v < 0 {
 			a.err = IndexError
 			if debug {
 				a.debug = fmt.Sprintf("Index received by %s() does not exist shape: %v index: %v", mthd, a.shape, index)
@@ -534,7 +534,7 @@ func (a *Arrayb) valIdx(index []int, mthd string) (idx int) {
 			}
 			return 0
 		}
-		idx += int(v) * a.strides[i+1]
+		idx += v * a.strides[i+1]
 	}
 	return
 }
