@@ -75,13 +75,13 @@ func (a *Array64) collapse(axis []int) (int, *Array64) {
 		return a.strides[0], r
 	}
 
-	span := int(1) // Span = size of "element" Mx = slicing
+	span := 1 // Span = size of "element" Mx = slicing
 	mx := a.strides[len(a.strides)-1]
 	steps := make([]int, len(axis)) // Element strides
 	brks := make([]int, len(axis))  // Stride-ending breaks
 
 	for i, v := range axis {
-		span *= int(a.shape[v])
+		span *= a.shape[v]
 		steps[i], brks[i] = a.strides[v+1], a.strides[v]
 		if brks[i] > mx {
 			mx = brks[i]
@@ -112,13 +112,13 @@ shape:
 	defer close(compChan)
 
 	go func() {
-		for sl := int(0); sl+mx <= a.strides[0]; sl += mx {
+		for sl := 0; sl+mx <= a.strides[0]; sl += mx {
 			<-retChan
 		}
 		compChan <- struct{}{}
 	}()
 
-	for sl := int(0); sl+mx <= a.strides[0]; sl += mx {
+	for sl := 0; sl+mx <= a.strides[0]; sl += mx {
 
 		go func(sl int) {
 			inc := make([]int, len(axis))              // N-dimensional incrementor
@@ -126,17 +126,17 @@ shape:
 
 			// Inner loop might be made concurrent using slices
 			// Unknown performance gains in doing so, tuning needed
-			offset := int(0)
-			for sp := int(0); sp+span <= mx; sp += span {
+			offset := 0
+			for sp := 0; sp+span <= mx; sp += span {
 
-				for i, k := int(0), int(0); i < span; i++ {
+				for i, k := 0, 0; i < span; i++ {
 					tmp[sl+i+sp] = a.data[sl+k+offset]
 
 					k, inc[0] = k+steps[0], inc[0]+steps[0]
 
 					// Incrementor loop to handle all dims
 					for c, v := range brks {
-						if int(i+1) == span {
+						if i+1 == span {
 							// Reset at end of loop
 							inc[c] = 0
 						}
@@ -176,7 +176,7 @@ shape:
 	b.strides = make([]int, len(b.shape)+1)
 	b.data = tmp
 
-	t := int(1)
+	t := 1
 	for i := len(b.strides) - 1; i > 0; i-- {
 		b.strides[i] = t
 		t *= b.shape[i-1]
@@ -219,7 +219,7 @@ func (a *Array64) FoldCC(f FoldFunc, axis ...int) (ret *Array64) {
 	defer close(compChan)
 	go func() {
 		d := make([]float64, ret.strides[0])
-		for i := int(0); i+span <= a.strides[0]; i += span {
+		for i := 0; i+span <= a.strides[0]; i += span {
 			c := <-retChan
 			d[c.index] = c.value
 		}
@@ -227,7 +227,7 @@ func (a *Array64) FoldCC(f FoldFunc, axis ...int) (ret *Array64) {
 		compChan <- struct{}{}
 	}()
 
-	for i := int(0); i+span <= a.strides[0]; i += span {
+	for i := 0; i+span <= a.strides[0]; i += span {
 		go func(i int) {
 			defer rfunc(retChan, i/span)
 			retChan <- rt{i / span, f(ret.data[i : i+span])}
@@ -258,7 +258,7 @@ func (a *Array64) Fold(f FoldFunc, axis ...int) (ret *Array64) {
 	}()
 
 	span, ret := a.collapse(axis)
-	for i := int(0); i+span <= a.strides[0]; i += span {
+	for i := 0; i+span <= a.strides[0]; i += span {
 		ret.data[i/span] = f(ret.data[i : i+span])
 	}
 	ret.data = ret.data[:ret.strides[0]]
@@ -283,7 +283,7 @@ func (a *Array64) Map(f MapFunc) (ret *Array64) {
 	}()
 
 	ret = newArray64(a.shape...)
-	for i := int(0); i < a.strides[0]; i++ {
+	for i := 0; i < a.strides[0]; i++ {
 		ret.data[i] = f(a.data[i])
 	}
 	return
