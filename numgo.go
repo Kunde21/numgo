@@ -257,9 +257,9 @@ func (a *Array64) Reshape(shape ...int) *Array64 {
 		return a
 	}
 
-	var sz int = 1
+	var sz = 1
 	sh := make([]int, len(shape))
-	for i, v := range shape {
+	for _, v := range shape {
 		if v < 0 {
 			a.err = NegativeAxis
 			if debug {
@@ -269,8 +269,8 @@ func (a *Array64) Reshape(shape ...int) *Array64 {
 			return a
 		}
 		sz *= v
-		sh[i] = v
 	}
+	copy(sh, shape)
 
 	if sz != len(a.data) {
 		a.err = ReshapeError
