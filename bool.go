@@ -383,8 +383,8 @@ func (a *Arrayb) Resize(shape ...int) *Arrayb {
 	}
 
 	a.strides[ln-1] = 1
+	copy(a.shape, shape)
 	for i := ln - 2; i >= 0; i-- {
-		a.shape[i] = shape[i]
 		a.strides[i] = a.shape[i] * a.strides[i+1]
 	}
 
