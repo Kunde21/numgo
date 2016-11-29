@@ -13,7 +13,6 @@ import (
 type Array64 struct {
 	shape        []int
 	strides      []int
-	offset       []int
 	data         []float64
 	err          error
 	debug, stack string
@@ -46,9 +45,9 @@ func NewArray64(data []float64, shape ...int) (a *Array64) {
 		}
 	}
 
-	var sz int = 1
+	var sz = 1
 	sh := make([]int, len(shape))
-	for i, v := range shape {
+	for _, v := range shape {
 		if v < 0 {
 			a = &Array64{err: NegativeAxis}
 			if debug {
@@ -58,8 +57,8 @@ func NewArray64(data []float64, shape ...int) (a *Array64) {
 			return
 		}
 		sz *= v
-		sh[i] = v
 	}
+	copy(sh, shape)
 
 	a = &Array64{
 		shape:   sh,
