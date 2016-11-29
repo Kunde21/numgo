@@ -41,11 +41,8 @@ func (a *Array64) Shape() []int {
 		return nil
 	}
 
-	res := make([]int, 0, len(a.shape))
-	for _, v := range a.shape {
-		res = append(res, v)
-	}
-
+	res := make([]int, len(a.shape), len(a.shape))
+	copy(res, a.shape)
 	return res
 }
 
