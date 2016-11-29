@@ -26,7 +26,7 @@ func NewArrayB(data []bool, shape ...int) (a *Arrayb) {
 	a = new(Arrayb)
 	var sz = 1
 	sh := make([]int, len(shape))
-	for i, v := range shape {
+	for _, v := range shape {
 		if v <= 0 {
 			a.err = NegativeAxis
 			if debug {
@@ -59,12 +59,12 @@ func NewArrayB(data []bool, shape ...int) (a *Arrayb) {
 // Internal function to create using the shape of another array
 func newArrayB(shape ...int) (a *Arrayb) {
 	a = new(Arrayb)
-	var sz int = 1
+	var sz = 1
 	sh := make([]int, len(shape))
-	for i, v := range shape {
+	for _, v := range shape {
 		sz *= v
-		sh[i] = v
 	}
+	copy(sh, shape)
 
 	a.shape = sh
 	a.data = make([]bool, sz)
