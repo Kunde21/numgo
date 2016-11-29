@@ -105,4 +105,4 @@ Debugging can be enabled by calling `numgo.Debug(true)`.  This will give detaile
 
 ## Contributions
 
-If you have any suggestions, corrections, bug reports, or design ideas please create an issue so that we can discuss and imporove the code.  
+If you have any suggestions, corrections, bug reports, or design ideas please create an issue so that we can discuss and improve the code.  
