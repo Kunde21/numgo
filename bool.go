@@ -36,8 +36,8 @@ func NewArrayB(data []bool, shape ...int) (a *Arrayb) {
 			return
 		}
 		sz *= v
-		sh[i] = v
 	}
+	copy(sh, shape)
 
 	a.shape = sh
 	a.data = make([]bool, sz)
