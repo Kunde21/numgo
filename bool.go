@@ -11,7 +11,6 @@ import (
 type Arrayb struct {
 	shape        []int
 	strides      []int
-	offset       []int
 	data         []bool
 	err          error
 	debug, stack string
@@ -25,7 +24,7 @@ func NewArrayB(data []bool, shape ...int) (a *Arrayb) {
 	}
 
 	a = new(Arrayb)
-	var sz int = 1
+	var sz = 1
 	sh := make([]int, len(shape))
 	for i, v := range shape {
 		if v <= 0 {
