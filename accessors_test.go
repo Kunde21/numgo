@@ -422,9 +422,9 @@ func TestAppend(t *testing.T) {
 		t.Fail()
 	}
 
-	a = NewArray64([]float64{1, 2, 3, 3, 2, 1, 2, 1, 3}, 3, 3)
-	b = NewArray64([]float64{5, 6, 5, 4, 6, 5}, 3, 2)
-	c := NewArray64([]float64{
+	a = NewArray64([]nDimElement{1, 2, 3, 3, 2, 1, 2, 1, 3}, 3, 3)
+	b = NewArray64([]nDimElement{5, 6, 5, 4, 6, 5}, 3, 2)
+	c := NewArray64([]nDimElement{
 		1, 2, 3, 5, 6,
 		3, 2, 1, 5, 4,
 		2, 1, 3, 6, 5},

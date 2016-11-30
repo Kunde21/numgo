@@ -5,8 +5,6 @@ import (
 	"math"
 	"runtime"
 	"sync"
-
-	"github.com/Kunde21/numgo/internal"
 )
 
 var nan float64
@@ -24,13 +22,13 @@ func (a *Array64) Add(b *Array64) *Array64 {
 	}
 
 	if b.shape[len(b.shape)-1] == a.shape[len(a.shape)-1] {
-		asm.Add(a.data, b.data)
+		Add(a.data, b.data)
 		return a
 	}
 
 	st := a.strides[len(a.strides)-1] * a.shape[len(a.shape)-1]
 	for i := 0; i < len(b.data); i++ {
-		asm.AddC(b.data[i], a.data[i*st:(i+1)*st])
+		AddC(b.data[i], a.data[i*st:(i+1)*st])
 	}
 	return a
 }
@@ -41,7 +39,7 @@ func (a *Array64) AddC(b float64) *Array64 {
 		return a
 	}
 
-	asm.AddC(b, a.data)
+	AddC(b, a.data)
 	return a
 }
 
@@ -54,13 +52,13 @@ func (a *Array64) Subtr(b *Array64) *Array64 {
 	}
 
 	if b.shape[len(b.shape)-1] == a.shape[len(a.shape)-1] {
-		asm.Subtr(a.data, b.data)
+		Subtr(a.data, b.data)
 		return a
 	}
 
 	st := a.strides[len(a.strides)-1] * a.shape[len(a.shape)-1]
 	for i := 0; i < len(b.data); i++ {
-		asm.SubtrC(b.data[i], a.data[i*st:(i+1)*st])
+		SubtrC(b.data[i], a.data[i*st:(i+1)*st])
 	}
 	return a
 }
@@ -71,7 +69,7 @@ func (a *Array64) SubtrC(b float64) *Array64 {
 		return a
 	}
 
-	asm.SubtrC(b, a.data)
+	SubtrC(b, a.data)
 	return a
 }
 
@@ -84,13 +82,13 @@ func (a *Array64) Mult(b *Array64) *Array64 {
 	}
 
 	if b.shape[len(b.shape)-1] == a.shape[len(a.shape)-1] {
-		asm.Mult(a.data, b.data)
+		Mult(a.data, b.data)
 		return a
 	}
 
 	st := a.strides[len(a.strides)-1] * a.shape[len(a.shape)-1]
 	for i := 0; i < len(b.data); i++ {
-		asm.MultC(b.data[i], a.data[i*st:(i+1)*st])
+		MultC(b.data[i], a.data[i*st:(i+1)*st])
 	}
 	return a
 }
@@ -101,7 +99,7 @@ func (a *Array64) MultC(b float64) *Array64 {
 		return a
 	}
 
-	asm.MultC(b, a.data)
+	MultC(b, a.data)
 	return a
 }
 
@@ -116,13 +114,13 @@ func (a *Array64) Div(b *Array64) *Array64 {
 	}
 
 	if b.shape[len(b.shape)-1] == a.shape[len(a.shape)-1] {
-		asm.Div(a.data, b.data)
+		Div(a.data, b.data)
 		return a
 	}
 
 	st := a.strides[len(a.strides)-1] * a.shape[len(a.shape)-1]
 	for i := 0; i < len(b.data); i++ {
-		asm.DivC(b.data[i], a.data[i*st:(i+1)*st])
+		DivC(b.data[i], a.data[i*st:(i+1)*st])
 	}
 	return a
 }
@@ -136,7 +134,7 @@ func (a *Array64) DivC(b float64) *Array64 {
 		return a
 	}
 
-	asm.DivC(b, a.data)
+	DivC(b, a.data)
 	return a
 }
 
@@ -154,7 +152,7 @@ func (a *Array64) Pow(b *Array64) *Array64 {
 			if j >= lnb {
 				j = 0
 			}
-			a.data[i] = math.Pow(a.data[i], b.data[j])
+			a.data[i] = math.Pow(a.data[i].(float64), b.data[j].(float64))
 		}
 		return a
 	}
@@ -162,7 +160,7 @@ func (a *Array64) Pow(b *Array64) *Array64 {
 	st := a.strides[len(a.strides)-1] * a.shape[len(a.shape)-1]
 	for i := 0; i < len(b.data); i++ {
 		for j := i * st; j < (i+1)*st; j++ {
-			a.data[j] = math.Pow(a.data[j], b.data[i])
+			a.data[j] = math.Pow(a.data[j].(float64), b.data[i].(float64))
 		}
 	}
 	return a
@@ -176,7 +174,7 @@ func (a *Array64) PowC(b float64) *Array64 {
 	}
 
 	for i := 0; i < len(a.data); i++ {
-		a.data[i] = math.Pow(a.data[i], b)
+		a.data[i] = math.Pow(a.data[i].(float64), b)
 	}
 	return a
 }
@@ -193,7 +191,7 @@ func (a *Array64) FMA12(x float64, b *Array64) *Array64 {
 		cmp.Add(mul)
 		for k := 0; k < mul; k++ {
 			go func(m int) {
-				asm.Fma12(x, a.data[m:m+len(b.data)], b.data)
+				Fma12(x, a.data[m:m+len(b.data)], b.data)
 				cmp.Done()
 			}(k * len(b.data))
 		}
@@ -201,7 +199,7 @@ func (a *Array64) FMA12(x float64, b *Array64) *Array64 {
 		return a
 	}
 
-	asm.Fma12(x, a.data, b.data)
+	Fma12(x, a.data, b.data)
 	return a
 }
 
@@ -216,7 +214,7 @@ func (a *Array64) FMA21(x float64, b *Array64) *Array64 {
 		cmp.Add(mul)
 		for k := 0; k < mul; k++ {
 			go func(m int) {
-				asm.Fma21(x, a.data[m:m+len(b.data)], b.data)
+				Fma21(x, a.data[m:m+len(b.data)], b.data)
 				cmp.Done()
 			}(k * len(b.data))
 		}
@@ -224,7 +222,7 @@ func (a *Array64) FMA21(x float64, b *Array64) *Array64 {
 		return a
 	}
 
-	asm.Fma21(x, a.data, b.data)
+	Fma21(x, a.data, b.data)
 	return a
 }
 

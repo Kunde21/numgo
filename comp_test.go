@@ -14,11 +14,11 @@ func TestMax(t *testing.T) {
 		ax   []int
 		err  error
 	}{
-		{a.C(), NewArray64([]float64{19}), []int{}, nil},
+		{a.C(), NewArray64([]nDimElement{19}), []int{}, nil},
 		{a.C(), Arange(10, 20).Reshape(5, 2), []int{0}, nil},
-		{a.C(), NewArray64([]float64{8, 9, 18, 19}, 2, 2), []int{1}, nil},
+		{a.C(), NewArray64([]nDimElement{8, 9, 18, 19}, 2, 2), []int{1}, nil},
 		{a.C(), Arange(0, 20, 2).AddC(1).Reshape(2, 5), []int{2}, nil},
-		{a.C(), NewArray64([]float64{9, 19}), []int{1, 2}, nil},
+		{a.C(), NewArray64([]nDimElement{9, 19}), []int{1, 2}, nil},
 		{nil, nil, []int{}, NilError},
 		{a.C(), nil, []int{1, 2, 3, 4}, ShapeError},
 		{a.C(), nil, []int{4}, IndexError},
@@ -44,12 +44,12 @@ func TestMin(t *testing.T) {
 		ax   []int
 		err  error
 	}{
-		{a.C(), NewArray64([]float64{0}), []int{}, nil},
+		{a.C(), NewArray64([]nDimElement{0}), []int{}, nil},
 		{a.C(), Arange(10).Reshape(5, 2), []int{0}, nil},
-		{a.C(), NewArray64([]float64{0, 1, 10, 11}, 2, 2), []int{1}, nil},
+		{a.C(), NewArray64([]nDimElement{0, 1, 10, 11}, 2, 2), []int{1}, nil},
 		{a.C(), Arange(0, 20, 2).Reshape(2, 5), []int{2}, nil},
-		{a.C(), NewArray64([]float64{0, 10}), []int{1, 2}, nil},
-		{Arange(20, -1), NewArray64([]float64{-1}), []int{}, nil},
+		{a.C(), NewArray64([]nDimElement{0, 10}), []int{1, 2}, nil},
+		{Arange(20, -1), NewArray64([]nDimElement{-1}), []int{}, nil},
 		{nil, nil, []int{}, NilError},
 		{a.C(), nil, []int{1, 2, 3, 4}, ShapeError},
 		{a.C(), nil, []int{4}, IndexError},
@@ -82,7 +82,7 @@ func TestMinSet(t *testing.T) {
 		{[]*Array64{a.C().AddC(1), a}, a, nil},
 		{[]*Array64{}, nil, NilError},
 		{[]*Array64{a, nil}, nil, NilError},
-		{[]*Array64{a, {err: InvIndexError}}, nil, InvIndexError},
+		{[]*Array64{a, {nDimObject{err: InvIndexError}}}, nil, InvIndexError},
 		{[]*Array64{a, a.C().Reshape(2, 10)}, nil, ShapeError},
 	}
 
@@ -113,7 +113,7 @@ func TestMaxSet(t *testing.T) {
 		{[]*Array64{a.C().AddC(-1), a}, a, nil},
 		{[]*Array64{}, nil, NilError},
 		{[]*Array64{a, nil}, nil, NilError},
-		{[]*Array64{a, {err: InvIndexError}}, nil, InvIndexError},
+		{[]*Array64{a, {nDimObject{err: InvIndexError}}}, nil, InvIndexError},
 		{[]*Array64{a, a.C().Reshape(2, 10)}, nil, ShapeError},
 	}
 

@@ -21,12 +21,13 @@ func (a *Array64) C() (b *Array64) {
 	}
 
 	b = &Array64{
-		shape:   make([]int, len(a.shape)),
-		strides: make([]int, len(a.strides)),
-		data:    make([]float64, a.strides[0]),
-		err:     nil,
-		debug:   "",
-		stack:   "",
+		nDimObject{
+			strides: make([]int, len(a.strides)),
+			shape:   make([]int, len(a.shape)),
+			err:     nil,
+			debug:   "",
+			stack:   "",
+			data:    make([]nDimElement, a.strides[0])},
 	}
 
 	copy(b.shape, a.shape)
@@ -54,10 +55,10 @@ func (a *Array64) At(index ...int) float64 {
 		return math.NaN()
 	}
 
-	return a.data[idx]
+	return a.data[idx].(float64)
 }
 
-func (a *Array64) at(index []int) float64 {
+func (a *Array64) at(index []int) nDimElement {
 	var idx int
 	for i, v := range index {
 		idx += v * a.strides[i+1]
@@ -93,7 +94,7 @@ func (a *Array64) valIdx(index []int, mthd string) (idx int) {
 
 // SliceElement returns the element group at one axis above the leaf elements.
 // Data is returned as a copy  in a float slice.
-func (a *Array64) SliceElement(index ...int) (ret []float64) {
+func (a *Array64) SliceElement(index ...int) (ret []nDimElement) {
 	idx := a.valIdx(index, "SliceElement")
 	switch {
 	case a.HasErr():
@@ -125,7 +126,7 @@ func (a *Array64) SubArr(index ...int) (ret *Array64) {
 
 // Set sets the element at the given index.
 // There should be one index per axis.  Generates a ShapeError if incorrect index.
-func (a *Array64) Set(val float64, index ...int) *Array64 {
+func (a *Array64) Set(val nDimElement, index ...int) *Array64 {
 	idx := a.valIdx(index, "Set")
 	if a.HasErr() {
 		return a
@@ -137,7 +138,7 @@ func (a *Array64) Set(val float64, index ...int) *Array64 {
 
 // SetSliceElement sets the element group at one axis above the leaf elements.
 // Source Array is returned, for function-chaining design.
-func (a *Array64) SetSliceElement(vals []float64, index ...int) *Array64 {
+func (a *Array64) SetSliceElement(vals []nDimElement, index ...int) *Array64 {
 	idx := a.valIdx(index, "SetSliceElement")
 	switch {
 	case a.HasErr():
@@ -227,7 +228,7 @@ func (a *Array64) Resize(shape ...int) *Array64 {
 		return a
 	}
 
-	var sz int = 1
+	var sz = 1
 	for _, v := range shape {
 		if v >= 0 {
 			sz *= v
@@ -264,7 +265,7 @@ func (a *Array64) Resize(shape ...int) *Array64 {
 
 	cp = cap(a.data)
 	if sz > cp {
-		a.data = append(a.data[:cp], make([]float64, sz-cp)...)
+		a.data = append(a.data[:cp], make([]nDimElement, sz-cp)...)
 	} else {
 		a.data = a.data[:sz]
 	}
@@ -315,10 +316,10 @@ func (a *Array64) Append(val *Array64, axis int) *Array64 {
 	}
 
 	ln := len(a.data) + len(val.data)
-	var dat []float64
+	var dat []nDimElement
 	cp := cap(a.data)
 	if ln > cp {
-		dat = make([]float64, ln)
+		dat = make([]nDimElement, ln)
 	} else {
 		dat = a.data[:ln]
 	}

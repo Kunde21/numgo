@@ -2,7 +2,6 @@ package numgo
 
 import (
 	"fmt"
-	"github.com/Kunde21/numgo/internal"
 	"math"
 	"runtime"
 	"testing"
@@ -10,7 +9,7 @@ import (
 
 func init() {
 	debug = true
-	fmt.Println("SSE3:", asm.Sse3Supt, "AVX:", asm.AvxSupt, "FMA:", asm.FmaSupt, "AVX2:", asm.Avx2Supt)
+	fmt.Println("SSE3:", Sse3Supt, "AVX:", AvxSupt, "FMA:", FmaSupt, "AVX2:", Avx2Supt)
 }
 
 func TestAddC(t *testing.T) {
@@ -28,16 +27,16 @@ func TestAddC(t *testing.T) {
 		t.Fail()
 	}
 
-	if !asm.AvxSupt {
+	if !AvxSupt {
 		return
 	}
-	asm.AvxSupt = false
+	AvxSupt = false
 	if b := Arange(50).AddC(6); !Arange(6, 55).Equals(b).All().At(0) {
 		t.Log("NoAvx Failed")
 		t.Log(b)
 		t.Fail()
 	}
-	asm.AvxSupt = true
+	AvxSupt = true
 	if b := Arange(50).AddC(6); !Arange(6, 55).Equals(b).All().At(0) {
 		t.Log("AVX Failed")
 		t.Log(b)
@@ -132,7 +131,7 @@ func TestAdd(t *testing.T) {
 	a.Add(Arange(5))
 	runtime.GC()
 	for i, v := range a.data {
-		if int(v) != i%5*2+i/5*5 {
+		if int(v.(float64)) != i%5*2+i/5*5 {
 			t.Log("Incorrect result at:", i, "Expected", i%5*2+i/5*5, "Got", v)
 			t.Fail()
 		}
@@ -241,7 +240,7 @@ func TestMult(t *testing.T) {
 
 	a = FullArray64(math.NaN(), 4, 4)
 	for _, v := range a.data {
-		if !math.IsNaN(v) {
+		if !math.IsNaN(v.(float64)) {
 			t.Log("Expected NaN, got ", v)
 			t.FailNow()
 		}
@@ -408,7 +407,7 @@ func TestValRith(t *testing.T) {
 	}{
 		{a, b, NilError, "Nil not caught"},
 		{NewArray64(nil, 0), b, NilError, "Nil var not caught"},
-		{NewArray64(nil, 0), &Array64{err: InvIndexError}, InvIndexError, "Var in error not caught"},
+		{NewArray64(nil, 0), &Array64{nDimObject{err: InvIndexError}}, InvIndexError, "Var in error not caught"},
 		{NewArray64(nil, 0), NewArray64(nil, 2, 2, 2), ShapeError, "Larger var not caught"},
 		{NewArray64(nil, 2, 2, 4), NewArray64(nil, 2, 2, 2), ShapeError, "Axis mismatch not caught"},
 		{NewArray64(nil, 2, 2, 2), NewArray64(nil, 2, 2, 2), nil, "Correct values failed"},
@@ -450,10 +449,10 @@ func BenchmarkAddC_AVX(b *testing.B) {
 }
 
 func BenchmarkAddC_noAVX(b *testing.B) {
-	if !asm.AvxSupt {
+	if !AvxSupt {
 		b.Skip()
 	}
-	asm.AvxSupt = false
+	AvxSupt = false
 	a := Arange(500003)
 
 	b.ResetTimer()
@@ -462,7 +461,7 @@ func BenchmarkAddC_noAVX(b *testing.B) {
 		a.AddC(5)
 	}
 	b.StopTimer()
-	asm.AvxSupt = true
+	AvxSupt = true
 	runtime.GC()
 }
 
@@ -624,11 +623,11 @@ func BenchmarkCopy(b *testing.B) {
 }
 
 func BenchmarkFMA12_noFMA(b *testing.B) {
-	if !asm.FmaSupt {
+	if !FmaSupt {
 		b.Skip()
 	}
-	tmp := asm.FmaSupt
-	asm.FmaSupt = false
+	tmp := FmaSupt
+	FmaSupt = false
 	a := Arange(1, 1000000, .5)
 	if len(a.data) != (1000000-1)/.5+1 {
 		b.Log("Expected:", (1000000-1)/.5+1, "Got:", len(a.data))
@@ -641,7 +640,7 @@ func BenchmarkFMA12_noFMA(b *testing.B) {
 		a.FMA12(2, a)
 	}
 	b.StopTimer()
-	asm.FmaSupt = tmp
+	FmaSupt = tmp
 	runtime.GC()
 }
 

@@ -19,14 +19,14 @@ func TestSum(t *testing.T) {
 	sz := []int{7, 3, 4, 5, 6}
 	a := Arange(10).Reshape(2, 5).Sum(0)
 	for i, v := range a.data {
-		if int(v) != 5+2*i {
+		if int(v.(float64)) != 5+2*i {
 			t.Log("Incorrect result. Expected:", 5+2*i, "Received:", v)
 		}
 	}
 
 	a = Arange(3*4*5*6*7).Reshape(sz...).Sum(0, 2, 4)
 	for i, v := range a.data {
-		if int(v) != (i%5+i/5*20)*1008+189420 {
+		if int(v.(float64)) != (i%5+i/5*20)*1008+189420 {
 			t.Log("Incorrect result.  Expected: ", (i%5+i/5*20)*1008+189420, "Received", v)
 			t.Fail()
 		}
@@ -52,16 +52,16 @@ func BenchmarkSum(b *testing.B) {
 
 func TestNaNSum(t *testing.T) {
 	t.Parallel()
-	mask := func(i int, v float64) MapFunc {
-		return func(d float64) float64 {
-			if int(d)%i == 0 && d != 0 {
+	mask := func(i int, v nDimElement) MapFunc {
+		return func(d nDimElement) nDimElement {
+			if int(d.(float64))%i == 0 && d.(float64) != 0 {
 				return v
 			}
 			return d
 		}
 	}
-	maskz := func(d float64) float64 {
-		if math.IsNaN(d) {
+	maskz := func(d nDimElement) nDimElement {
+		if math.IsNaN(d.(float64)) {
 			return 0
 		}
 		return d
@@ -124,9 +124,9 @@ func TestCount(t *testing.T) {
 
 func TestNaNCount(t *testing.T) {
 	t.Parallel()
-	mask := func(i int, v float64) MapFunc {
-		return func(d float64) float64 {
-			if int(d)%i == 0 && d != 0 {
+	mask := func(i int, v nDimElement) MapFunc {
+		return func(d nDimElement) nDimElement {
+			if int(d.(float64))%i == 0 && d != 0 {
 				return v
 			}
 			return d
@@ -187,7 +187,7 @@ func TestMean(t *testing.T) {
 func TestNanMean(t *testing.T) {
 	t.Parallel()
 	a := Arange(2*3*4*5).Reshape(2, 3, 4, 5)
-	if !a.Mean(1, 3).Equals(a.NaNMean(1, 3)).All().data[0] {
+	if !a.Mean(1, 3).Equals(a.NaNMean(1, 3)).All().data[0].(bool) {
 		t.Log("NaNMean producing different results than Mean")
 		t.Log(a.Mean(1, 3))
 		t.Log(a.NaNMean(1, 3))
@@ -201,7 +201,7 @@ func TestNanMean(t *testing.T) {
 
 func TestNonzero(t *testing.T) {
 	t.Parallel()
-	maskz := func(d float64) float64 {
+	maskz := func(d nDimElement) nDimElement {
 		if d == 0 {
 			return math.NaN()
 		}
@@ -234,10 +234,11 @@ func TestNonzero(t *testing.T) {
 func TestFoldMean(t *testing.T) {
 	t.Parallel()
 	a := Arange(2*3*4*5*6*7*8*9*10*11).Reshape(2, 3, 4, 5, 6, 7, 8, 9, 10, 11)
-	sm := func(d []float64) (r float64) {
+	sm := func(d []nDimElement) nDimElement {
+		r := 0.0
 		i := 0
 		for _, v := range d {
-			r += v
+			r += v.(float64)
 			i++
 		}
 		return r / float64(i)
@@ -251,9 +252,10 @@ func TestFoldMean(t *testing.T) {
 func TestCollapse(t *testing.T) {
 	t.Parallel()
 	a := Arange(2*3*4*5).Reshape(2, 3, 4, 5)
-	sm := func(d []float64) (r float64) {
+	sm := func(d []nDimElement) nDimElement {
+		r := 0.0
 		for _, v := range d {
-			r += v
+			r += v.(float64)
 		}
 		return r
 	}
@@ -288,15 +290,16 @@ func BenchmarkCollapse(b *testing.B) {
 
 func BenchmarkFoldMean(b *testing.B) {
 	a := Arange(2*3*4*5*6*7*8*9*10*11).Reshape(2, 3, 4, 5, 6, 7, 8, 9, 10, 11)
-	sm := func(d []float64) (r float64) {
+	sm := func(d []nDimElement) nDimElement {
+		r := 0.0
 		l := len(d)
 		for i := 0; i < l; i++ {
-			r += d[i]
+			r += d[i].(float64)
 		}
 		return r / float64(l)
 	}
 
-	if !a.C().Mean(1, 3, 5, 7).Equals(a.Fold(sm, 1, 3, 5, 7)).All().data[0] {
+	if !a.C().Mean(1, 3, 5, 7).Equals(a.Fold(sm, 1, 3, 5, 7)).All().data[0].(bool) {
 		b.FailNow()
 	}
 
@@ -311,16 +314,17 @@ func BenchmarkFoldMean(b *testing.B) {
 
 func BenchmarkFoldCCMean(b *testing.B) {
 	a := Arange(2*3*4*5*6*7*8*9*10*11).Reshape(2, 3, 4, 5, 6, 7, 8, 9, 10, 11)
-	sm := func(d []float64) (r float64) {
+	sm := func(d []nDimElement) nDimElement {
+		r := 0.0
 		i := 0
 		for _, v := range d {
-			r += v
+			r += v.(float64)
 			i++
 		}
 		return r / float64(i)
 	}
 
-	if !a.C().Mean(1, 3, 5, 7).Equals(a.FoldCC(sm, 1, 3, 5, 7)).All().data[0] {
+	if !a.C().Mean(1, 3, 5, 7).Equals(a.FoldCC(sm, 1, 3, 5, 7)).All().data[0].(bool) {
 		b.FailNow()
 	}
 

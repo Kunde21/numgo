@@ -8,10 +8,10 @@ import (
 
 // FoldFunc can be received by Fold and FoldCC to apply as a summary function
 // across one or multiple axes.
-type FoldFunc func([]float64) float64
+type FoldFunc func([]nDimElement) nDimElement
 
 // MapFunc can be received by Map to modify each element in an array.
-type MapFunc func(float64) float64
+type MapFunc func(nDimElement) nDimElement
 
 // cleanAxis removes any duplicate axes and returns the cleaned slice.
 // only the first instance of an axis is retained.
@@ -106,7 +106,7 @@ shape:
 		j--
 	}
 
-	tmp := make([]float64, a.strides[0]) // Holds re-arranged data for return
+	tmp := make([]nDimElement, a.strides[0]) // Holds re-arranged data for return
 	retChan, compChan := make(chan struct{}), make(chan struct{})
 	defer close(retChan)
 	defer close(compChan)
@@ -197,7 +197,7 @@ func (a *Array64) FoldCC(f FoldFunc, axis ...int) (ret *Array64) {
 
 	type rt struct {
 		index int
-		value float64
+		value nDimElement
 	}
 
 	rfunc := func(c chan rt, i int) {
@@ -218,7 +218,7 @@ func (a *Array64) FoldCC(f FoldFunc, axis ...int) (ret *Array64) {
 	defer close(retChan)
 	defer close(compChan)
 	go func() {
-		d := make([]float64, ret.strides[0])
+		d := make([]nDimElement, ret.strides[0])
 		for i := 0; i+span <= a.strides[0]; i += span {
 			c := <-retChan
 			d[c.index] = c.value

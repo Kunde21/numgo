@@ -9,39 +9,46 @@ import (
 	"strings"
 )
 
-// Array64 is an n-dimensional array of float64 data
-type Array64 struct {
+type nDimObject struct {
 	shape        []int
 	strides      []int
-	data         []float64
 	err          error
 	debug, stack string
+	data         []nDimElement
+}
+
+type nDimElement interface {
+}
+
+// Array64 is an n-dimensional array of float64 data
+type Array64 struct {
+	nDimObject
 }
 
 // NewArray64 creates an Array64 object with dimensions given in order from outer-most to inner-most
 // Passing a slice with no shape data will wrap the slice as a 1-D array.
 // All values will default to zero.  Passing nil as the data parameter creates an empty array.
-func NewArray64(data []float64, shape ...int) (a *Array64) {
+func NewArray64(data []nDimElement, shape ...int) (a *Array64) {
 	if len(shape) == 0 {
 		switch {
 		case data != nil:
-			return &Array64{
+			return &Array64{nDimObject{
 				shape:   []int{len(data)},
 				strides: []int{len(data), 1},
 				data:    data,
 				err:     nil,
 				debug:   "",
 				stack:   "",
-			}
+			}}
 		default:
-			return &Array64{
+			return &Array64{nDimObject{
 				shape:   []int{0},
 				strides: []int{0, 0},
-				data:    []float64{},
+				data:    []nDimElement{},
 				err:     nil,
 				debug:   "",
 				stack:   "",
-			}
+			}}
 		}
 	}
 
@@ -49,7 +56,7 @@ func NewArray64(data []float64, shape ...int) (a *Array64) {
 	sh := make([]int, len(shape))
 	for _, v := range shape {
 		if v < 0 {
-			a = &Array64{err: NegativeAxis}
+			a = &Array64{nDimObject{err: NegativeAxis}}
 			if debug {
 				a.debug = fmt.Sprintf("Negative axis length received by Create: %v", shape)
 				a.stack = string(stackBuf[:runtime.Stack(stackBuf, false)])
@@ -60,14 +67,14 @@ func NewArray64(data []float64, shape ...int) (a *Array64) {
 	}
 	copy(sh, shape)
 
-	a = &Array64{
+	a = &Array64{nDimObject{
 		shape:   sh,
 		strides: make([]int, len(shape)+1),
-		data:    make([]float64, sz),
+		data:    make([]nDimElement, sz),
 		err:     nil,
 		debug:   "",
 		stack:   "",
-	}
+	}}
 
 	if data != nil {
 		copy(a.data, data)
@@ -82,19 +89,19 @@ func NewArray64(data []float64, shape ...int) (a *Array64) {
 
 // Internal function to create using the shape of another array
 func newArray64(shape ...int) (a *Array64) {
-	var sz int = 1
+	var sz = 1
 	for _, v := range shape {
 		sz *= v
 	}
 
-	a = &Array64{
+	a = &Array64{nDimObject{
 		shape:   shape,
 		strides: make([]int, len(shape)+1),
-		data:    make([]float64, sz),
+		data:    make([]nDimElement, sz),
 		err:     nil,
 		debug:   "",
 		stack:   "",
-	}
+	}}
 
 	a.strides[len(shape)] = 1
 	for i := len(shape) - 1; i >= 0; i-- {
@@ -163,7 +170,7 @@ func Arange(vals ...float64) (a *Array64) {
 		start, stop = vals[0], vals[1]
 	default:
 		if vals[1] < vals[0] && vals[2] >= 0 || vals[1] > vals[0] && vals[2] <= 0 {
-			a = &Array64{err: ShapeError}
+			a = &Array64{nDimObject{err: ShapeError}}
 			if debug {
 				a.debug = fmt.Sprintf("Arange received illegal values %v", vals)
 				a.stack = string(stackBuf[:runtime.Stack(stackBuf, false)])
@@ -187,7 +194,7 @@ func Arange(vals ...float64) (a *Array64) {
 // Negative size values will generate an error and return a nil value.
 func Identity(size int) (r *Array64) {
 	if size < 0 {
-		r = &Array64{err: NegativeAxis}
+		r = &Array64{nDimObject{err: NegativeAxis}}
 		if debug {
 			r.debug = fmt.Sprintf("Negative dimension received by Identity: %d", size)
 			r.stack = string(stackBuf[:runtime.Stack(stackBuf, false)])
@@ -297,13 +304,13 @@ func (a *Array64) Reshape(shape ...int) *Array64 {
 func (a *Array64) encode() (inf, nan []int64, err int8) {
 	for k, v := range a.data {
 		switch {
-		case math.IsNaN(float64(v)):
+		case math.IsNaN(v.(float64)):
 			a.data[k] = 0
 			nan = append(nan, int64(k+1))
-		case math.IsInf(float64(v), 1):
+		case math.IsInf(v.(float64), 1):
 			a.data[k] = 0
 			inf = append(inf, int64(k+1))
-		case math.IsInf(float64(v), -1):
+		case math.IsInf(v.(float64), -1):
 			a.data[k] = 0
 			inf = append(inf, int64(-(k + 1)))
 		}
@@ -320,11 +327,11 @@ func (a *Array64) MarshalJSON() ([]byte, error) {
 
 	inf, nan, err := t.encode()
 	return json.Marshal(struct {
-		Shape []int     `json:"shape"`
-		Data  []float64 `json:"data"`
-		Inf   []int64   `json:"inf,omitempty"`
-		Nan   []int64   `json:"nan,omitempty"`
-		Err   int8      `json:"err,omitempty"`
+		Shape []int         `json:"shape"`
+		Data  []nDimElement `json:"data"`
+		Inf   []int64       `json:"inf,omitempty"`
+		Nan   []int64       `json:"nan,omitempty"`
+		Err   int8          `json:"err,omitempty"`
 	}{
 		Shape: t.shape,
 		Data:  t.data,
@@ -357,11 +364,11 @@ func (a *Array64) decode(i, n []int64, err int8) {
 // Custom Unmarshaler is needed to load/decode unexported values and build strides.
 func (a *Array64) UnmarshalJSON(b []byte) error {
 	tmpA := new(struct {
-		Shape []int     `json:"shape"`
-		Data  []float64 `json:"data"`
-		Inf   []int64   `json:"inf,omitempty"`
-		Nan   []int64   `json:"nan,omitempty"`
-		Err   int8      `json:"err,omitempty"`
+		Shape []int         `json:"shape"`
+		Data  []nDimElement `json:"data"`
+		Inf   []int64       `json:"inf,omitempty"`
+		Nan   []int64       `json:"nan,omitempty"`
+		Err   int8          `json:"err,omitempty"`
 	})
 
 	err := json.Unmarshal(b, tmpA)

@@ -33,19 +33,19 @@ func TestNewArray64(t *testing.T) {
 		t.Fail()
 	}
 
-	a = NewArray64([]float64{0, 1, 2, 3, 4})
+	a = NewArray64([]nDimElement{0, 1, 2, 3, 4})
 	if e := a.Equals(Arange(5)); !e.All().At(0) {
 		t.Log("Slice Assignment Failed", a.GetErr(), e)
 		t.Fail()
 	}
 
-	a = NewArray64([]float64{0, 1, 2, 3, 4}, 3)
+	a = NewArray64([]nDimElement{0, 1, 2, 3, 4}, 3)
 	if e := a.Equals(Arange(3)); !e.All().At(0) {
 		t.Log("Slice Assignment Failed", a.GetErr(), e)
 		t.Fail()
 	}
 
-	a = NewArray64([]float64{0, 1, 2, 3, 4, 5}, 2, -1, 3)
+	a = NewArray64([]nDimElement{0, 1, 2, 3, 4, 5}, 2, -1, 3)
 	if e := a.GetErr(); e != NegativeAxis {
 		t.Log("Expected NegativeAxis, got:", e)
 		t.Fail()
@@ -126,7 +126,7 @@ func TestArange(t *testing.T) {
 
 	a = Arange(24, 0)
 	for i := 1; i < len(a.data); i++ {
-		if a.data[i]-a.data[i-1] != -1 {
+		if a.data[i].(float64)-a.data[i-1].(float64) != -1 {
 			t.Log("Stepping incorrect for negative range.", a)
 			t.Fail()
 		}
@@ -220,7 +220,7 @@ func TestString(t *testing.T) {
 	}{
 		{nil, "<nil>"},
 		{newArray64(0), "[]"},
-		{&Array64{err: InvIndexError}, "Error: " + InvIndexError.s},
+		{&Array64{nDimObject{err: InvIndexError}}, "Error: " + InvIndexError.s},
 		{Arange(10), fmt.Sprint(Arange(10).data)},
 		{Arange(10).Reshape(2, 5), "[[0 1 2 3 4] \n [5 6 7 8 9]]"},
 		{Arange(20).Reshape(2, 2, 5), "[[[0 1 2 3 4]  \n  [5 6 7 8 9]] \n\n [[10 11 12 13 14]  \n  [15 16 17 18 19]]]"},
@@ -247,7 +247,7 @@ func TestReshape(t *testing.T) {
 		{Arange(10), []int{2, 5}, nil},
 		{Arange(11), []int{2, 5}, ReshapeError},
 		{Arange(10), []int{2, -5}, NegativeAxis},
-		{&Array64{err: InvIndexError}, []int{0}, InvIndexError},
+		{&Array64{nDimObject{err: InvIndexError}}, []int{0}, InvIndexError},
 		{nil, []int{1}, NilError},
 	}
 

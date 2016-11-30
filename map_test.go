@@ -39,7 +39,7 @@ tests:
 		{Arange(10), []int{1}, []int{1}, IndexError},
 		{Arange(10).Reshape(2, 5), []int{1, -1}, []int{1, -1}, IndexError},
 		{Arange(10).Reshape(2, 5), []int{1, 0}, []int{}, nil},
-		{&Array64{err: InvIndexError}, []int{}, []int{}, InvIndexError},
+		{&Array64{nDimObject{err: InvIndexError}}, []int{}, []int{}, InvIndexError},
 	} {
 		if v.a.valAxis(&v.ax, "Test"); v.a.getErr() != v.err {
 			t.Log("Error mismatch.", i, "Expected", v.err, "Got", v.a.getErr())
@@ -62,22 +62,25 @@ tests:
 
 func TestFoldCC(t *testing.T) {
 
-	num := func(i float64) FoldFunc {
-		return func(d []float64) float64 {
+	num := func(i nDimElement) FoldFunc {
+		return func(d []nDimElement) nDimElement {
 			return i
 		}
 	}
 
-	sum := func(d []float64) (r float64) {
+	sum := func(d []nDimElement) nDimElement {
+		r := 0.0
 		for i := range d {
-			r += d[i]
+			r += d[i].(float64)
 		}
-		return r
+		return nDimElement(r)
 	}
 
-	pan := func(d []float64) (r float64) {
+	pan := func(d []nDimElement) nDimElement {
+		r := 0.0
+		//TODO check this loop, isn't it useless to assign to r?
 		for i := range d {
-			r += d[i]
+			r += d[i].(float64)
 		}
 		return d[len(d)+1]
 	}
@@ -115,22 +118,24 @@ func TestFoldCC(t *testing.T) {
 
 func TestFold(t *testing.T) {
 
-	num := func(i float64) FoldFunc {
-		return func(d []float64) float64 {
+	num := func(i nDimElement) FoldFunc {
+		return func(d []nDimElement) nDimElement {
 			return i
 		}
 	}
 
-	sum := func(d []float64) (r float64) {
+	sum := func(d []nDimElement) nDimElement {
+		r := 0.0
 		for i := range d {
-			r += d[i]
+			r += d[i].(float64)
 		}
 		return r
 	}
 
-	pan := func(d []float64) (r float64) {
+	pan := func(d []nDimElement) nDimElement {
+		r := 0.0
 		for i := range d {
-			r += d[i]
+			r += d[i].(float64)
 		}
 		return d[len(d)+1]
 	}
@@ -167,19 +172,19 @@ func TestFold(t *testing.T) {
 }
 
 func TestMap(t *testing.T) {
-	num := func(i float64) MapFunc {
-		return func(d float64) float64 {
+	num := func(i nDimElement) MapFunc {
+		return func(d nDimElement) nDimElement {
 			return i
 		}
 	}
 
-	inc := func(i float64) MapFunc {
-		return func(d float64) float64 {
-			return d + i
+	inc := func(i nDimElement) MapFunc {
+		return func(d nDimElement) nDimElement {
+			return d.(float64) + i.(float64)
 		}
 	}
 
-	pan := func(d float64) float64 {
+	pan := func(d nDimElement) nDimElement {
 		var f *float64
 		return *f
 	}

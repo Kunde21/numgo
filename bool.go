@@ -9,16 +9,12 @@ import (
 
 // Arrayb is an n-dimensional array of boolean values
 type Arrayb struct {
-	shape        []int
-	strides      []int
-	data         []bool
-	err          error
-	debug, stack string
+	nDimObject
 }
 
 // NewArrayB creates an Arrayb object with dimensions given in order from outer-most to inner-most
 // All values will default to false
-func NewArrayB(data []bool, shape ...int) (a *Arrayb) {
+func NewArrayB(data []nDimElement, shape ...int) (a *Arrayb) {
 	if data != nil && len(shape) == 0 {
 		shape = append(shape, len(data))
 	}
@@ -40,7 +36,7 @@ func NewArrayB(data []bool, shape ...int) (a *Arrayb) {
 	copy(sh, shape)
 
 	a.shape = sh
-	a.data = make([]bool, sz)
+	a.data = make([]nDimElement, sz)
 	if data != nil {
 		copy(a.data, data)
 	}
@@ -67,7 +63,7 @@ func newArrayB(shape ...int) (a *Arrayb) {
 	copy(sh, shape)
 
 	a.shape = sh
-	a.data = make([]bool, sz)
+	a.data = make([]nDimElement, sz)
 
 	a.strides = make([]int, len(sh)+1)
 	tmp := 1
@@ -213,12 +209,12 @@ func (a *Arrayb) At(index ...int) bool {
 	if a.HasErr() {
 		return false
 	}
-	return a.data[idx]
+	return a.data[idx].(bool)
 }
 
 // SliceElement returns the element group at one axis above the leaf elements.
 // Data is returned as a copy  in a float slice.
-func (a *Arrayb) SliceElement(index ...int) (ret []bool) {
+func (a *Arrayb) SliceElement(index ...int) (ret []nDimElement) {
 	idx := a.valIdx(index, "SliceElement")
 	switch {
 	case a.HasErr():
@@ -263,7 +259,7 @@ func (a *Arrayb) Set(val bool, index ...int) *Arrayb {
 
 // SetSliceElement sets the element group at one axis above the leaf elements.
 // Source Array is returned, for function-chaining design.
-func (a *Arrayb) SetSliceElement(vals []bool, index ...int) *Arrayb {
+func (a *Arrayb) SetSliceElement(vals []nDimElement, index ...int) *Arrayb {
 	idx := a.valIdx(index, "SetSliceElement")
 	switch {
 	case a.HasErr():
@@ -390,7 +386,7 @@ func (a *Arrayb) Resize(shape ...int) *Arrayb {
 
 	cp = cap(a.data)
 	if sz > cp {
-		a.data = append(a.data[:cp], make([]bool, sz-cp)...)
+		a.data = append(a.data[:cp], make([]nDimElement, sz-cp)...)
 	} else {
 		a.data = a.data[:sz]
 	}
@@ -441,10 +437,10 @@ func (a *Arrayb) Append(val *Arrayb, axis int) *Arrayb {
 	}
 
 	ln := len(a.data) + len(val.data)
-	var dat []bool
+	var dat []nDimElement
 	cp := cap(a.data)
 	if ln > cp {
-		dat = append(a.data, make([]bool, ln-cp)...)
+		dat = append(a.data, make([]nDimElement, ln-cp)...)
 	} else {
 		dat = a.data[:ln]
 	}
@@ -469,9 +465,9 @@ func (a *Arrayb) Append(val *Arrayb, axis int) *Arrayb {
 // Custom Unmarshaler is needed to encode/send unexported values.
 func (a *Arrayb) MarshalJSON() ([]byte, error) {
 	return json.Marshal(struct {
-		Shape []int  `json:"shape"`
-		Data  []bool `json:"data"`
-		Err   int8   `json:"err,omitempty"`
+		Shape []int         `json:"shape"`
+		Data  []nDimElement `json:"data"`
+		Err   int8          `json:"err,omitempty"`
 	}{
 		Shape: a.shape,
 		Data:  a.data,
@@ -484,9 +480,9 @@ func (a *Arrayb) MarshalJSON() ([]byte, error) {
 func (a *Arrayb) UnmarshalJSON(b []byte) error {
 
 	tmpA := new(struct {
-		Shape []int  `json:"shape"`
-		Data  []bool `json:"data"`
-		Err   int8   `json:"err,omitempty"`
+		Shape []int         `json:"shape"`
+		Data  []nDimElement `json:"data"`
+		Err   int8          `json:"err,omitempty"`
 	})
 
 	err := json.Unmarshal(b, tmpA)

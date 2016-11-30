@@ -1,7 +1,5 @@
 package numgo
 
-import "github.com/Kunde21/numgo/internal"
-
 //Matrix and vector multiplication implementations
 // - Dot Product
 // - Cross Product
@@ -14,14 +12,14 @@ func (a *Array64) DotProd(b *Array64) *Array64 {
 	case a.valRith(b, "DotProd"):
 		return a
 	case len(a.shape) == 1:
-		return &Array64{
+		return &Array64{nDimObject{
 			shape:   []int{1},
 			strides: []int{1, 1},
-			data:    []float64{asm.DotProd(a.data, b.data)},
+			data:    []nDimElement{DotProd(a.data, b.data)},
 			err:     nil,
 			debug:   "",
 			stack:   "",
-		}
+		}}
 	}
 	return a
 }
@@ -31,14 +29,14 @@ func (a *Array64) MatProd(b *Array64) *Array64 {
 	case a.valRith(b, "MatProd"):
 		return a
 	case len(a.shape) == 1 && len(b.shape) == 1:
-		return &Array64{
+		return &Array64{nDimObject{
 			shape:   []int{1},
 			strides: []int{1, 1},
-			data:    []float64{asm.DotProd(a.data, b.data)},
+			data:    []nDimElement{DotProd(a.data, b.data)},
 			err:     nil,
 			debug:   "",
 			stack:   "",
-		}
+		}}
 	}
 	return a
 }
