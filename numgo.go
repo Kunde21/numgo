@@ -9,17 +9,6 @@ import (
 	"strings"
 )
 
-type nDimObject struct {
-	shape        []int
-	strides      []int
-	err          error
-	debug, stack string
-	data         []nDimElement
-}
-
-type nDimElement interface {
-}
-
 // Array64 is an n-dimensional array of float64 data
 type Array64 struct {
 	nDimObject
@@ -209,97 +198,6 @@ func Identity(size int) (r *Array64) {
 	return
 }
 
-// String Satisfies the Stringer interface for fmt package
-func (a *Array64) String() (s string) {
-	switch {
-	case a == nil:
-		return "<nil>"
-	case a.err != nil:
-		return "Error: " + a.err.(*ngError).s
-	case a.data == nil || a.shape == nil || a.strides == nil:
-		return "<nil>"
-	case a.strides[0] == 0:
-		return "[]"
-	case len(a.shape) == 1:
-		return fmt.Sprint(a.data)
-	}
-
-	stride := a.shape[len(a.shape)-1]
-
-	for i, k := 0, 0; i+stride <= len(a.data); i, k = i+stride, k+1 {
-
-		t := ""
-		for j, v := range a.strides {
-			if i%v == 0 && j < len(a.strides)-2 {
-				t += "["
-			}
-		}
-
-		s += strings.Repeat(" ", len(a.shape)-len(t)-1) + t
-		s += fmt.Sprint(a.data[i : i+stride])
-
-		t = ""
-		for j, v := range a.strides {
-			if (i+stride)%v == 0 && j < len(a.strides)-2 {
-				t += "]"
-			}
-		}
-
-		s += t + strings.Repeat(" ", len(a.shape)-len(t)-1)
-		if i+stride != len(a.data) {
-			s += "\n"
-			if len(t) > 0 {
-				s += "\n"
-			}
-		}
-	}
-	return
-}
-
-// Reshape Changes the size of the array axes.  Values are not changed or moved.
-// This must not change the size of the array.
-// Incorrect dimensions will return a nil pointer
-func (a *Array64) Reshape(shape ...int) *Array64 {
-	if a.HasErr() || len(shape) == 0 {
-		return a
-	}
-
-	var sz = 1
-	sh := make([]int, len(shape))
-	for _, v := range shape {
-		if v < 0 {
-			a.err = NegativeAxis
-			if debug {
-				a.debug = fmt.Sprintf("Negative dimension received by Reshape(): %v", shape)
-				a.stack = string(stackBuf[:runtime.Stack(stackBuf, false)])
-			}
-			return a
-		}
-		sz *= v
-	}
-	copy(sh, shape)
-
-	if sz != len(a.data) {
-		a.err = ReshapeError
-		if debug {
-			a.debug = fmt.Sprintf("Reshape() can not change data size.  Dimensions: %v reshape: %v", a.shape, shape)
-			a.stack = string(stackBuf[:runtime.Stack(stackBuf, false)])
-		}
-		return a
-	}
-
-	a.strides = make([]int, len(sh)+1)
-	tmp := 1
-	for i := len(a.strides) - 1; i > 0; i-- {
-		a.strides[i] = tmp
-		tmp *= sh[i-1]
-	}
-	a.strides[0] = tmp
-	a.shape = sh
-
-	return a
-}
-
 // encode is used to prepare data for MarshalJSON that isn't JSON defined.
 func (a *Array64) encode() (inf, nan []int64, err int8) {
 	for k, v := range a.data {
@@ -323,7 +221,7 @@ func (a *Array64) encode() (inf, nan []int64, err int8) {
 // MarshalJSON fulfills the json.Marshaler Interface for encoding data.
 // Custom Unmarshaler is needed to encode/send unexported values.
 func (a *Array64) MarshalJSON() ([]byte, error) {
-	t := a.C()
+	t := Array64{*a.C()}
 
 	inf, nan, err := t.encode()
 	return json.Marshal(struct {

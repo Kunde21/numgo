@@ -101,10 +101,10 @@ func (a *Array64) NaNSum(axis ...int) *Array64 {
 
 // Count gives the number of elements along a set of axis.
 // Value in the element is not tested, all elements are counted.
-func (a *Array64) Count(axis ...int) *Array64 {
+func (a *nDimObject) Count(axis ...int) *Array64 {
 	switch {
 	case a.valAxis(&axis, "Count"):
-		return a
+		return &Array64{*a}
 	case len(axis) == 0:
 		return full(float64(a.strides[0]), 1)
 	}
@@ -168,7 +168,9 @@ func (a *Array64) Mean(axis ...int) *Array64 {
 	case a.valAxis(&axis, "Mean"):
 		return a
 	}
-	return a.C().Sum(axis...).DivC(a.count(axis...))
+	arr := Array64{*(a.C())}
+	arr.Sum(axis...).DivC(a.count(axis...))
+	return &arr
 }
 
 // NaNMean calculates the mean across the given axes.

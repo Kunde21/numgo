@@ -7,7 +7,7 @@ import (
 )
 
 // Flatten reshapes the data to a 1-D array.
-func (a *Array64) Flatten() *Array64 {
+func (a *nDimObject) Flatten() *nDimObject {
 	if a.HasErr() {
 		return a
 	}
@@ -15,20 +15,19 @@ func (a *Array64) Flatten() *Array64 {
 }
 
 // C will return a deep copy of the source array.
-func (a *Array64) C() (b *Array64) {
+func (a *nDimObject) C() (b *nDimObject) {
 	if a.HasErr() {
 		return a
 	}
 
-	b = &Array64{
-		nDimObject{
+	b =
+		&nDimObject{
 			strides: make([]int, len(a.strides)),
 			shape:   make([]int, len(a.shape)),
 			err:     nil,
 			debug:   "",
 			stack:   "",
-			data:    make([]nDimElement, a.strides[0])},
-	}
+			data:    make([]nDimElement, a.strides[0])}
 
 	copy(b.shape, a.shape)
 	copy(b.strides, a.strides)
@@ -37,7 +36,7 @@ func (a *Array64) C() (b *Array64) {
 }
 
 // Shape returns a copy of the array shape
-func (a *Array64) Shape() []int {
+func (a *nDimObject) Shape() []int {
 	if a.HasErr() {
 		return nil
 	}
@@ -49,7 +48,7 @@ func (a *Array64) Shape() []int {
 
 // At returns the element at the given index.
 // There should be one index per axis.  Generates a ShapeError if incorrect index.
-func (a *Array64) At(index ...int) float64 {
+func (a *nDimObject) At(index ...int) nDimElement {
 	idx := a.valIdx(index, "At")
 	if a.HasErr() {
 		return math.NaN()
@@ -58,7 +57,7 @@ func (a *Array64) At(index ...int) float64 {
 	return a.data[idx].(float64)
 }
 
-func (a *Array64) at(index []int) nDimElement {
+func (a *nDimObject) at(index []int) nDimElement {
 	var idx int
 	for i, v := range index {
 		idx += v * a.strides[i+1]
@@ -66,7 +65,7 @@ func (a *Array64) at(index []int) nDimElement {
 	return a.data[idx]
 }
 
-func (a *Array64) valIdx(index []int, mthd string) (idx int) {
+func (a *nDimObject) valIdx(index []int, mthd string) (idx int) {
 	if a.HasErr() {
 		return 0
 	}
@@ -94,7 +93,7 @@ func (a *Array64) valIdx(index []int, mthd string) (idx int) {
 
 // SliceElement returns the element group at one axis above the leaf elements.
 // Data is returned as a copy  in a float slice.
-func (a *Array64) SliceElement(index ...int) (ret []nDimElement) {
+func (a *nDimObject) SliceElement(index ...int) (ret []nDimElement) {
 	idx := a.valIdx(index, "SliceElement")
 	switch {
 	case a.HasErr():
@@ -112,13 +111,13 @@ func (a *Array64) SliceElement(index ...int) (ret []nDimElement) {
 }
 
 // SubArr slices the array at a given index.
-func (a *Array64) SubArr(index ...int) (ret *Array64) {
+func (a *nDimObject) SubArr(index ...int) (ret *nDimObject) {
 	idx := a.valIdx(index, "SubArr")
 	if a.HasErr() {
 		return a
 	}
 
-	ret = newArray64(a.shape[len(index):]...)
+	ret = newnDimObject(a.shape[len(index):]...)
 	copy(ret.data, a.data[idx:idx+a.strides[len(index)]])
 
 	return
@@ -126,7 +125,7 @@ func (a *Array64) SubArr(index ...int) (ret *Array64) {
 
 // Set sets the element at the given index.
 // There should be one index per axis.  Generates a ShapeError if incorrect index.
-func (a *Array64) Set(val nDimElement, index ...int) *Array64 {
+func (a *nDimObject) Set(val nDimElement, index ...int) *nDimObject {
 	idx := a.valIdx(index, "Set")
 	if a.HasErr() {
 		return a
@@ -138,7 +137,7 @@ func (a *Array64) Set(val nDimElement, index ...int) *Array64 {
 
 // SetSliceElement sets the element group at one axis above the leaf elements.
 // Source Array is returned, for function-chaining design.
-func (a *Array64) SetSliceElement(vals []nDimElement, index ...int) *Array64 {
+func (a *nDimObject) SetSliceElement(vals []nDimElement, index ...int) *nDimObject {
 	idx := a.valIdx(index, "SetSliceElement")
 	switch {
 	case a.HasErr():
@@ -164,7 +163,7 @@ func (a *Array64) SetSliceElement(vals []nDimElement, index ...int) *Array64 {
 
 // SetSubArr sets the array below a given index to the values in vals.
 // Values will be broadcast up multiple axes if the shapes match.
-func (a *Array64) SetSubArr(vals *Array64, index ...int) *Array64 {
+func (a *nDimObject) SetSubArr(vals *nDimObject, index ...int) *nDimObject {
 	idx := a.valIdx(index, "SetSubArr")
 	switch {
 	case a.HasErr():
@@ -217,7 +216,7 @@ func (a *Array64) SetSubArr(vals *Array64, index ...int) *Array64 {
 //
 // Make a copy C() if the original array needs to remain unchanged.
 // Element location in the underlying slice will not be adjusted to the new shape.
-func (a *Array64) Resize(shape ...int) *Array64 {
+func (a *nDimObject) Resize(shape ...int) *nDimObject {
 	switch {
 	case a.HasErr():
 		return a
@@ -277,7 +276,7 @@ func (a *Array64) Resize(shape ...int) *Array64 {
 //
 // Source array will be changed, so use C() if the original data is needed.
 // All axes must be the same except the appending axis.
-func (a *Array64) Append(val *Array64, axis int) *Array64 {
+func (a *nDimObject) Append(val *nDimObject, axis int) *nDimObject {
 	switch {
 	case a.HasErr():
 		return a
@@ -338,4 +337,51 @@ func (a *Array64) Append(val *Array64, axis int) *Array64 {
 	}
 
 	return a
+}
+
+// String Satisfies the Stringer interface for fmt package
+func (a *nDimObject) String() (s string) {
+	switch {
+	case a == nil:
+		return "<nil>"
+	case a.err != nil:
+		return "Error: " + a.err.(*ngError).s
+	case a.data == nil || a.shape == nil || a.strides == nil:
+		return "<nil>"
+	case a.strides[0] == 0:
+		return "[]"
+	case len(a.shape) == 1:
+		return fmt.Sprint(a.data)
+	}
+
+	stride := a.shape[len(a.shape)-1]
+
+	for i, k := 0, 0; i+stride <= len(a.data); i, k = i+stride, k+1 {
+
+		t := ""
+		for j, v := range a.strides {
+			if i%v == 0 && j < len(a.strides)-2 {
+				t += "["
+			}
+		}
+
+		s += strings.Repeat(" ", len(a.shape)-len(t)-1) + t
+		s += fmt.Sprint(a.data[i : i+stride])
+
+		t = ""
+		for j, v := range a.strides {
+			if (i+stride)%v == 0 && j < len(a.strides)-2 {
+				t += "]"
+			}
+		}
+
+		s += t + strings.Repeat(" ", len(a.shape)-len(t)-1)
+		if i+stride != len(a.data) {
+			s += "\n"
+			if len(t) > 0 {
+				s += "\n"
+			}
+		}
+	}
+	return
 }

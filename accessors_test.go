@@ -41,7 +41,7 @@ func TestC(t *testing.T) {
 			t.Log("Size Changed", v)
 			t.Fail()
 		}
-		if v := a.Equals(b); !v.All().At(0) {
+		if v := a.Equals(b); !v.All().At(0).(bool) {
 			t.Log("Data Changed", v)
 			t.Fail()
 		}
@@ -151,7 +151,7 @@ func TestSubArr(t *testing.T) {
 	for i := 0; i < 20 || !g || !b; i++ {
 		x, y := rand.Intn(6), rand.Intn(6)
 		val := a.SubArr(x, y)
-		if v := val.Equals(Arange(float64(x*25+y*5), float64(x*25+y*5+5))); !v.All().At(0) && !v.HasErr() {
+		if v := val.Equals(&Arange(float64(x*25+y*5), float64(x*25+y*5+5)).nDimObject); !v.All().At(0).(bool) && !v.HasErr() {
 			t.Logf("Value %d failed.  Expected: %v Received: %v", i, float64(x*25+y*5+i), v)
 			t.Log(x, y)
 			t.Fail()
@@ -357,7 +357,7 @@ func TestResize(t *testing.T) {
 
 func TestAppend(t *testing.T) {
 	a := NewArray64(nil, 1, 2, 3, 4, 5)
-	b := Arange(120)
+	b := &Arange(120).nDimObject
 
 	a.Append(nil, 1)
 	if e := a.GetErr(); e != NilError {
@@ -423,14 +423,14 @@ func TestAppend(t *testing.T) {
 	}
 
 	a = NewArray64([]nDimElement{1, 2, 3, 3, 2, 1, 2, 1, 3}, 3, 3)
-	b = NewArray64([]nDimElement{5, 6, 5, 4, 6, 5}, 3, 2)
-	c := NewArray64([]nDimElement{
+	b = &NewArray64([]nDimElement{5, 6, 5, 4, 6, 5}, 3, 2).nDimObject
+	c := &NewArray64([]nDimElement{
 		1, 2, 3, 5, 6,
 		3, 2, 1, 5, 4,
 		2, 1, 3, 6, 5},
-		3, 5)
+		3, 5).nDimObject
 
-	if !a.Append(b, 1).Equals(c).All().At(0) {
+	if !a.Append(b, 1).Equals(c).All().At(0).(bool) {
 		t.Log("Append gave unexpected results")
 		t.Log(a.Append(b, 1).Equals(c))
 		t.Fail()
