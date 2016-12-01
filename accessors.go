@@ -4,6 +4,7 @@ import (
 	"fmt"
 	"math"
 	"runtime"
+	"strings"
 )
 
 // Flatten reshapes the data to a 1-D array.
@@ -117,7 +118,7 @@ func (a *nDimObject) SubArr(index ...int) (ret *nDimObject) {
 		return a
 	}
 
-	ret = newnDimObject(a.shape[len(index):]...)
+	ret = &newArray64(a.shape[len(index):]...).nDimObject
 	copy(ret.data, a.data[idx:idx+a.strides[len(index)]])
 
 	return
