@@ -17,6 +17,9 @@ type nDimFields struct {
 	data         []nDimElement
 }
 
+type nDimObject interface {
+	/* TODO: add methods */
+}
 type nDimElement interface {
 }
 

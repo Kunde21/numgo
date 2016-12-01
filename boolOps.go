@@ -265,7 +265,7 @@ axis:
 }
 
 // Equals performs boolean '==' element-wise comparison
-func (a *Array64) Equals(b *Array64) (r *Arrayb) {
+func (a *Array64) Equals(b nDimObject) (r *Arrayb) {
 	return a.values().Equals(b.values())
 }
 
