@@ -19,6 +19,10 @@ type nDimFields struct {
 
 type nDimObject interface {
 	/* TODO: add methods */
+	values() nDimObject
+	fields() nDimFields
+	Equals(nDimObject) Arrayb
+	Shape() []int
 }
 type nDimElement interface {
 }
