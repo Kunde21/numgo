@@ -14,14 +14,14 @@ func init() {
 
 func TestAddC(t *testing.T) {
 	t.Parallel()
-	a := &Arange(21).nDimObject
+	a := Arange(21).values()
 
-	if b := a.AddC(2).Equals(Arange(2, 22)); !b.All().At(0).(bool) {
+	if b := a.Array64().AddC(2).Equals(Arange(2, 22).values()); !b.All().At(0).(bool) {
 		t.Log(Arange(2, 23).shape)
 		t.Log(a.shape)
 		t.Fail()
 	}
-	a.Reshape(10, 10).AddC(1)
+	a.Reshape(10, 10).Array64().AddC(1)
 	if !a.HasErr() {
 		t.Log(a.GetErr())
 		t.Fail()
@@ -31,13 +31,13 @@ func TestAddC(t *testing.T) {
 		return
 	}
 	AvxSupt = false
-	if b := &Arange(50).AddC(6).nDimObject; !Arange(6, 55).Equals(b).All().At(0).(bool) {
+	if b := &Arange(50).AddC(6).nDimFields; !Arange(6, 55).Equals(b).All().At(0).(bool) {
 		t.Log("NoAvx Failed")
 		t.Log(b)
 		t.Fail()
 	}
 	AvxSupt = true
-	if b := &Arange(50).AddC(6).nDimObject; !Arange(6, 55).Equals(b).All().At(0).(bool) {
+	if b := &Arange(50).AddC(6).nDimFields; !Arange(6, 55).Equals(b).All().At(0).(bool) {
 		t.Log("AVX Failed")
 		t.Log(b)
 		t.Fail()
@@ -46,13 +46,13 @@ func TestAddC(t *testing.T) {
 
 func TestSubtrC(t *testing.T) {
 	t.Parallel()
-	a := &Arange(21).nDimObject
-	if b := a.SubtrC(2).Equals(Arange(-2, 18)); !b.All().At(0).(bool) {
+	a := Arange(21)
+	if b := a.Array64().SubtrC(2).Equals(Arange(-2, 18).values()); !b.All().At(0).(bool) {
 		t.Log(b)
 		t.Log(a)
 		t.Fail()
 	}
-	a.Reshape(10, 10).SubtrC(2)
+	a.Array64().Reshape(10, 10).Array64().SubtrC(2)
 	if !a.HasErr() {
 		t.Log(a.GetErr())
 		t.Fail()
@@ -63,7 +63,7 @@ func TestMultC(t *testing.T) {
 	t.Parallel()
 	a := Arange(21)
 
-	if b := a.MultC(2).Equals(Arange(0, 40, 2)); !b.All().At(0) {
+	if b := a.MultC(2).Equals(Arange(0, 40, 2).values()); !b.All().At(0) {
 		t.Log(b)
 		t.Log(a)
 		t.Fail()
@@ -407,7 +407,7 @@ func TestValRith(t *testing.T) {
 	}{
 		{a, b, NilError, "Nil not caught"},
 		{NewArray64(nil, 0), b, NilError, "Nil var not caught"},
-		{NewArray64(nil, 0), &Array64{nDimObject{err: InvIndexError}}, InvIndexError, "Var in error not caught"},
+		{NewArray64(nil, 0), &Array64{nDimFields{err: InvIndexError}}, InvIndexError, "Var in error not caught"},
 		{NewArray64(nil, 0), NewArray64(nil, 2, 2, 2), ShapeError, "Larger var not caught"},
 		{NewArray64(nil, 2, 2, 4), NewArray64(nil, 2, 2, 2), ShapeError, "Axis mismatch not caught"},
 		{NewArray64(nil, 2, 2, 2), NewArray64(nil, 2, 2, 2), nil, "Correct values failed"},

@@ -43,8 +43,8 @@ func (a *Array64) AddC(b float64) *Array64 {
 	return a
 }
 
-func (a Array64) values() nDimObject {
-	return a.nDimObject
+func (a Array64) values() *nDimFields {
+	return &a.nDimFields
 }
 
 // Subtr performs element-wise subtraction.

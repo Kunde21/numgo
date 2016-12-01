@@ -8,7 +8,7 @@ import (
 )
 
 // Flatten reshapes the data to a 1-D array.
-func (a *nDimObject) Flatten() *nDimObject {
+func (a *nDimFields) Flatten() *nDimFields {
 	if a.HasErr() {
 		return a
 	}
@@ -16,13 +16,13 @@ func (a *nDimObject) Flatten() *nDimObject {
 }
 
 // C will return a deep copy of the source array.
-func (a *nDimObject) C() (b *nDimObject) {
+func (a *nDimFields) C() (b *nDimFields) {
 	if a.HasErr() {
 		return a
 	}
 
 	b =
-		&nDimObject{
+		&nDimFields{
 			strides: make([]int, len(a.strides)),
 			shape:   make([]int, len(a.shape)),
 			err:     nil,
@@ -37,7 +37,7 @@ func (a *nDimObject) C() (b *nDimObject) {
 }
 
 // Shape returns a copy of the array shape
-func (a *nDimObject) Shape() []int {
+func (a *nDimFields) Shape() []int {
 	if a.HasErr() {
 		return nil
 	}
@@ -49,7 +49,7 @@ func (a *nDimObject) Shape() []int {
 
 // At returns the element at the given index.
 // There should be one index per axis.  Generates a ShapeError if incorrect index.
-func (a *nDimObject) At(index ...int) nDimElement {
+func (a *nDimFields) At(index ...int) nDimElement {
 	idx := a.valIdx(index, "At")
 	if a.HasErr() {
 		return math.NaN()
@@ -58,7 +58,7 @@ func (a *nDimObject) At(index ...int) nDimElement {
 	return a.data[idx].(float64)
 }
 
-func (a *nDimObject) at(index []int) nDimElement {
+func (a *nDimFields) at(index []int) nDimElement {
 	var idx int
 	for i, v := range index {
 		idx += v * a.strides[i+1]
@@ -66,7 +66,7 @@ func (a *nDimObject) at(index []int) nDimElement {
 	return a.data[idx]
 }
 
-func (a *nDimObject) valIdx(index []int, mthd string) (idx int) {
+func (a *nDimFields) valIdx(index []int, mthd string) (idx int) {
 	if a.HasErr() {
 		return 0
 	}
@@ -94,7 +94,7 @@ func (a *nDimObject) valIdx(index []int, mthd string) (idx int) {
 
 // SliceElement returns the element group at one axis above the leaf elements.
 // Data is returned as a copy  in a float slice.
-func (a *nDimObject) SliceElement(index ...int) (ret []nDimElement) {
+func (a *nDimFields) SliceElement(index ...int) (ret []nDimElement) {
 	idx := a.valIdx(index, "SliceElement")
 	switch {
 	case a.HasErr():
@@ -112,13 +112,13 @@ func (a *nDimObject) SliceElement(index ...int) (ret []nDimElement) {
 }
 
 // SubArr slices the array at a given index.
-func (a *nDimObject) SubArr(index ...int) (ret *nDimObject) {
+func (a *nDimFields) SubArr(index ...int) (ret *nDimFields) {
 	idx := a.valIdx(index, "SubArr")
 	if a.HasErr() {
 		return a
 	}
 
-	ret = &newArray64(a.shape[len(index):]...).nDimObject
+	ret = &newArray64(a.shape[len(index):]...).nDimFields
 	copy(ret.data, a.data[idx:idx+a.strides[len(index)]])
 
 	return
@@ -126,7 +126,7 @@ func (a *nDimObject) SubArr(index ...int) (ret *nDimObject) {
 
 // Set sets the element at the given index.
 // There should be one index per axis.  Generates a ShapeError if incorrect index.
-func (a *nDimObject) Set(val nDimElement, index ...int) *nDimObject {
+func (a *nDimFields) Set(val nDimElement, index ...int) *nDimFields {
 	idx := a.valIdx(index, "Set")
 	if a.HasErr() {
 		return a
@@ -138,7 +138,7 @@ func (a *nDimObject) Set(val nDimElement, index ...int) *nDimObject {
 
 // SetSliceElement sets the element group at one axis above the leaf elements.
 // Source Array is returned, for function-chaining design.
-func (a *nDimObject) SetSliceElement(vals []nDimElement, index ...int) *nDimObject {
+func (a *nDimFields) SetSliceElement(vals []nDimElement, index ...int) *nDimFields {
 	idx := a.valIdx(index, "SetSliceElement")
 	switch {
 	case a.HasErr():
@@ -164,7 +164,7 @@ func (a *nDimObject) SetSliceElement(vals []nDimElement, index ...int) *nDimObje
 
 // SetSubArr sets the array below a given index to the values in vals.
 // Values will be broadcast up multiple axes if the shapes match.
-func (a *nDimObject) SetSubArr(vals *nDimObject, index ...int) *nDimObject {
+func (a *nDimFields) SetSubArr(vals *nDimFields, index ...int) *nDimFields {
 	idx := a.valIdx(index, "SetSubArr")
 	switch {
 	case a.HasErr():
@@ -217,7 +217,7 @@ func (a *nDimObject) SetSubArr(vals *nDimObject, index ...int) *nDimObject {
 //
 // Make a copy C() if the original array needs to remain unchanged.
 // Element location in the underlying slice will not be adjusted to the new shape.
-func (a *nDimObject) Resize(shape ...int) *nDimObject {
+func (a *nDimFields) Resize(shape ...int) *nDimFields {
 	switch {
 	case a.HasErr():
 		return a
@@ -277,7 +277,7 @@ func (a *nDimObject) Resize(shape ...int) *nDimObject {
 //
 // Source array will be changed, so use C() if the original data is needed.
 // All axes must be the same except the appending axis.
-func (a *nDimObject) Append(val *nDimObject, axis int) *nDimObject {
+func (a *nDimFields) Append(val *nDimFields, axis int) *nDimFields {
 	switch {
 	case a.HasErr():
 		return a
@@ -341,7 +341,7 @@ func (a *nDimObject) Append(val *nDimObject, axis int) *nDimObject {
 }
 
 // String Satisfies the Stringer interface for fmt package
-func (a *nDimObject) String() (s string) {
+func (a *nDimFields) String() (s string) {
 	switch {
 	case a == nil:
 		return "<nil>"

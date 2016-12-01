@@ -8,7 +8,7 @@ import (
 
 // Arrayb is an n-dimensional array of boolean values
 type Arrayb struct {
-	nDimObject
+	nDimFields
 }
 
 // NewArrayB creates an Arrayb object with dimensions given in order from outer-most to inner-most
@@ -51,8 +51,8 @@ func NewArrayB(data []nDimElement, shape ...int) (a *Arrayb) {
 	return
 }
 
-func (a Arrayb) values() nDimObject {
-	return a.nDimObject
+func (a Arrayb) values() *nDimFields {
+	return &a.nDimFields
 }
 
 // Internal function to create using the shape of another array

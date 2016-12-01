@@ -37,7 +37,7 @@ func cleanAxis(axis *[]int) *[]int {
 	return axis
 }
 
-func (a *nDimObject) valAxis(axis *[]int, mthd string) bool {
+func (a *nDimFields) valAxis(axis *[]int, mthd string) bool {
 	axis = cleanAxis(axis)
 	switch {
 	case a.HasErr():

@@ -8,7 +8,7 @@ import (
 )
 
 // NotEq performs boolean '!=' element-wise comparison
-func (a *nDimObject) NotEq(b *nDimObject) (r *Arrayb) {
+func (a *nDimFields) NotEq(b *nDimFields) (r *Arrayb) {
 	r = a.compValid(b, "NotEq()")
 	if r != nil {
 		return r
@@ -21,7 +21,7 @@ func (a *nDimObject) NotEq(b *nDimObject) (r *Arrayb) {
 }
 
 // Less performs boolean '<' element-wise comparison
-func (a *nDimObject) Less(b *nDimObject) (r *Arrayb) {
+func (a *nDimFields) Less(b *nDimFields) (r *Arrayb) {
 	r = a.compValid(b, "Less()")
 	if r != nil {
 		return r
@@ -34,7 +34,7 @@ func (a *nDimObject) Less(b *nDimObject) (r *Arrayb) {
 }
 
 // LessEq performs boolean '<=' element-wise comparison
-func (a *nDimObject) LessEq(b *nDimObject) (r *Arrayb) {
+func (a *nDimFields) LessEq(b *nDimFields) (r *Arrayb) {
 	r = a.compValid(b, "LessEq()")
 	if r != nil {
 		return r
@@ -47,7 +47,7 @@ func (a *nDimObject) LessEq(b *nDimObject) (r *Arrayb) {
 }
 
 // Greater performs boolean '<' element-wise comparison
-func (a *nDimObject) Greater(b *nDimObject) (r *Arrayb) {
+func (a *nDimFields) Greater(b *nDimFields) (r *Arrayb) {
 	r = a.compValid(b, "Greater()")
 	if r != nil {
 		return r
@@ -60,7 +60,7 @@ func (a *nDimObject) Greater(b *nDimObject) (r *Arrayb) {
 }
 
 // GreaterEq performs boolean '<=' element-wise comparison
-func (a *nDimObject) GreaterEq(b *nDimObject) (r *Arrayb) {
+func (a *nDimFields) GreaterEq(b *nDimFields) (r *Arrayb) {
 	r = a.compValid(b, "GreaterEq()")
 	if r != nil {
 		return r
@@ -73,32 +73,32 @@ func (a *nDimObject) GreaterEq(b *nDimObject) (r *Arrayb) {
 
 }
 
-func (a *nDimObject) compValid(b *nDimObject, mthd string) (r *Arrayb) {
+func (a *nDimFields) compValid(b *nDimFields, mthd string) (r *Arrayb) {
 
 	switch {
 	case a == nil || a.data == nil && a.err == nil:
-		r = &Arrayb{nDimObject{err: NilError}}
+		r = &Arrayb{nDimFields{err: NilError}}
 		if debug {
 			r.debug = fmt.Sprintf("Nil pointer received by %s", mthd)
 			r.stack = string(stackBuf[:runtime.Stack(stackBuf, false)])
 		}
 		return r
 	case b == nil || b.data == nil && b.err == nil:
-		r = &Arrayb{nDimObject{err: NilError}}
+		r = &Arrayb{nDimFields{err: NilError}}
 		if debug {
 			r.debug = fmt.Sprintf("Array received by %s is a Nil Pointer.", mthd)
 			r.stack = string(stackBuf[:runtime.Stack(stackBuf, false)])
 		}
 		return r
 	case a.err != nil:
-		r = &Arrayb{nDimObject{err: a.err}}
+		r = &Arrayb{nDimFields{err: a.err}}
 		if debug {
 			r.debug = fmt.Sprintf("Error in %s arrays", mthd)
 			r.stack = string(stackBuf[:runtime.Stack(stackBuf, false)])
 		}
 		return r
 	case b.err != nil:
-		r = &Arrayb{nDimObject{err: b.err}}
+		r = &Arrayb{nDimFields{err: b.err}}
 		if debug {
 			r.debug = fmt.Sprintf("Error in %s arrays", mthd)
 			r.stack = string(stackBuf[:runtime.Stack(stackBuf, false)])
@@ -106,7 +106,7 @@ func (a *nDimObject) compValid(b *nDimObject, mthd string) (r *Arrayb) {
 		return r
 
 	case len(a.shape) < len(b.shape):
-		r = &Arrayb{nDimObject{err: ShapeError}}
+		r = &Arrayb{nDimFields{err: ShapeError}}
 		if debug {
 			r.debug = fmt.Sprintf("Array received by %s can not be broadcast.  Shape: %v  Val shape: %v", mthd, a.shape, b.shape)
 			r.stack = string(stackBuf[:runtime.Stack(stackBuf, false)])
@@ -116,7 +116,7 @@ func (a *nDimObject) compValid(b *nDimObject, mthd string) (r *Arrayb) {
 
 	for i, j := len(b.shape)-1, len(a.shape)-1; i >= 0; i, j = i-1, j-1 {
 		if a.shape[j] != b.shape[i] {
-			r = &Arrayb{nDimObject{err: ShapeError}}
+			r = &Arrayb{nDimFields{err: ShapeError}}
 			if debug {
 				r.debug = fmt.Sprintf("Array received by %s can not be broadcast.  Shape: %v  Val shape: %v", mthd, a.shape, b.shape)
 				r.stack = string(stackBuf[:runtime.Stack(stackBuf, false)])
@@ -129,7 +129,7 @@ func (a *nDimObject) compValid(b *nDimObject, mthd string) (r *Arrayb) {
 }
 
 // Validation and error checks must be complete before calling comp
-func (a *nDimObject) comp(b *nDimObject, f func(i, j nDimElement) bool) (r *Arrayb) {
+func (a *nDimFields) comp(b *nDimFields, f func(i, j nDimElement) bool) (r *Arrayb) {
 	r = newArrayB(b.shape...)
 
 	for i := range r.data {
@@ -265,7 +265,17 @@ axis:
 }
 
 // Equals performs boolean '==' element-wise comparison
-func (a *nDimObject) Equals(b *nDimObject) (r *Arrayb) {
+func (a *Array64) Equals(b *Array64) (r *Arrayb) {
+	return a.values().Equals(b.values())
+}
+
+// Equals performs boolean '==' element-wise comparison
+func (a *Arrayb) Equals(b *Arrayb) (r *Arrayb) {
+	return a.values().Equals(b.values())
+}
+
+// Equals performs boolean '==' element-wise comparison
+func (a *nDimFields) Equals(b *nDimFields) (r *Arrayb) {
 	r = a.compValid(b, "Equals()")
 	if r != nil {
 		return r

@@ -9,7 +9,7 @@ import (
 	"strings"
 )
 
-type nDimObject struct {
+type nDimFields struct {
 	shape        []int
 	strides      []int
 	err          error
@@ -22,7 +22,12 @@ type nDimElement interface {
 
 // Array64 is an n-dimensional array of float64 data
 type Array64 struct {
-	nDimObject
+	nDimFields
+}
+
+func (n *nDimFields) Array64() *Array64 {
+	return &Array64{*n}
+
 }
 
 // NewArray64 creates an Array64 object with dimensions given in order from outer-most to inner-most
@@ -32,7 +37,7 @@ func NewArray64(data []nDimElement, shape ...int) (a *Array64) {
 	if len(shape) == 0 {
 		switch {
 		case data != nil:
-			return &Array64{nDimObject{
+			return &Array64{nDimFields{
 				shape:   []int{len(data)},
 				strides: []int{len(data), 1},
 				data:    data,
@@ -41,7 +46,7 @@ func NewArray64(data []nDimElement, shape ...int) (a *Array64) {
 				stack:   "",
 			}}
 		default:
-			return &Array64{nDimObject{
+			return &Array64{nDimFields{
 				shape:   []int{0},
 				strides: []int{0, 0},
 				data:    []nDimElement{},
@@ -56,7 +61,7 @@ func NewArray64(data []nDimElement, shape ...int) (a *Array64) {
 	sh := make([]int, len(shape))
 	for _, v := range shape {
 		if v < 0 {
-			a = &Array64{nDimObject{err: NegativeAxis}}
+			a = &Array64{nDimFields{err: NegativeAxis}}
 			if debug {
 				a.debug = fmt.Sprintf("Negative axis length received by Create: %v", shape)
 				a.stack = string(stackBuf[:runtime.Stack(stackBuf, false)])
@@ -67,7 +72,7 @@ func NewArray64(data []nDimElement, shape ...int) (a *Array64) {
 	}
 	copy(sh, shape)
 
-	a = &Array64{nDimObject{
+	a = &Array64{nDimFields{
 		shape:   sh,
 		strides: make([]int, len(shape)+1),
 		data:    make([]nDimElement, sz),
@@ -94,7 +99,7 @@ func newArray64(shape ...int) (a *Array64) {
 		sz *= v
 	}
 
-	a = &Array64{nDimObject{
+	a = &Array64{nDimFields{
 		shape:   shape,
 		strides: make([]int, len(shape)+1),
 		data:    make([]nDimElement, sz),
@@ -170,7 +175,7 @@ func Arange(vals ...float64) (a *Array64) {
 		start, stop = vals[0], vals[1]
 	default:
 		if vals[1] < vals[0] && vals[2] >= 0 || vals[1] > vals[0] && vals[2] <= 0 {
-			a = &Array64{nDimObject{err: ShapeError}}
+			a = &Array64{nDimFields{err: ShapeError}}
 			if debug {
 				a.debug = fmt.Sprintf("Arange received illegal values %v", vals)
 				a.stack = string(stackBuf[:runtime.Stack(stackBuf, false)])
@@ -194,7 +199,7 @@ func Arange(vals ...float64) (a *Array64) {
 // Negative size values will generate an error and return a nil value.
 func Identity(size int) (r *Array64) {
 	if size < 0 {
-		r = &Array64{nDimObject{err: NegativeAxis}}
+		r = &Array64{nDimFields{err: NegativeAxis}}
 		if debug {
 			r.debug = fmt.Sprintf("Negative dimension received by Identity: %d", size)
 			r.stack = string(stackBuf[:runtime.Stack(stackBuf, false)])
@@ -353,7 +358,7 @@ func (a *Array64) String() (s string) {
 // Reshape Changes the size of the array axes.  Values are not changed or moved.
 // This must not change the size of the array.
 // Incorrect dimensions will return a nil pointer
-func (a *nDimObject) Reshape(shape ...int) *nDimObject {
+func (a *nDimFields) Reshape(shape ...int) *nDimFields {
 	if a.HasErr() || len(shape) == 0 {
 		return a
 	}

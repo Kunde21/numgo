@@ -12,7 +12,7 @@ func (a *Array64) DotProd(b *Array64) *Array64 {
 	case a.valRith(b, "DotProd"):
 		return a
 	case len(a.shape) == 1:
-		return &Array64{nDimObject{
+		return &Array64{nDimFields{
 			shape:   []int{1},
 			strides: []int{1, 1},
 			data:    []nDimElement{DotProd(a.data, b.data)},
@@ -29,7 +29,7 @@ func (a *Array64) MatProd(b *Array64) *Array64 {
 	case a.valRith(b, "MatProd"):
 		return a
 	case len(a.shape) == 1 && len(b.shape) == 1:
-		return &Array64{nDimObject{
+		return &Array64{nDimFields{
 			shape:   []int{1},
 			strides: []int{1, 1},
 			data:    []nDimElement{DotProd(a.data, b.data)},

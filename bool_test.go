@@ -113,7 +113,7 @@ func TestStringB(t *testing.T) {
 	}{
 		{nil, "<nil>"},
 		{newArrayB(0), "[]"},
-		{&Arrayb{nDimObject{err: InvIndexError}}, "Error: " + InvIndexError.s},
+		{&Arrayb{nDimFields{err: InvIndexError}}, "Error: " + InvIndexError.s},
 		{Fullb(true, 10), fmt.Sprint(Fullb(true, 10).data)},
 		{Fullb(false, 10).Reshape(2, 5), "[[false false false false false] \n [false false false false false]]"},
 		{Fullb(true, 20).Reshape(2, 2, 5), "[[[true true true true true]  \n  [true true true true true]] \n\n [[true true true true true]  \n  [true true true true true]]]"},
@@ -140,7 +140,7 @@ func TestReshapeB(t *testing.T) {
 		{Fullb(false, 10), []int{2, 5}, nil},
 		{Fullb(false, 11), []int{2, 5}, ReshapeError},
 		{Fullb(false, 10), []int{2, -5}, NegativeAxis},
-		{&Arrayb{nDimObject{err: InvIndexError}}, []int{0}, InvIndexError},
+		{&Arrayb{nDimFields{err: InvIndexError}}, []int{0}, InvIndexError},
 		{nil, []int{1}, NilError},
 	}
 
