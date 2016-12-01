@@ -59,7 +59,7 @@ func Debug(set bool) bool {
 // so only the first error will be returned when GetErr() is called.
 // Use HasErr() as a gate for the GetErr() or GetDebug() choice in
 // error handling code.
-func (a *Array64) HasErr() bool {
+func (a *nDimObject) HasErr() bool {
 	if a == nil || (a.data == nil && a.err == nil) {
 		return true
 	}
@@ -71,7 +71,7 @@ func (a *Array64) HasErr() bool {
 // This will only return an error value once per error instance.  Do not use
 // it in the if statement to test for the existence of an error.  HasErr() is
 // provided for that purpose.
-func (a *Array64) GetErr() (err error) {
+func (a *nDimObject) GetErr() (err error) {
 	if a == nil || (a.data == nil && a.err == nil) {
 		return NilError
 	}
@@ -80,7 +80,7 @@ func (a *Array64) GetErr() (err error) {
 	return
 }
 
-func (a *Array64) getErr() error {
+func (a *nDimObject) getErr() error {
 	if a == nil || (a.data == nil && a.err == nil) {
 		return NilError
 	}
@@ -92,7 +92,7 @@ func (a *Array64) getErr() error {
 //
 // This debug information will only be generated and returned if numgo.Debug is set to true
 // before the function call that causes the error.
-func (a *Array64) GetDebug() (err error, debugStr, stackTrace string) {
+func (a *nDimObject) GetDebug() (err error, debugStr, stackTrace string) {
 	if a == nil || (a.data == nil && a.err == nil) {
 		err = NilError
 		if debug {
@@ -155,40 +155,6 @@ func decodeErr(err int8) (a error) {
 		a = &ngError{fmt.Sprintf("Unknown error Unmarshaled: %d", err)}
 	}
 	return
-}
-
-// HasErr tests for the existence of an error on the Arrayb object.
-//
-// Errors will be maintained through a chain of function calls,
-// so only the first error will be returned when GetErr() is called.
-// Use HasErr() as a gate for the GetErr() or GetDebug() choice in
-// error handling code.
-func (a *Arrayb) HasErr() bool {
-	if a == nil || (a.data == nil && a.err == nil) {
-		return true
-	}
-	return a.err != nil
-}
-
-// GetErr returns the error object and clears the error from the array.
-//
-// This will only return an error value once per error instance.  Do not use
-// it in the if statement to test for the existence of an error.  HasErr() is
-// provided for that purpose.
-func (a *Arrayb) GetErr() (err error) {
-	if a == nil || (a.data == nil && a.err == nil) {
-		return NilError
-	}
-	err = a.err
-	a.err, a.debug = nil, ""
-	return
-}
-
-func (a *Arrayb) getErr() error {
-	if a == nil || (a.data == nil && a.err == nil) {
-		return NilError
-	}
-	return a.err
 }
 
 // GetDebug returns and clears the error object from the array object.  The returned debug string

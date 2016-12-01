@@ -14,9 +14,9 @@ func init() {
 
 func TestAddC(t *testing.T) {
 	t.Parallel()
-	a := Arange(21)
+	a := &Arange(21).nDimObject
 
-	if b := a.AddC(2).Equals(Arange(2, 22)); !b.All().At(0) {
+	if b := a.AddC(2).Equals(Arange(2, 22)); !b.All().At(0).(bool) {
 		t.Log(Arange(2, 23).shape)
 		t.Log(a.shape)
 		t.Fail()
@@ -31,13 +31,13 @@ func TestAddC(t *testing.T) {
 		return
 	}
 	AvxSupt = false
-	if b := Arange(50).AddC(6); !Arange(6, 55).Equals(b).All().At(0) {
+	if b := &Arange(50).AddC(6).nDimObject; !Arange(6, 55).Equals(b).All().At(0).(bool) {
 		t.Log("NoAvx Failed")
 		t.Log(b)
 		t.Fail()
 	}
 	AvxSupt = true
-	if b := Arange(50).AddC(6); !Arange(6, 55).Equals(b).All().At(0) {
+	if b := &Arange(50).AddC(6).nDimObject; !Arange(6, 55).Equals(b).All().At(0).(bool) {
 		t.Log("AVX Failed")
 		t.Log(b)
 		t.Fail()
@@ -46,8 +46,8 @@ func TestAddC(t *testing.T) {
 
 func TestSubtrC(t *testing.T) {
 	t.Parallel()
-	a := Arange(21)
-	if b := a.SubtrC(2).Equals(Arange(-2, 18)); !b.All().At(0) {
+	a := &Arange(21).nDimObject
+	if b := a.SubtrC(2).Equals(Arange(-2, 18)); !b.All().At(0).(bool) {
 		t.Log(b)
 		t.Log(a)
 		t.Fail()
