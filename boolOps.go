@@ -7,8 +7,21 @@ import (
 	"sort"
 )
 
+// Equals performs boolean '==' element-wise comparison
+func (a *Array64) Equals(b *Array64) (r *Arrayb) {
+	r = a.compValid(b, "Equals()")
+	if r != nil {
+		return r
+	}
+
+	r = a.comp(b, func(i, j nDimElement) bool {
+		return i == j || math.IsNaN(i.(float64)) && math.IsNaN(j.(float64))
+	})
+	return
+}
+
 // NotEq performs boolean '!=' element-wise comparison
-func (a *nDimObject) NotEq(b *nDimObject) (r *Arrayb) {
+func (a *Array64) NotEq(b *Array64) (r *Arrayb) {
 	r = a.compValid(b, "NotEq()")
 	if r != nil {
 		return r
@@ -21,7 +34,7 @@ func (a *nDimObject) NotEq(b *nDimObject) (r *Arrayb) {
 }
 
 // Less performs boolean '<' element-wise comparison
-func (a *nDimObject) Less(b *nDimObject) (r *Arrayb) {
+func (a *Array64) Less(b *Array64) (r *Arrayb) {
 	r = a.compValid(b, "Less()")
 	if r != nil {
 		return r
@@ -34,7 +47,7 @@ func (a *nDimObject) Less(b *nDimObject) (r *Arrayb) {
 }
 
 // LessEq performs boolean '<=' element-wise comparison
-func (a *nDimObject) LessEq(b *nDimObject) (r *Arrayb) {
+func (a *Array64) LessEq(b *Array64) (r *Arrayb) {
 	r = a.compValid(b, "LessEq()")
 	if r != nil {
 		return r
@@ -47,7 +60,7 @@ func (a *nDimObject) LessEq(b *nDimObject) (r *Arrayb) {
 }
 
 // Greater performs boolean '<' element-wise comparison
-func (a *nDimObject) Greater(b *nDimObject) (r *Arrayb) {
+func (a *Array64) Greater(b *Array64) (r *Arrayb) {
 	r = a.compValid(b, "Greater()")
 	if r != nil {
 		return r
@@ -60,7 +73,7 @@ func (a *nDimObject) Greater(b *nDimObject) (r *Arrayb) {
 }
 
 // GreaterEq performs boolean '<=' element-wise comparison
-func (a *nDimObject) GreaterEq(b *nDimObject) (r *Arrayb) {
+func (a *Array64) GreaterEq(b *Array64) (r *Arrayb) {
 	r = a.compValid(b, "GreaterEq()")
 	if r != nil {
 		return r
@@ -73,7 +86,7 @@ func (a *nDimObject) GreaterEq(b *nDimObject) (r *Arrayb) {
 
 }
 
-func (a *nDimObject) compValid(b *nDimObject, mthd string) (r *Arrayb) {
+func (a *Array64) compValid(b *Array64, mthd string) (r *Arrayb) {
 
 	switch {
 	case a == nil || a.data == nil && a.err == nil:
@@ -129,7 +142,7 @@ func (a *nDimObject) compValid(b *nDimObject, mthd string) (r *Arrayb) {
 }
 
 // Validation and error checks must be complete before calling comp
-func (a *nDimObject) comp(b *nDimObject, f func(i, j nDimElement) bool) (r *Arrayb) {
+func (a *Array64) comp(b *Array64, f func(i, j nDimElement) bool) (r *Arrayb) {
 	r = newArrayB(b.shape...)
 
 	for i := range r.data {
@@ -264,19 +277,121 @@ axis:
 	return a
 }
 
+func (a *Arrayb) valAxis(axis *[]int, mthd string) bool {
+	axis = cleanAxis(axis)
+	switch {
+	case a == nil || a.err != nil:
+		return true
+	case len(*axis) > len(a.shape):
+		a.err = ShapeError
+		if debug {
+			a.debug = fmt.Sprintf("Too many axes received by %s().  Shape: %v  Axes: %v", mthd, a.shape, axis)
+			a.stack = string(stackBuf[:runtime.Stack(stackBuf, false)])
+		}
+		return true
+	}
+	for _, v := range *axis {
+		if v < 0 || v >= len(a.shape) {
+			a.err = IndexError
+			if debug {
+				a.debug = fmt.Sprintf("Axis out of range received by %s().  Shape: %v  Axes: %v", mthd, a.shape, axis)
+				a.stack = string(stackBuf[:runtime.Stack(stackBuf, false)])
+			}
+			return true
+		}
+	}
+	return false
+
+}
+
 // Equals performs boolean '==' element-wise comparison
-func (a *nDimObject) Equals(b *nDimObject) (r *Arrayb) {
+func (a *Arrayb) Equals(b *Arrayb) (r *Arrayb) {
 	r = a.compValid(b, "Equals()")
 	if r != nil {
 		return r
 	}
 
-	//r = a.comp(b, func(i, j nDimElement) bool {
-	//return i == j || math.IsNaN(i.(float64)) && math.IsNaN(j.(float64))
-	//})
-	//return
 	r = a.comp(b, func(i, j nDimElement) bool {
 		return i == j
 	})
+	return
+}
+
+// NotEq performs boolean '1=' element-wise comparison
+func (a *Arrayb) NotEq(b *Arrayb) (r *Arrayb) {
+	r = a.compValid(b, "NotEq()")
+	if r != nil {
+		return r
+	}
+
+	r = a.comp(b, func(i, j nDimElement) bool {
+		return i != j
+	})
+	return
+}
+
+func (a *Arrayb) compValid(b *Arrayb, mthd string) (r *Arrayb) {
+
+	switch {
+	case a == nil || a.data == nil && a.err == nil:
+		r = &Arrayb{nDimObject{err: NilError}}
+		if debug {
+			r.debug = fmt.Sprintf("Nil pointer received by %s", mthd)
+			r.stack = string(stackBuf[:runtime.Stack(stackBuf, false)])
+		}
+		return r
+	case b == nil || b.data == nil && b.err == nil:
+		r = &Arrayb{nDimObject{err: NilError}}
+		if debug {
+			r.debug = fmt.Sprintf("Array received by %s is a Nil Pointer.", mthd)
+			r.stack = string(stackBuf[:runtime.Stack(stackBuf, false)])
+		}
+		return r
+	case a.err != nil:
+		r = &Arrayb{nDimObject{err: a.err}}
+		if debug {
+			r.debug = fmt.Sprintf("Error in %s arrays", mthd)
+			r.stack = string(stackBuf[:runtime.Stack(stackBuf, false)])
+		}
+		return r
+	case b.err != nil:
+		r = &Arrayb{nDimObject{err: b.err}}
+		if debug {
+			r.debug = fmt.Sprintf("Error in %s arrays", mthd)
+			r.stack = string(stackBuf[:runtime.Stack(stackBuf, false)])
+		}
+		return r
+
+	case len(a.shape) < len(b.shape):
+		r = &Arrayb{nDimObject{err: ShapeError}}
+		if debug {
+			r.debug = fmt.Sprintf("Array received by %s can not be broadcast.  Shape: %v  Val shape: %v", mthd, a.shape, b.shape)
+			r.stack = string(stackBuf[:runtime.Stack(stackBuf, false)])
+		}
+		return r
+	}
+
+	for i, j := len(b.shape)-1, len(a.shape)-1; i >= 0; i, j = i-1, j-1 {
+		if a.shape[j] != b.shape[i] {
+			r = &Arrayb{nDimObject{err: ShapeError}}
+			if debug {
+				r.debug = fmt.Sprintf("Array received by %s can not be broadcast.  Shape: %v  Val shape: %v", mthd, a.shape, b.shape)
+				r.stack = string(stackBuf[:runtime.Stack(stackBuf, false)])
+			}
+			return r
+		}
+	}
+
+	return nil
+}
+
+// Validation and error checks must be complete before calling comp
+func (a *Arrayb) comp(b *Arrayb, f func(i, j nDimElement) bool) (r *Arrayb) {
+	r = newArrayB(b.shape...)
+
+	for i := range r.data {
+		r.data[i] = f(a.data[i], b.data[i])
+	}
+
 	return
 }

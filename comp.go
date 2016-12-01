@@ -55,7 +55,7 @@ func MaxSet(arrSet ...*Array64) (b *Array64) {
 		return b
 	}
 
-	b = &Array64{*arrSet[0].C()}
+	b = arrSet[0].C()
 
 	for j := 1; j < len(arrSet); j++ {
 		for i := range b.data {
@@ -75,7 +75,7 @@ func MinSet(arrSet ...*Array64) (b *Array64) {
 		return b
 	}
 
-	b = &Array64{*arrSet[0].C()}
+	b = arrSet[0].C()
 
 	for j := 1; j < len(arrSet); j++ {
 		for i := range b.data {
