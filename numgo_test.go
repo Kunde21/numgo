@@ -88,7 +88,7 @@ func TestShapes(t *testing.T) {
 	shp := []int{3, 3, 4, 7}
 	a := NewArray64(nil, shp...)
 	for i, v := range a.shape {
-		if uint64(shp[i]) != v {
+		if shp[i] != v {
 			t.Log(a.shape, "!=", shp)
 			t.FailNow()
 		}
@@ -165,7 +165,7 @@ func TestIdent(t *testing.T) {
 			t.Log("Incorrect identity shape.", tmp.shape)
 			t.Fail()
 		}
-		if tmp.shape[0] != uint64(k) || tmp.shape[1] != uint64(k) {
+		if tmp.shape[0] != k || tmp.shape[1] != k {
 			t.Log("Incorrect shape values. I()", k, tmp.shape)
 			t.Fail()
 		}
@@ -261,7 +261,7 @@ func TestReshape(t *testing.T) {
 			continue
 		}
 		for j, v := range tst.a.shape {
-			if v != uint64(tst.sh[j]) {
+			if v != tst.sh[j] {
 				t.Log("Reshape incorrect in test", i, ", expected", tst.sh, "got", tst.a.shape)
 				t.Fail()
 				break

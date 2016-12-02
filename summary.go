@@ -22,7 +22,7 @@ func (a *Array64) Sum(axis ...int) (r *Array64) {
 	}
 
 	sort.IntSlice(axis).Sort()
-	n := make([]uint64, len(a.shape)-len(axis))
+	n := make([]int, len(a.shape)-len(axis))
 
 axisR:
 	for i, t := 0, 0; i < len(a.shape); i++ {
@@ -42,16 +42,16 @@ axisR:
 		}
 		v, wd, st := a.shape[axis[k]], a.strides[axis[k]], a.strides[axis[k]+1]
 		if st == 1 {
-			asm.Hadd(wd, a.data)
+			asm.Hadd(uint64(wd), a.data)
 			ln /= v
 			a.data = a.data[:ln]
 			continue
 		}
 
-		for w := uint64(0); w < ln; w += wd {
+		for w := 0; w < ln; w += wd {
 			t := a.data[w/wd*st : (w/wd+1)*st]
 			copy(t, a.data[w:w+st])
-			for i := uint64(1); i*st+1 < wd; i++ {
+			for i := 1; i*st+1 < wd; i++ {
 				asm.Vadd(t, a.data[w+(i)*st:w+(i+1)*st])
 			}
 		}
@@ -60,7 +60,7 @@ axisR:
 	}
 	a.shape = n
 
-	tmp := uint64(1)
+	tmp := 1
 	for i := len(n); i > 0; i-- {
 		a.strides[i] = tmp
 		tmp *= n[i-1]
@@ -109,8 +109,8 @@ func (a *Array64) Count(axis ...int) *Array64 {
 		return full(float64(a.strides[0]), 1)
 	}
 
-	tAxis := make([]uint64, len(a.shape)-len(axis))
-	cnt := uint64(1)
+	tAxis := make([]int, len(a.shape)-len(axis))
+	cnt := 1
 cntAx:
 	for i, t := 0, 0; i < len(a.shape); i++ {
 		for _, w := range axis {
@@ -132,7 +132,7 @@ func (a *Array64) count(axis ...int) float64 {
 		return float64(a.strides[0])
 	}
 
-	cnt := uint64(1)
+	cnt := 1
 	for _, w := range axis {
 		cnt *= a.shape[w]
 	}

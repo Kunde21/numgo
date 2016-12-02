@@ -15,8 +15,8 @@ func (a *Array64) DotProd(b *Array64) *Array64 {
 		return a
 	case len(a.shape) == 1:
 		return &Array64{
-			shape:   []uint64{1},
-			strides: []uint64{1, 1},
+			shape:   []int{1},
+			strides: []int{1, 1},
 			data:    []float64{asm.DotProd(a.data, b.data)},
 			err:     nil,
 			debug:   "",
@@ -32,8 +32,8 @@ func (a *Array64) MatProd(b *Array64) *Array64 {
 		return a
 	case len(a.shape) == 1 && len(b.shape) == 1:
 		return &Array64{
-			shape:   []uint64{1},
-			strides: []uint64{1, 1},
+			shape:   []int{1},
+			strides: []int{1, 1},
 			data:    []float64{asm.DotProd(a.data, b.data)},
 			err:     nil,
 			debug:   "",

@@ -9,8 +9,8 @@ import (
 
 // Arrayb is an n-dimensional array of boolean values
 type Arrayb struct {
-	shape        []uint64
-	strides      []uint64
+	shape        []int
+	strides      []int
 	data         []bool
 	err          error
 	debug, stack string
@@ -24,9 +24,9 @@ func NewArrayB(data []bool, shape ...int) (a *Arrayb) {
 	}
 
 	a = new(Arrayb)
-	var sz uint64 = 1
-	sh := make([]uint64, len(shape))
-	for i, v := range shape {
+	var sz = 1
+	sh := make([]int, len(shape))
+	for _, v := range shape {
 		if v <= 0 {
 			a.err = NegativeAxis
 			if debug {
@@ -35,9 +35,9 @@ func NewArrayB(data []bool, shape ...int) (a *Arrayb) {
 			}
 			return
 		}
-		sz *= uint64(v)
-		sh[i] = uint64(v)
+		sz *= v
 	}
+	copy(sh, shape)
 
 	a.shape = sh
 	a.data = make([]bool, sz)
@@ -45,8 +45,8 @@ func NewArrayB(data []bool, shape ...int) (a *Arrayb) {
 		copy(a.data, data)
 	}
 
-	a.strides = make([]uint64, len(sh)+1)
-	tmp := uint64(1)
+	a.strides = make([]int, len(sh)+1)
+	tmp := 1
 	for i := len(a.strides) - 1; i > 0; i-- {
 		a.strides[i] = tmp
 		tmp *= sh[i-1]
@@ -57,20 +57,20 @@ func NewArrayB(data []bool, shape ...int) (a *Arrayb) {
 }
 
 // Internal function to create using the shape of another array
-func newArrayB(shape ...uint64) (a *Arrayb) {
+func newArrayB(shape ...int) (a *Arrayb) {
 	a = new(Arrayb)
-	var sz uint64 = 1
-	sh := make([]uint64, len(shape))
-	for i, v := range shape {
-		sz *= uint64(v)
-		sh[i] = uint64(v)
+	var sz = 1
+	sh := make([]int, len(shape))
+	for _, v := range shape {
+		sz *= v
 	}
+	copy(sh, shape)
 
 	a.shape = sh
 	a.data = make([]bool, sz)
 
-	a.strides = make([]uint64, len(sh)+1)
-	tmp := uint64(1)
+	a.strides = make([]int, len(sh)+1)
+	tmp := 1
 	for i := len(a.strides) - 1; i > 0; i-- {
 		a.strides[i] = tmp
 		tmp *= sh[i-1]
@@ -94,7 +94,7 @@ func Fullb(val bool, shape ...int) (a *Arrayb) {
 	return
 }
 
-func fullb(val bool, shape ...uint64) (a *Arrayb) {
+func fullb(val bool, shape ...int) (a *Arrayb) {
 	a = newArrayB(shape...)
 	if a.HasErr() || !val {
 		return a
@@ -120,7 +120,7 @@ func (a *Arrayb) String() (s string) {
 	}
 
 	stride := a.strides[len(a.strides)-2]
-	for i, k := uint64(0), 0; i+stride <= uint64(len(a.data)); i, k = i+stride, k+1 {
+	for i, k := 0, 0; i+stride <= len(a.data); i, k = i+stride, k+1 {
 
 		t := ""
 		for j, v := range a.strides {
@@ -140,7 +140,7 @@ func (a *Arrayb) String() (s string) {
 		}
 
 		s += t + strings.Repeat(" ", len(a.shape)-len(t)-1)
-		if i+stride != uint64(len(a.data)) {
+		if i+stride != len(a.data) {
 			s += "\n"
 			if len(t) > 0 {
 				s += "\n"
@@ -158,9 +158,9 @@ func (a *Arrayb) Reshape(shape ...int) *Arrayb {
 		return a
 	}
 
-	var sz uint64 = 1
-	sh := make([]uint64, len(shape))
-	for i, v := range shape {
+	var sz = 1
+	sh := make([]int, len(shape))
+	for _, v := range shape {
 		if v < 0 {
 			a.err = NegativeAxis
 			if debug {
@@ -169,11 +169,11 @@ func (a *Arrayb) Reshape(shape ...int) *Arrayb {
 			}
 			return a
 		}
-		sz *= uint64(v)
-		sh[i] = uint64(v)
+		sz *= v
 	}
+	copy(sh, shape)
 
-	if sz != uint64(len(a.data)) {
+	if sz != len(a.data) {
 		a.err = ReshapeError
 		if debug {
 			a.debug = fmt.Sprintf("Reshape() can not change data size.  Dimensions: %v reshape: %v", a.shape, shape)
@@ -182,8 +182,8 @@ func (a *Arrayb) Reshape(shape ...int) *Arrayb {
 		return a
 	}
 
-	a.strides = make([]uint64, len(sh)+1)
-	tmp := uint64(1)
+	a.strides = make([]int, len(sh)+1)
+	tmp := 1
 	for i := len(a.strides) - 1; i > 0; i-- {
 		a.strides[i] = tmp
 		tmp *= sh[i-1]
@@ -274,7 +274,7 @@ func (a *Arrayb) SetSliceElement(vals []bool, index ...int) *Arrayb {
 			a.stack = string(stackBuf[:runtime.Stack(stackBuf, false)])
 		}
 		fallthrough
-	case uint64(len(vals)) != a.shape[len(a.shape)-1]:
+	case len(vals) != a.shape[len(a.shape)-1]:
 		a.err = InvIndexError
 		if debug {
 			a.debug = fmt.Sprintf("Incorrect slice length received by SetSliceElement().  Shape: %v  Index: %v", a.shape, len(index))
@@ -322,17 +322,17 @@ func (a *Arrayb) SetSubArr(vals *Arrayb, index ...int) *Arrayb {
 	}
 
 	if len(a.shape)-len(index)-len(vals.shape) == 0 {
-		copy(a.data[idx:idx+uint64(len(vals.data))], vals.data)
+		copy(a.data[idx:idx+len(vals.data)], vals.data)
 		return a
 	}
 
-	reps := uint64(1)
+	reps := 1
 	for i := len(index); i < len(a.shape)-len(vals.shape); i++ {
 		reps *= a.shape[i]
 	}
 
-	ln := uint64(len(vals.data))
-	for i := uint64(1); i <= reps; i++ {
+	ln := len(vals.data)
+	for i := 1; i <= reps; i++ {
 		copy(a.data[idx+ln*(i-1):idx+ln*i], vals.data)
 	}
 	return a
@@ -353,10 +353,10 @@ func (a *Arrayb) Resize(shape ...int) *Arrayb {
 		return a
 	}
 
-	var sz uint64 = 1
+	var sz int = 1
 	for _, v := range shape {
 		if v >= 0 {
-			sz *= uint64(v)
+			sz *= v
 			continue
 		}
 
@@ -370,27 +370,27 @@ func (a *Arrayb) Resize(shape ...int) *Arrayb {
 
 	ln, cp := len(shape), cap(a.shape)
 	if ln > cp {
-		a.shape = append(a.shape[:cp], make([]uint64, ln-cp)...)
+		a.shape = append(a.shape[:cp], make([]int, ln-cp)...)
 	} else {
 		a.shape = a.shape[:ln]
 	}
 
 	ln, cp = ln+1, cap(a.strides)
 	if ln > cp {
-		a.strides = append(a.strides[:cp], make([]uint64, ln-cp)...)
+		a.strides = append(a.strides[:cp], make([]int, ln-cp)...)
 	} else {
 		a.strides = a.strides[:ln]
 	}
 
 	a.strides[ln-1] = 1
+	copy(a.shape, shape)
 	for i := ln - 2; i >= 0; i-- {
-		a.shape[i] = uint64(shape[i])
 		a.strides[i] = a.shape[i] * a.strides[i+1]
 	}
 
 	cp = cap(a.data)
-	if sz > uint64(cp) {
-		a.data = append(a.data[:cp], make([]bool, sz-uint64(cp))...)
+	if sz > cp {
+		a.data = append(a.data[:cp], make([]bool, sz-cp)...)
 	} else {
 		a.data = a.data[:sz]
 	}
@@ -469,9 +469,9 @@ func (a *Arrayb) Append(val *Arrayb, axis int) *Arrayb {
 // Custom Unmarshaler is needed to encode/send unexported values.
 func (a *Arrayb) MarshalJSON() ([]byte, error) {
 	return json.Marshal(struct {
-		Shape []uint64 `json:"shape"`
-		Data  []bool   `json:"data"`
-		Err   int8     `json:"err,omitempty"`
+		Shape []int  `json:"shape"`
+		Data  []bool `json:"data"`
+		Err   int8   `json:"err,omitempty"`
 	}{
 		Shape: a.shape,
 		Data:  a.data,
@@ -484,9 +484,9 @@ func (a *Arrayb) MarshalJSON() ([]byte, error) {
 func (a *Arrayb) UnmarshalJSON(b []byte) error {
 
 	tmpA := new(struct {
-		Shape []uint64 `json:"shape"`
-		Data  []bool   `json:"data"`
-		Err   int8     `json:"err,omitempty"`
+		Shape []int  `json:"shape"`
+		Data  []bool `json:"data"`
+		Err   int8   `json:"err,omitempty"`
 	})
 
 	err := json.Unmarshal(b, tmpA)
@@ -500,8 +500,8 @@ func (a *Arrayb) UnmarshalJSON(b []byte) error {
 		return nil
 	}
 
-	a.strides = make([]uint64, len(a.shape)+1)
-	tmp := uint64(1)
+	a.strides = make([]int, len(a.shape)+1)
+	tmp := 1
 	for i := len(a.strides) - 1; i > 0; i-- {
 		a.strides[i] = tmp
 		tmp *= a.shape[i-1]
@@ -512,7 +512,7 @@ func (a *Arrayb) UnmarshalJSON(b []byte) error {
 }
 
 // helper function to validate index inputs
-func (a *Arrayb) valIdx(index []int, mthd string) (idx uint64) {
+func (a *Arrayb) valIdx(index []int, mthd string) (idx int) {
 	if a.HasErr() {
 		return 0
 	}
@@ -525,7 +525,7 @@ func (a *Arrayb) valIdx(index []int, mthd string) (idx uint64) {
 		return 0
 	}
 	for i, v := range index {
-		if uint64(v) >= a.shape[i] || v < 0 {
+		if v >= a.shape[i] || v < 0 {
 			a.err = IndexError
 			if debug {
 				a.debug = fmt.Sprintf("Index received by %s() does not exist shape: %v index: %v", mthd, a.shape, index)
@@ -533,7 +533,7 @@ func (a *Arrayb) valIdx(index []int, mthd string) (idx uint64) {
 			}
 			return 0
 		}
-		idx += uint64(v) * a.strides[i+1]
+		idx += v * a.strides[i+1]
 	}
 	return
 }
