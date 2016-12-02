@@ -23,12 +23,18 @@ type nDimObject interface {
 	Shape() []int
 	C() nDimObject
 	Count(...int) *Array64
-	Flatten() *nDimFields
+	Flatten() nDimObject
 	GetErr() error
+	getErr() error //TODO is this nessesasy?
 	GetDebug() (err error, debugStr, stackTrace string)
 	At(...int) nDimElement
+	Set(nDimElement, ...int) *nDimFields
+	SetSliceElement(vals []nDimElement, index ...int) *nDimFields
 	Reshape(...int) nDimObject
 	HasErr() bool
+	at([]int) nDimElement //TODO is this nessesary?
+	SliceElement(...int) []nDimElement
+	SubArr(...int) *nDimFields
 }
 type nDimElement interface {
 }
@@ -38,11 +44,16 @@ func (a nDimFields) fields() nDimFields {
 }
 
 // Flatten reshapes the data to a 1-D array.
-func (a nDimFields) Flatten() *nDimFields {
+func (a nDimFields) Flatten() nDimObject {
 	if a.HasErr() {
-		return &a
+		return a
 	}
-	return a.Reshape(a.strides[0])
+	b := (a.Reshape(a.strides[0]))
+	return b
+}
+
+func (a nDimFields) C() nDimObject {
+	return a
 }
 
 // c will return a deep copy of the source array.
@@ -85,10 +96,10 @@ func (a nDimFields) At(index ...int) nDimElement {
 		return math.NaN()
 	}
 
-	return a.data[idx].(float64)
+	return a.data[idx]
 }
 
-func (a *nDimFields) at(index []int) nDimElement {
+func (a nDimFields) at(index []int) nDimElement {
 	var idx int
 	for i, v := range index {
 		idx += v * a.strides[i+1]
@@ -124,7 +135,7 @@ func (a *nDimFields) valIdx(index []int, mthd string) (idx int) {
 
 // SliceElement returns the element group at one axis above the leaf elements.
 // Data is returned as a copy  in a float slice.
-func (a *nDimFields) SliceElement(index ...int) (ret []nDimElement) {
+func (a nDimFields) SliceElement(index ...int) (ret []nDimElement) {
 	idx := a.valIdx(index, "SliceElement")
 	switch {
 	case a.HasErr():
@@ -142,10 +153,10 @@ func (a *nDimFields) SliceElement(index ...int) (ret []nDimElement) {
 }
 
 // SubArr slices the array at a given index.
-func (a *nDimFields) SubArr(index ...int) (ret *nDimFields) {
+func (a nDimFields) SubArr(index ...int) (ret *nDimFields) {
 	idx := a.valIdx(index, "SubArr")
 	if a.HasErr() {
-		return a
+		return &a
 	}
 
 	ret = &newArray64(a.shape[len(index):]...).nDimFields
@@ -156,23 +167,23 @@ func (a *nDimFields) SubArr(index ...int) (ret *nDimFields) {
 
 // Set sets the element at the given index.
 // There should be one index per axis.  Generates a ShapeError if incorrect index.
-func (a *nDimFields) Set(val nDimElement, index ...int) *nDimFields {
+func (a nDimFields) Set(val nDimElement, index ...int) *nDimFields {
 	idx := a.valIdx(index, "Set")
 	if a.HasErr() {
-		return a
+		return &a
 	}
 
 	a.data[idx] = val
-	return a
+	return &a
 }
 
 // SetSliceElement sets the element group at one axis above the leaf elements.
 // Source Array is returned, for function-chaining design.
-func (a *nDimFields) SetSliceElement(vals []nDimElement, index ...int) *nDimFields {
+func (a nDimFields) SetSliceElement(vals []nDimElement, index ...int) *nDimFields {
 	idx := a.valIdx(index, "SetSliceElement")
 	switch {
 	case a.HasErr():
-		return a
+		return &a
 	case len(a.shape)-1 != len(index):
 		if debug {
 			a.debug = fmt.Sprintf("Incorrect number of indicies received by SetSliceElement().  Shape: %v  Index: %v", a.shape, index)
@@ -185,16 +196,16 @@ func (a *nDimFields) SetSliceElement(vals []nDimElement, index ...int) *nDimFiel
 			a.debug = fmt.Sprintf("Incorrect slice length received by SetSliceElement().  Shape: %v  Index: %v", a.shape, len(index))
 			a.stack = string(stackBuf[:runtime.Stack(stackBuf, false)])
 		}
-		return a
+		return &a
 	}
 
 	copy(a.data[idx:idx+a.strides[len(a.strides)-2]], vals[:a.strides[len(a.strides)-2]])
-	return a
+	return &a
 }
 
 // SetSubArr sets the array below a given index to the values in vals.
 // Values will be broadcast up multiple axes if the shapes match.
-func (a *nDimFields) SetSubArr(vals *nDimFields, index ...int) *nDimFields {
+func (a *nDimFields) SetSubArr(vals nDimObject, index ...int) *nDimFields {
 	idx := a.valIdx(index, "SetSubArr")
 	switch {
 	case a.HasErr():
@@ -206,39 +217,39 @@ func (a *nDimFields) SetSubArr(vals *nDimFields, index ...int) *nDimFields {
 			a.stack = string(stackBuf[:runtime.Stack(stackBuf, false)])
 		}
 		return a
-	case len(vals.shape)+len(index) > len(a.shape):
+	case len(vals.Shape())+len(index) > len(a.shape):
 		a.err = InvIndexError
 		if debug {
-			a.debug = fmt.Sprintf("Array received by SetSubArr() cant be broadcast.  Shape: %v  Vals shape: %v index: %v", a.shape, vals.shape, index)
+			a.debug = fmt.Sprintf("Array received by SetSubArr() cant be broadcast.  Shape: %v  Vals shape: %v index: %v", a.fields().shape, vals.fields().shape, index)
 			a.stack = string(stackBuf[:runtime.Stack(stackBuf, false)])
 		}
 		return a
 	}
 
-	for i, j := len(a.shape)-1, len(vals.shape)-1; j >= 0; i, j = i-1, j-1 {
-		if a.shape[i] != vals.shape[j] {
+	for i, j := len(a.fields().shape)-1, len(vals.fields().shape)-1; j >= 0; i, j = i-1, j-1 {
+		if a.fields().shape[i] != vals.fields().shape[j] {
 			a.err = ShapeError
 			if debug {
-				a.debug = fmt.Sprintf("Shape of array recieved by SetSubArr() doesn't match receiver.  Shape: %v  Vals Shape: %v", a.shape, vals.shape)
+				a.debug = fmt.Sprintf("Shape of array recieved by SetSubArr() doesn't match receiver.  Shape: %v  Vals Shape: %v", a.fields().shape, vals.fields().shape)
 				a.stack = string(stackBuf[:runtime.Stack(stackBuf, false)])
 			}
 			return a
 		}
 	}
 
-	if len(a.shape)-len(index)-len(vals.shape) == 0 {
-		copy(a.data[idx:idx+len(vals.data)], vals.data)
+	if len(a.fields().shape)-len(index)-len(vals.fields().shape) == 0 {
+		copy(a.fields().data[idx:idx+len(vals.fields().data)], vals.fields().data)
 		return a
 	}
 
 	reps := 1
-	for i := len(index); i < len(a.shape)-len(vals.shape); i++ {
-		reps *= a.shape[i]
+	for i := len(index); i < len(a.fields().shape)-len(vals.fields().shape); i++ {
+		reps *= a.fields().shape[i]
 	}
 
-	ln := len(vals.data)
+	ln := len(vals.fields().data)
 	for i := 1; i <= reps; i++ {
-		copy(a.data[idx+ln*(i-1):idx+ln*i], vals.data)
+		copy(a.data[idx+ln*(i-1):idx+ln*i], vals.fields().data)
 	}
 	return a
 }
@@ -307,7 +318,7 @@ func (a *nDimFields) Resize(shape ...int) *nDimFields {
 //
 // Source array will be changed, so use C() if the original data is needed.
 // All axes must be the same except the appending axis.
-func (a *nDimFields) Append(val *nDimFields, axis int) *nDimFields {
+func (a *nDimFields) Append(val nDimObject, axis int) *nDimFields {
 	switch {
 	case a.HasErr():
 		return a
@@ -325,27 +336,27 @@ func (a *nDimFields) Append(val *nDimFields, axis int) *nDimFields {
 			a.stack = string(stackBuf[:runtime.Stack(stackBuf, false)])
 		}
 		return a
-	case len(a.shape) != len(val.shape):
+	case len(a.fields().shape) != len(val.fields().shape):
 		a.err = ShapeError
 		if debug {
-			a.debug = fmt.Sprintf("Array received by Append() can not be matched.  Shape: %v  Val shape: %v", a.shape, val.shape)
+			a.debug = fmt.Sprintf("Array received by Append() can not be matched.  Shape: %v  Val shape: %v", a.fields().shape, val.fields().shape)
 			a.stack = string(stackBuf[:runtime.Stack(stackBuf, false)])
 		}
 		return a
 	}
 
 	for k, v := range a.shape {
-		if v != val.shape[k] && k != axis {
+		if v != val.fields().shape[k] && k != axis {
 			a.err = ShapeError
 			if debug {
-				a.debug = fmt.Sprintf("Array received by Append() can not be matched.  Shape: %v  Val shape: %v", a.shape, val.shape)
+				a.debug = fmt.Sprintf("Array received by Append() can not be matched.  Shape: %v  Val shape: %v", a.fields().shape, val.fields().shape)
 				a.stack = string(stackBuf[:runtime.Stack(stackBuf, false)])
 			}
 			return a
 		}
 	}
 
-	ln := len(a.data) + len(val.data)
+	ln := len(a.fields().data) + len(val.fields().data)
 	var dat []nDimElement
 	cp := cap(a.data)
 	if ln > cp {
@@ -354,14 +365,14 @@ func (a *nDimFields) Append(val *nDimFields, axis int) *nDimFields {
 		dat = a.data[:ln]
 	}
 
-	as, vs := a.strides[axis], val.strides[axis]
-	for i, j := a.strides[0], val.strides[0]; i > 0; i, j = i-as, j-vs {
-		copy(dat[i+j-vs:i+j], val.data[j-vs:j])
-		copy(dat[i+j-as-vs:i+j-vs], a.data[i-as:i])
+	as, vs := a.fields().strides[axis], val.fields().strides[axis]
+	for i, j := a.fields().strides[0], val.fields().strides[0]; i > 0; i, j = i-as, j-vs {
+		copy(dat[i+j-vs:i+j], val.fields().data[j-vs:j])
+		copy(dat[i+j-as-vs:i+j-vs], a.fields().data[i-as:i])
 	}
 
 	a.data = dat
-	a.shape[axis] += val.shape[axis]
+	a.shape[axis] += val.fields().shape[axis]
 
 	for i := axis; i >= 0; i-- {
 		a.strides[i] = a.strides[i+1] * a.shape[i]
@@ -425,7 +436,7 @@ func (a *nDimFields) Array64() *Array64 {
 // Reshape Changes the size of the array axes.  Values are not changed or moved.
 // This must not change the size of the array.
 // Incorrect dimensions will return a nil pointer
-func (a *nDimFields) Reshape(shape ...int) *nDimFields {
+func (a nDimFields) Reshape(shape ...int) nDimObject {
 	if a.HasErr() || len(shape) == 0 {
 		return a
 	}

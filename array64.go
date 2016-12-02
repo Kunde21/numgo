@@ -162,7 +162,7 @@ func RandArray64(base, scale float64, shape ...int) (a *Array64) {
 
 //Reshape the array
 func (a Array64) Reshape(shape ...int) nDimObject {
-	b := Array64{*a.nDimFields.Reshape(shape...)}
+	b := Array64{a.nDimFields.Reshape(shape...).fields()}
 	return b
 }
 

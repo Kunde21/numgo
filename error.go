@@ -59,8 +59,8 @@ func Debug(set bool) bool {
 // so only the first error will be returned when GetErr() is called.
 // Use HasErr() as a gate for the GetErr() or GetDebug() choice in
 // error handling code.
-func (a *nDimFields) HasErr() bool {
-	if a == nil || (a.data == nil && a.err == nil) {
+func (a nDimFields) HasErr() bool {
+	if &a == nil || (a.data == nil && a.err == nil) {
 		return true
 	}
 	return a.err != nil
@@ -80,8 +80,8 @@ func (a nDimFields) GetErr() (err error) {
 	return
 }
 
-func (a *nDimFields) getErr() error {
-	if a == nil || (a.data == nil && a.err == nil) {
+func (a nDimFields) getErr() error {
+	if &a == nil || (a.data == nil && a.err == nil) {
 		return NilError
 	}
 	return a.err
@@ -162,17 +162,3 @@ func decodeErr(err int8) (a error) {
 //
 // This debug information will only be generated and returned if numgo.Debug is set to true
 // before the function call that causes the error.
-func (a *Arrayb) GetDebug() (err error, debugStr, stackTrace string) {
-	if a == nil || (a.data == nil && a.err == nil) {
-		err = NilError
-		if debug {
-			debugStr = "Nil pointer received in GetDebug().  Source array was not initialized."
-			stackTrace = string(stackBuf[:runtime.Stack(stackBuf, false)])
-		}
-		return
-	}
-	err, debugStr, stackTrace = a.err, a.debug, a.stack
-	a.err, a.debug, a.stack = nil, "", ""
-
-	return
-}

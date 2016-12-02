@@ -254,8 +254,8 @@ func TestSetSliceElement(t *testing.T) {
 func TestSetSubArr(t *testing.T) {
 	a := NewArray64(nil, 5, 5, 3, 5)
 
-	b := Arange(15).Reshape(3, 5)
-	a.SetSubArr(b, 0, 1)
+	b := Arange(15).Reshape(3, 5).fields()
+	a.SetSubArr((b), 0, 1)
 	if a.HasErr() {
 		t.Log(a.GetErr())
 		t.Fail()

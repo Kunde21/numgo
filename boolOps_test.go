@@ -11,15 +11,15 @@ func init() {
 
 func TestEquals(t *testing.T) {
 
-	a := Arange(10)
+	a := *Arange(10)
 
 	tests := []struct {
-		a, b     *Array64
+		a, b     Array64
 		any, all bool
 		err      error
 	}{
-		{a, a.C(), true, true, nil},
-		{a, a.C().AddC(1), false, false, nil},
+		{a, a.C().(Array64), true, true, nil},
+		{a, a.C().(Array64).AddC(1), false, false, nil},
 		{a.C().Reshape(2, 5), a.C().Reshape(2, 5), true, true, nil},
 		{a, Arange(0, 18, 2), true, false, nil},
 		{a, Arange(27, 9, -2), true, false, nil},

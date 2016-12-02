@@ -11,15 +11,15 @@ type Arrayb struct {
 }
 
 // C will return a deep copy of the source array.
-func (a *Arrayb) C() (b *Arrayb) {
-	b.nDimFields = a.nDimFields
-	return
+func (a Arrayb) C() (b nDimObject) {
+	//b.nDimFields = a.fields()
+
+	return Arrayb{a.fields()}
 }
 
 //Reshape the array
-func (a *Arrayb) Reshape(shape ...int) (b *Array64) {
-	b.nDimFields = *a.nDimFields.Reshape(shape...)
-	return
+func (a Arrayb) Reshape(shape ...int) (b nDimObject) {
+	return Arrayb{a.nDimFields.Reshape(shape...).fields()}
 }
 
 // NewArrayB creates an Arrayb object with dimensions given in order from outer-most to inner-most
