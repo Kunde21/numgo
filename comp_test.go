@@ -14,17 +14,17 @@ func TestMax(t *testing.T) {
 		ax   []int
 		err  error
 	}{
-		{a.C(), NewArray64([]nDimElement{19}), []int{}, nil},
-		{a.C(), Arange(10, 20).Reshape(5, 2), []int{0}, nil},
-		{a.C(), NewArray64([]nDimElement{8, 9, 18, 19}, 2, 2), []int{1}, nil},
-		{a.C(), Arange(0, 20, 2).AddC(1).Reshape(2, 5), []int{2}, nil},
-		{a.C(), NewArray64([]nDimElement{9, 19}), []int{1, 2}, nil},
+		{a.C().(*Array64), NewArray64([]nDimElement{19}), []int{}, nil},
+		{a.C().(*Array64), Arange(10, 20).Reshape(5, 2).(*Array64), []int{0}, nil},
+		{a.C().(*Array64), NewArray64([]nDimElement{8, 9, 18, 19}, 2, 2), []int{1}, nil},
+		{a.C().(*Array64), Arange(0, 20, 2).AddC(1).Reshape(2, 5).(*Array64), []int{2}, nil},
+		{a.C().(*Array64), NewArray64([]nDimElement{9, 19}), []int{1, 2}, nil},
 		{nil, nil, []int{}, NilError},
-		{a.C(), nil, []int{1, 2, 3, 4}, ShapeError},
-		{a.C(), nil, []int{4}, IndexError},
+		{a.C().(*Array64), nil, []int{1, 2, 3, 4}, ShapeError},
+		{a.C().(*Array64), nil, []int{4}, IndexError},
 	}
 	for i, v := range tests {
-		if c := v.a.Max(v.ax...).Equals(v.b); !c.All().At(0) && !c.HasErr() {
+		if c := v.a.Max(v.ax...).Equals(v.b); !c.All().At(0).(bool) && !c.HasErr() {
 			t.Logf("Test %d Failed:\n %v == %v : %v\n", i, v.a.Max(v.ax...), v.b, c.All().At(0))
 			t.Fail()
 		}
@@ -44,18 +44,18 @@ func TestMin(t *testing.T) {
 		ax   []int
 		err  error
 	}{
-		{a.C(), NewArray64([]nDimElement{0}), []int{}, nil},
-		{a.C(), Arange(10).Reshape(5, 2), []int{0}, nil},
-		{a.C(), NewArray64([]nDimElement{0, 1, 10, 11}, 2, 2), []int{1}, nil},
-		{a.C(), Arange(0, 20, 2).Reshape(2, 5), []int{2}, nil},
-		{a.C(), NewArray64([]nDimElement{0, 10}), []int{1, 2}, nil},
+		{a.C().(*Array64), NewArray64([]nDimElement{0}), []int{}, nil},
+		{a.C().(*Array64), Arange(10).Reshape(5, 2).(*Array64), []int{0}, nil},
+		{a.C().(*Array64), NewArray64([]nDimElement{0, 1, 10, 11}, 2, 2), []int{1}, nil},
+		{a.C().(*Array64), Arange(0, 20, 2).Reshape(2, 5).(*Array64), []int{2}, nil},
+		{a.C().(*Array64), NewArray64([]nDimElement{0, 10}), []int{1, 2}, nil},
 		{Arange(20, -1), NewArray64([]nDimElement{-1}), []int{}, nil},
 		{nil, nil, []int{}, NilError},
-		{a.C(), nil, []int{1, 2, 3, 4}, ShapeError},
-		{a.C(), nil, []int{4}, IndexError},
+		{a.C().(*Array64), nil, []int{1, 2, 3, 4}, ShapeError},
+		{a.C().(*Array64), nil, []int{4}, IndexError},
 	}
 	for i, v := range tests {
-		if c := v.a.Min(v.ax...).Equals(v.b); !c.All().At(0) && !c.HasErr() {
+		if c := v.a.Min(v.ax...).Equals(v.b); !c.All().At(0).(bool) && !c.HasErr() {
 			t.Logf("Test %d Failed:\n %v == %v : %v\n", i, v.a.Min(v.ax...), v.b, c.All().At(0))
 			t.Fail()
 		}
@@ -78,17 +78,17 @@ func TestMinSet(t *testing.T) {
 		e error
 	}{
 		{[]*Array64{a}, a, nil},
-		{[]*Array64{a, a.C().AddC(1)}, a, nil},
-		{[]*Array64{a.C().AddC(1), a}, a, nil},
+		{[]*Array64{a, a.C().(*Array64).AddC(1)}, a, nil},
+		{[]*Array64{a.C().(*Array64).AddC(1), a}, a, nil},
 		{[]*Array64{}, nil, NilError},
 		{[]*Array64{a, nil}, nil, NilError},
 		{[]*Array64{a, {nDimFields{err: InvIndexError}}}, nil, InvIndexError},
-		{[]*Array64{a, a.C().Reshape(2, 10)}, nil, ShapeError},
+		{[]*Array64{a, a.C().Reshape(2, 10).(*Array64)}, nil, ShapeError},
 	}
 
 	for i, v := range tests {
 		m := MinSet(v.a...)
-		if c := m.Equals(v.m); !c.All().At(0) && !c.HasErr() {
+		if c := m.Equals(v.m); !c.All().At(0).(bool) && !c.HasErr() {
 			t.Logf("Test %d Failed:\n %v\n", i, c)
 			t.Fail()
 		}
@@ -109,17 +109,17 @@ func TestMaxSet(t *testing.T) {
 		e error
 	}{
 		{[]*Array64{a}, a, nil},
-		{[]*Array64{a, a.C().AddC(-1)}, a, nil},
-		{[]*Array64{a.C().AddC(-1), a}, a, nil},
+		{[]*Array64{a, a.C().(*Array64).AddC(-1)}, a, nil},
+		{[]*Array64{a.C().(*Array64).AddC(-1), a}, a, nil},
 		{[]*Array64{}, nil, NilError},
 		{[]*Array64{a, nil}, nil, NilError},
 		{[]*Array64{a, {nDimFields{err: InvIndexError}}}, nil, InvIndexError},
-		{[]*Array64{a, a.C().Reshape(2, 10)}, nil, ShapeError},
+		{[]*Array64{a, a.C().Reshape(2, 10).(*Array64)}, nil, ShapeError},
 	}
 
 	for i, v := range tests {
 		m := MaxSet(v.a...)
-		if c := m.Equals(v.m); !c.All().At(0) && !c.HasErr() {
+		if c := m.Equals(v.m); !c.All().At(0).(bool) && !c.HasErr() {
 			t.Logf("Test %d Failed:\n %v\n", i, c)
 			t.Fail()
 		}
