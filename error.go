@@ -71,8 +71,8 @@ func (a *nDimFields) HasErr() bool {
 // This will only return an error value once per error instance.  Do not use
 // it in the if statement to test for the existence of an error.  HasErr() is
 // provided for that purpose.
-func (a *nDimFields) GetErr() (err error) {
-	if a == nil || (a.data == nil && a.err == nil) {
+func (a nDimFields) GetErr() (err error) {
+	if &a == nil || (a.data == nil && a.err == nil) {
 		return NilError
 	}
 	err = a.err
@@ -92,8 +92,8 @@ func (a *nDimFields) getErr() error {
 //
 // This debug information will only be generated and returned if numgo.Debug is set to true
 // before the function call that causes the error.
-func (a *nDimFields) GetDebug() (err error, debugStr, stackTrace string) {
-	if a == nil || (a.data == nil && a.err == nil) {
+func (a nDimFields) GetDebug() (err error, debugStr, stackTrace string) {
+	if &a == nil || (a.data == nil && a.err == nil) {
 		err = NilError
 		if debug {
 			debugStr = "Nil pointer received by GetDebug().  Source array was not initialized."

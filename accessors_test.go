@@ -151,7 +151,7 @@ func TestSubArr(t *testing.T) {
 	for i := 0; i < 20 || !g || !b; i++ {
 		x, y := rand.Intn(6), rand.Intn(6)
 		val := a.SubArr(x, y)
-		if v := val.Equals(&Arange(float64(x*25+y*5), float64(x*25+y*5+5)).nDimFields); !v.All().At(0).(bool) && !v.HasErr() {
+		if v := val.Equals(*Arange(float64(x*25+y*5), float64(x*25+y*5+5))); !v.All().At(0).(bool) && !v.HasErr() {
 			t.Logf("Value %d failed.  Expected: %v Received: %v", i, float64(x*25+y*5+i), v)
 			t.Log(x, y)
 			t.Fail()

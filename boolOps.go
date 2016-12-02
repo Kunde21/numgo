@@ -14,7 +14,7 @@ func (a *nDimFields) NotEq(b nDimObject) (r *Arrayb) {
 		return r
 	}
 
-	r = a.comp(b, func(i, j nDimElement) bool {
+	r = a.comp(b.fields(), func(i, j nDimElement) bool {
 		return i != j && !(math.IsNaN(i.(float64)) && math.IsNaN(j.(float64)))
 	})
 	return
@@ -27,7 +27,7 @@ func (a *nDimFields) Less(b nDimObject) (r *Arrayb) {
 		return r
 	}
 
-	r = a.comp(b, func(i, j nDimElement) bool {
+	r = a.comp(b.fields(), func(i, j nDimElement) bool {
 		return i.(float64) < j.(float64)
 	})
 	return
@@ -40,7 +40,7 @@ func (a *nDimFields) LessEq(b nDimObject) (r *Arrayb) {
 		return r
 	}
 
-	r = a.comp(b, func(i, j nDimElement) bool {
+	r = a.comp(b.fields(), func(i, j nDimElement) bool {
 		return i.(float64) <= j.(float64)
 	})
 	return
@@ -53,7 +53,7 @@ func (a *nDimFields) Greater(b nDimObject) (r *Arrayb) {
 		return r
 	}
 
-	r = a.comp(b, func(i, j nDimElement) bool {
+	r = a.comp(b.fields(), func(i, j nDimElement) bool {
 		return i.(float64) > j.(float64)
 	})
 	return
@@ -66,7 +66,7 @@ func (a *nDimFields) GreaterEq(b nDimObject) (r *Arrayb) {
 		return r
 	}
 
-	r = a.comp(b, func(i, j nDimElement) bool {
+	r = a.comp(b.fields(), func(i, j nDimElement) bool {
 		return i.(float64) >= j.(float64)
 	})
 	return
@@ -130,11 +130,11 @@ func (a *nDimFields) compValid(b nDimObject, mthd string) (r *Arrayb) {
 }
 
 // Validation and error checks must be complete before calling comp
-func (a *nDimFields) comp(b nDimObject, f func(i, j nDimElement) bool) (r *Arrayb) {
+func (a *nDimFields) comp(b nDimFields, f func(i, j nDimElement) bool) (r *Arrayb) {
 	r = newArrayB(b.Shape()...)
 
 	for i := range r.data {
-		r.values().data[i] = f(a.data[i], b.values().data[i])
+		r.data[i] = f(a.data[i], b.data[i])
 	}
 
 	return
@@ -266,18 +266,18 @@ axis:
 }
 
 // Equals performs boolean '==' element-wise comparison
-func (a *Array64) Equals(b nDimObject) (r *Arrayb) {
+func (a Array64) Equals(b nDimObject) (r *Arrayb) {
 	return a.Equals(b)
 }
 
 // Equals performs boolean '==' element-wise comparison
-func (a *Arrayb) Equals(b nDimObject) (r *Arrayb) {
+func (a Arrayb) Equals(b nDimObject) (r *Arrayb) {
 	return a.Equals(b)
 }
 
 // Equals performs boolean '==' element-wise comparison
-func (a *nDimFields) Equals(b nDimObject) (r *Arrayb) {
-	r = a.compValid(b.fields(), "Equals()")
+func (a nDimFields) Equals(b nDimObject) (r *Arrayb) {
+	r = a.compValid(b, "Equals()")
 	if r != nil {
 		return r
 	}
@@ -286,7 +286,7 @@ func (a *nDimFields) Equals(b nDimObject) (r *Arrayb) {
 	//return i == j || math.IsNaN(i.(float64)) && math.IsNaN(j.(float64))
 	//})
 	//return
-	r = a.comp(b, func(i, j nDimElement) bool {
+	r = a.comp(b.fields(), func(i, j nDimElement) bool {
 		return i == j
 	})
 	return
