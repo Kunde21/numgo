@@ -266,16 +266,6 @@ axis:
 }
 
 // Equals performs boolean '==' element-wise comparison
-func (a Array64) Equals(b nDimObject) (r *Arrayb) {
-	return a.Equals(b)
-}
-
-// Equals performs boolean '==' element-wise comparison
-func (a Arrayb) Equals(b nDimObject) (r *Arrayb) {
-	return a.Equals(b)
-}
-
-// Equals performs boolean '==' element-wise comparison
 func (a nDimFields) Equals(b nDimObject) (r *Arrayb) {
 	r = a.compValid(b, "Equals()")
 	if r != nil {
