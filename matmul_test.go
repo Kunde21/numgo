@@ -15,11 +15,11 @@ func TestDotProd(t *testing.T) {
 		e error
 	}{
 		{a, b, 440, nil},
-		{a.C().Resize(2, 5), b.C().Resize(2, 4), math.NaN(), ShapeError},
-		{a.C().Resize(10), b.C().Resize(10), 330, nil},
-		{a.C().Resize(2, 5), b.C().Resize(2, 5), 0, nil},
+		{&Array64{*a.C().Resize(2, 5)}, &Array64{*b.C().Resize(2, 4)}, math.NaN(), ShapeError},
+		{&Array64{*a.C().Resize(10)}, &Array64{*b.C().Resize(10)}, 330, nil},
+		{&Array64{*a.C().Resize(2, 5)}, &Array64{*b.C().Resize(2, 5)}, 0, nil},
 	} {
-		if c := v.a.DotProd(v.b); c.At(0) != v.c && math.IsNaN(c.At(0)) != math.IsNaN(v.c) {
+		if c := v.a.DotProd(v.b); c.At(0) != v.c && math.IsNaN(c.At(0).(float64)) != math.IsNaN(v.c) {
 			t.Log("Test", i, "Expected", v.c, "Got", c.At(0))
 			t.Fail()
 		}

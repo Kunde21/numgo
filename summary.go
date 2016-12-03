@@ -127,7 +127,7 @@ cntAx:
 
 // count is an internal function for scalar count
 // TODO:  Make public?
-func (a *Array64) count(axis ...int) float64 {
+func (a nDimFields) count(axis ...int) float64 {
 	if len(axis) == 0 {
 		return float64(a.strides[0])
 	}
