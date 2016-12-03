@@ -40,6 +40,14 @@ type nDimObject interface {
 type nDimElement interface {
 }
 
+func nDimElementToFloat64(e nDimElement) float64 {
+	if e == nil {
+		return math.NaN()
+	}
+	return e.(float64)
+
+}
+
 func (a nDimFields) fields() nDimFields {
 	return a
 }

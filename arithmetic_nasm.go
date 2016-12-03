@@ -11,7 +11,7 @@ func initasm() {
 
 func AddC(c nDimElement, d []nDimElement) {
 	for i := range d {
-		d[i] = d[i].(float64) + c.(float64)
+		d[i] = nDimElementToFloat64(d[i]) + c.(float64)
 	}
 }
 
