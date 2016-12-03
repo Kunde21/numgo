@@ -35,6 +35,7 @@ type nDimObject interface {
 	at([]int) nDimElement //TODO is this nessesary?
 	SliceElement(...int) []nDimElement
 	SubArr(...int) *nDimFields
+	Resize(...int) *nDimFields
 }
 type nDimElement interface {
 }
@@ -258,15 +259,15 @@ func (a *nDimFields) SetSubArr(vals nDimObject, index ...int) *nDimFields {
 //
 // Make a copy C() if the original array needs to remain unchanged.
 // Element location in the underlying slice will not be adjusted to the new shape.
-func (a *nDimFields) Resize(shape ...int) *nDimFields {
+func (a nDimFields) Resize(shape ...int) *nDimFields {
 	switch {
 	case a.HasErr():
-		return a
+		return &a
 	case len(shape) == 0:
 		tmp := newArray64(0)
 		a.shape, a.strides = tmp.shape, tmp.strides
 		a.data = tmp.data
-		return a
+		return &a
 	}
 
 	var sz = 1
@@ -281,7 +282,7 @@ func (a *nDimFields) Resize(shape ...int) *nDimFields {
 			a.debug = fmt.Sprintf("Negative axis length received by Resize.  Shape: %v", shape)
 			a.stack = string(stackBuf[:runtime.Stack(stackBuf, false)])
 		}
-		return a
+		return &a
 	}
 
 	ln, cp := len(shape), cap(a.shape)
@@ -311,7 +312,7 @@ func (a *nDimFields) Resize(shape ...int) *nDimFields {
 		a.data = a.data[:sz]
 	}
 
-	return a
+	return &a
 }
 
 // Append will concatenate a and val at the given axis.
