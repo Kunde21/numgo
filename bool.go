@@ -147,50 +147,6 @@ func (a *Arrayb) String() (s string) {
 	return
 }
 
-// Reshape Changes the size of the array axes.  Values are not changed or moved.
-// This must not change the size of the array.
-// Incorrect dimensions will return a nil pointer
-func (a *Arrayb) Reshape(shape ...int) *Arrayb {
-	if a.HasErr() {
-		return a
-	}
-
-	var sz = 1
-	sh := make([]int, len(shape))
-	for _, v := range shape {
-		if v < 0 {
-			a.err = NegativeAxis
-			if debug {
-				a.debug = fmt.Sprintf("Negative axis length received by Reshape().  Shape: %v", shape)
-				a.stack = string(stackBuf[:runtime.Stack(stackBuf, false)])
-			}
-			return a
-		}
-		sz *= v
-	}
-	copy(sh, shape)
-
-	if sz != len(a.data) {
-		a.err = ReshapeError
-		if debug {
-			a.debug = fmt.Sprintf("Reshape() can not change data size.  Dimensions: %v reshape: %v", a.shape, shape)
-			a.stack = string(stackBuf[:runtime.Stack(stackBuf, false)])
-		}
-		return a
-	}
-
-	a.strides = make([]int, len(sh)+1)
-	tmp := 1
-	for i := len(a.strides) - 1; i > 0; i-- {
-		a.strides[i] = tmp
-		tmp *= sh[i-1]
-	}
-	a.strides[0] = tmp
-	a.shape = sh
-
-	return a
-}
-
 // C will return a deep copy of the source array.
 func (a *Arrayb) C() (b *Arrayb) {
 	if a.HasErr() {
