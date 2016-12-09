@@ -15,29 +15,34 @@ func (a *Array64) DotProd(b *Array64) *Array64 {
 		return a
 	case len(a.shape) == 1:
 		return &Array64{
-			shape:   []int{1},
-			strides: []int{1, 1},
-			data:    []float64{asm.DotProd(a.data, b.data)},
-			err:     nil,
-			debug:   "",
-			stack:   "",
+			nDimArray{
+				shape:   []int{1},
+				strides: []int{1, 1},
+				err:     nil,
+				debug:   "",
+				stack:   "",
+			},
+			[]float64{asm.DotProd(a.data, b.data)},
 		}
 	}
 	return a
 }
 
+//TODO Add method description?
 func (a *Array64) MatProd(b *Array64) *Array64 {
 	switch {
 	case a.valRith(b, "MatProd"):
 		return a
 	case len(a.shape) == 1 && len(b.shape) == 1:
 		return &Array64{
-			shape:   []int{1},
-			strides: []int{1, 1},
-			data:    []float64{asm.DotProd(a.data, b.data)},
-			err:     nil,
-			debug:   "",
-			stack:   "",
+			nDimArray{
+				shape:   []int{1},
+				strides: []int{1, 1},
+				err:     nil,
+				debug:   "",
+				stack:   "",
+			},
+			[]float64{asm.DotProd(a.data, b.data)},
 		}
 	}
 	return a
