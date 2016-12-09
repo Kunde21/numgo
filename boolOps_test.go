@@ -270,8 +270,8 @@ func TestCompValid(t *testing.T) {
 		{a.C(), a.C().Reshape(2, 5), true, ShapeError},
 		{a.C(), nil, true, NilError},
 		{nil, a.C(), true, NilError},
-		{a.C(), &Array64{err: InvIndexError}, true, InvIndexError},
-		{&Array64{err: InvIndexError}, a.C(), true, InvIndexError},
+		{a.C(), &Array64{nDimArray{err: InvIndexError}, nil}, true, InvIndexError},
+		{&Array64{nDimArray{err: InvIndexError}, nil}, a.C(), true, InvIndexError},
 		{a.C().Reshape(5, 2), a.C().Reshape(2, 5), true, ShapeError},
 		{a.C().Reshape(5, 5), a, true, ReshapeError},
 	}
@@ -452,8 +452,8 @@ func TestBoolCompValid(t *testing.T) {
 		{a.C(), a.C().Reshape(2, 5), true, ShapeError},
 		{a.C(), nil, true, NilError},
 		{nil, a.C(), true, NilError},
-		{a.C(), &Arrayb{err: InvIndexError}, true, InvIndexError},
-		{&Arrayb{err: InvIndexError}, a.C(), true, InvIndexError},
+		{a.C(), &Arrayb{nDimArray{err: InvIndexError}, nil}, true, InvIndexError},
+		{&Arrayb{nDimArray{err: InvIndexError}, nil}, a.C(), true, InvIndexError},
 		{a.C().Reshape(5, 2), a.C().Reshape(2, 5), true, ShapeError},
 		{a.C().Reshape(5, 5), a, true, ReshapeError},
 	}
@@ -493,7 +493,7 @@ func TestBoolValAxis(t *testing.T) {
 		{nil, []int{1}, true, NilError},
 		{a.C().Reshape(10), []int{1}, true, IndexError},
 		{a.C(), []int{0, 5, 1}, true, IndexError},
-		{&Arrayb{err: InvIndexError}, []int{0}, true, InvIndexError},
+		{&Arrayb{nDimArray{err: InvIndexError}, nil}, []int{0}, true, InvIndexError},
 		{a.C().Reshape(5, 5), []int{1}, true, ReshapeError},
 	}
 

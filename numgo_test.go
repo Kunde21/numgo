@@ -220,7 +220,7 @@ func TestString(t *testing.T) {
 	}{
 		{nil, "<nil>"},
 		{newArray64(0), "[]"},
-		{&Array64{err: InvIndexError}, "Error: " + InvIndexError.s},
+		{&Array64{nDimArray{err: InvIndexError}, nil}, "Error: " + InvIndexError.s},
 		{Arange(10), fmt.Sprint(Arange(10).data)},
 		{Arange(10).Reshape(2, 5), "[[0 1 2 3 4] \n [5 6 7 8 9]]"},
 		{Arange(20).Reshape(2, 2, 5), "[[[0 1 2 3 4]  \n  [5 6 7 8 9]] \n\n [[10 11 12 13 14]  \n  [15 16 17 18 19]]]"},
@@ -247,7 +247,7 @@ func TestReshape(t *testing.T) {
 		{Arange(10), []int{2, 5}, nil},
 		{Arange(11), []int{2, 5}, ReshapeError},
 		{Arange(10), []int{2, -5}, NegativeAxis},
-		{&Array64{err: InvIndexError}, []int{0}, InvIndexError},
+		{&Array64{nDimArray{err: InvIndexError}, nil}, []int{0}, InvIndexError},
 		{nil, []int{1}, NilError},
 	}
 
