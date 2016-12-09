@@ -30,21 +30,26 @@ func NewArray64(data []float64, shape ...int) (a *Array64) {
 		switch {
 		case data != nil:
 			return &Array64{
-				shape:   []int{len(data)},
-				strides: []int{len(data), 1},
-				data:    data,
-				err:     nil,
-				debug:   "",
-				stack:   "",
+				nDimArray{
+					shape:   []int{len(data)},
+					strides: []int{len(data), 1},
+					err:     nil,
+					debug:   "",
+					stack:   "",
+				},
+
+				data,
 			}
 		default:
 			return &Array64{
-				shape:   []int{0},
-				strides: []int{0, 0},
-				data:    []float64{},
-				err:     nil,
-				debug:   "",
-				stack:   "",
+				nDimArray{
+					shape:   []int{0},
+					strides: []int{0, 0},
+					err:     nil,
+					debug:   "",
+					stack:   "",
+				},
+				[]float64{},
 			}
 		}
 	}
@@ -53,7 +58,7 @@ func NewArray64(data []float64, shape ...int) (a *Array64) {
 	sh := make([]int, len(shape))
 	for _, v := range shape {
 		if v < 0 {
-			a = &Array64{err: NegativeAxis}
+			a = &Array64{nDimArray{err: NegativeAxis}, nil}
 			if debug {
 				a.debug = fmt.Sprintf("Negative axis length received by Create: %v", shape)
 				a.stack = string(stackBuf[:runtime.Stack(stackBuf, false)])
@@ -65,12 +70,15 @@ func NewArray64(data []float64, shape ...int) (a *Array64) {
 	copy(sh, shape)
 
 	a = &Array64{
-		shape:   sh,
-		strides: make([]int, len(shape)+1),
-		data:    make([]float64, sz),
-		err:     nil,
-		debug:   "",
-		stack:   "",
+
+		nDimArray{
+			shape:   sh,
+			strides: make([]int, len(shape)+1),
+			err:     nil,
+			debug:   "",
+			stack:   "",
+		},
+		make([]float64, sz),
 	}
 
 	if data != nil {
@@ -86,18 +94,21 @@ func NewArray64(data []float64, shape ...int) (a *Array64) {
 
 // Internal function to create using the shape of another array
 func newArray64(shape ...int) (a *Array64) {
-	var sz int = 1
+	var sz = 1
 	for _, v := range shape {
 		sz *= v
 	}
 
 	a = &Array64{
-		shape:   shape,
-		strides: make([]int, len(shape)+1),
-		data:    make([]float64, sz),
-		err:     nil,
-		debug:   "",
-		stack:   "",
+		nDimArray{
+			shape:   shape,
+			strides: make([]int, len(shape)+1),
+			err:     nil,
+			debug:   "",
+			stack:   "",
+		},
+
+		make([]float64, sz),
 	}
 
 	a.strides[len(shape)] = 1
@@ -167,7 +178,7 @@ func Arange(vals ...float64) (a *Array64) {
 		start, stop = vals[0], vals[1]
 	default:
 		if vals[1] < vals[0] && vals[2] >= 0 || vals[1] > vals[0] && vals[2] <= 0 {
-			a = &Array64{err: ShapeError}
+			a = &Array64{nDimArray{err: ShapeError}, nil}
 			if debug {
 				a.debug = fmt.Sprintf("Arange received illegal values %v", vals)
 				a.stack = string(stackBuf[:runtime.Stack(stackBuf, false)])
@@ -191,7 +202,7 @@ func Arange(vals ...float64) (a *Array64) {
 // Negative size values will generate an error and return a nil value.
 func Identity(size int) (r *Array64) {
 	if size < 0 {
-		r = &Array64{err: NegativeAxis}
+		r = &Array64{nDimArray{err: NegativeAxis}, nil}
 		if debug {
 			r.debug = fmt.Sprintf("Negative dimension received by Identity: %d", size)
 			r.stack = string(stackBuf[:runtime.Stack(stackBuf, false)])
