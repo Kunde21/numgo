@@ -9,11 +9,8 @@ import (
 
 // Arrayb is an n-dimensional array of boolean values
 type Arrayb struct {
-	shape        []int
-	strides      []int
-	data         []bool
-	err          error
-	debug, stack string
+	nDimArray
+	data []bool
 }
 
 // NewArrayB creates an Arrayb object with dimensions given in order from outer-most to inner-most

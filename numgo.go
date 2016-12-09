@@ -9,13 +9,17 @@ import (
 	"strings"
 )
 
-// Array64 is an n-dimensional array of float64 data
-type Array64 struct {
+type nDimArray struct {
 	shape        []int
 	strides      []int
-	data         []float64
 	err          error
 	debug, stack string
+}
+
+// Array64 is an n-dimensional array of float64 data
+type Array64 struct {
+	nDimArray
+	data []float64
 }
 
 // NewArray64 creates an Array64 object with dimensions given in order from outer-most to inner-most
