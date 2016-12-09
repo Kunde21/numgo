@@ -21,7 +21,7 @@ func (a *Array64) C() (b *Array64) {
 	}
 
 	b = &Array64{
-		nDimArray{
+		nDimMetadata{
 			shape:   make([]int, len(a.shape)),
 			strides: make([]int, len(a.strides)),
 			err:     nil,

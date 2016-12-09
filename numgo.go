@@ -9,7 +9,7 @@ import (
 	"strings"
 )
 
-type nDimArray struct {
+type nDimMetadata struct {
 	shape        []int
 	strides      []int
 	err          error
@@ -18,7 +18,7 @@ type nDimArray struct {
 
 // Array64 is an n-dimensional array of float64 data
 type Array64 struct {
-	nDimArray
+	nDimMetadata
 	data []float64
 }
 
@@ -30,7 +30,7 @@ func NewArray64(data []float64, shape ...int) (a *Array64) {
 		switch {
 		case data != nil:
 			return &Array64{
-				nDimArray{
+				nDimMetadata{
 					shape:   []int{len(data)},
 					strides: []int{len(data), 1},
 					err:     nil,
@@ -42,7 +42,7 @@ func NewArray64(data []float64, shape ...int) (a *Array64) {
 			}
 		default:
 			return &Array64{
-				nDimArray{
+				nDimMetadata{
 					shape:   []int{0},
 					strides: []int{0, 0},
 					err:     nil,
@@ -58,7 +58,7 @@ func NewArray64(data []float64, shape ...int) (a *Array64) {
 	sh := make([]int, len(shape))
 	for _, v := range shape {
 		if v < 0 {
-			a = &Array64{nDimArray{err: NegativeAxis}, nil}
+			a = &Array64{nDimMetadata{err: NegativeAxis}, nil}
 			if debug {
 				a.debug = fmt.Sprintf("Negative axis length received by Create: %v", shape)
 				a.stack = string(stackBuf[:runtime.Stack(stackBuf, false)])
@@ -71,7 +71,7 @@ func NewArray64(data []float64, shape ...int) (a *Array64) {
 
 	a = &Array64{
 
-		nDimArray{
+		nDimMetadata{
 			shape:   sh,
 			strides: make([]int, len(shape)+1),
 			err:     nil,
@@ -100,7 +100,7 @@ func newArray64(shape ...int) (a *Array64) {
 	}
 
 	a = &Array64{
-		nDimArray{
+		nDimMetadata{
 			shape:   shape,
 			strides: make([]int, len(shape)+1),
 			err:     nil,
@@ -178,7 +178,7 @@ func Arange(vals ...float64) (a *Array64) {
 		start, stop = vals[0], vals[1]
 	default:
 		if vals[1] < vals[0] && vals[2] >= 0 || vals[1] > vals[0] && vals[2] <= 0 {
-			a = &Array64{nDimArray{err: ShapeError}, nil}
+			a = &Array64{nDimMetadata{err: ShapeError}, nil}
 			if debug {
 				a.debug = fmt.Sprintf("Arange received illegal values %v", vals)
 				a.stack = string(stackBuf[:runtime.Stack(stackBuf, false)])
@@ -202,7 +202,7 @@ func Arange(vals ...float64) (a *Array64) {
 // Negative size values will generate an error and return a nil value.
 func Identity(size int) (r *Array64) {
 	if size < 0 {
-		r = &Array64{nDimArray{err: NegativeAxis}, nil}
+		r = &Array64{nDimMetadata{err: NegativeAxis}, nil}
 		if debug {
 			r.debug = fmt.Sprintf("Negative dimension received by Identity: %d", size)
 			r.stack = string(stackBuf[:runtime.Stack(stackBuf, false)])

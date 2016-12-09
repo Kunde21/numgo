@@ -9,7 +9,7 @@ import (
 
 // Arrayb is an n-dimensional array of boolean values
 type Arrayb struct {
-	nDimArray
+	nDimMetadata
 	data []bool
 }
 

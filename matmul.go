@@ -15,7 +15,7 @@ func (a *Array64) DotProd(b *Array64) *Array64 {
 		return a
 	case len(a.shape) == 1:
 		return &Array64{
-			nDimArray{
+			nDimMetadata{
 				shape:   []int{1},
 				strides: []int{1, 1},
 				err:     nil,
@@ -35,7 +35,7 @@ func (a *Array64) MatProd(b *Array64) *Array64 {
 		return a
 	case len(a.shape) == 1 && len(b.shape) == 1:
 		return &Array64{
-			nDimArray{
+			nDimMetadata{
 				shape:   []int{1},
 				strides: []int{1, 1},
 				err:     nil,

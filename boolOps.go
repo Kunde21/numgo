@@ -90,28 +90,28 @@ func (a *Array64) compValid(b *Array64, mthd string) (r *Arrayb) {
 
 	switch {
 	case a == nil || a.data == nil && a.err == nil:
-		r = &Arrayb{nDimArray{err: NilError}, nil}
+		r = &Arrayb{nDimMetadata{err: NilError}, nil}
 		if debug {
 			r.debug = fmt.Sprintf("Nil pointer received by %s", mthd)
 			r.stack = string(stackBuf[:runtime.Stack(stackBuf, false)])
 		}
 		return r
 	case b == nil || b.data == nil && b.err == nil:
-		r = &Arrayb{nDimArray{err: NilError}, nil}
+		r = &Arrayb{nDimMetadata{err: NilError}, nil}
 		if debug {
 			r.debug = fmt.Sprintf("Array received by %s is a Nil Pointer.", mthd)
 			r.stack = string(stackBuf[:runtime.Stack(stackBuf, false)])
 		}
 		return r
 	case a.err != nil:
-		r = &Arrayb{nDimArray{err: a.err}, nil}
+		r = &Arrayb{nDimMetadata{err: a.err}, nil}
 		if debug {
 			r.debug = fmt.Sprintf("Error in %s arrays", mthd)
 			r.stack = string(stackBuf[:runtime.Stack(stackBuf, false)])
 		}
 		return r
 	case b.err != nil:
-		r = &Arrayb{nDimArray{err: b.err}, nil}
+		r = &Arrayb{nDimMetadata{err: b.err}, nil}
 		if debug {
 			r.debug = fmt.Sprintf("Error in %s arrays", mthd)
 			r.stack = string(stackBuf[:runtime.Stack(stackBuf, false)])
@@ -119,7 +119,7 @@ func (a *Array64) compValid(b *Array64, mthd string) (r *Arrayb) {
 		return r
 
 	case len(a.shape) < len(b.shape):
-		r = &Arrayb{nDimArray{err: ShapeError}, nil}
+		r = &Arrayb{nDimMetadata{err: ShapeError}, nil}
 		if debug {
 			r.debug = fmt.Sprintf("Array received by %s can not be broadcast.  Shape: %v  Val shape: %v", mthd, a.shape, b.shape)
 			r.stack = string(stackBuf[:runtime.Stack(stackBuf, false)])
@@ -129,7 +129,7 @@ func (a *Array64) compValid(b *Array64, mthd string) (r *Arrayb) {
 
 	for i, j := len(b.shape)-1, len(a.shape)-1; i >= 0; i, j = i-1, j-1 {
 		if a.shape[j] != b.shape[i] {
-			r = &Arrayb{nDimArray{err: ShapeError}, nil}
+			r = &Arrayb{nDimMetadata{err: ShapeError}, nil}
 			if debug {
 				r.debug = fmt.Sprintf("Array received by %s can not be broadcast.  Shape: %v  Val shape: %v", mthd, a.shape, b.shape)
 				r.stack = string(stackBuf[:runtime.Stack(stackBuf, false)])
@@ -334,28 +334,28 @@ func (a *Arrayb) compValid(b *Arrayb, mthd string) (r *Arrayb) {
 
 	switch {
 	case a == nil || a.data == nil && a.err == nil:
-		r = &Arrayb{nDimArray{err: NilError}, nil}
+		r = &Arrayb{nDimMetadata{err: NilError}, nil}
 		if debug {
 			r.debug = fmt.Sprintf("Nil pointer received by %s", mthd)
 			r.stack = string(stackBuf[:runtime.Stack(stackBuf, false)])
 		}
 		return r
 	case b == nil || b.data == nil && b.err == nil:
-		r = &Arrayb{nDimArray{err: NilError}, nil}
+		r = &Arrayb{nDimMetadata{err: NilError}, nil}
 		if debug {
 			r.debug = fmt.Sprintf("Array received by %s is a Nil Pointer.", mthd)
 			r.stack = string(stackBuf[:runtime.Stack(stackBuf, false)])
 		}
 		return r
 	case a.err != nil:
-		r = &Arrayb{nDimArray{err: a.err}, nil}
+		r = &Arrayb{nDimMetadata{err: a.err}, nil}
 		if debug {
 			r.debug = fmt.Sprintf("Error in %s arrays", mthd)
 			r.stack = string(stackBuf[:runtime.Stack(stackBuf, false)])
 		}
 		return r
 	case b.err != nil:
-		r = &Arrayb{nDimArray{err: b.err}, nil}
+		r = &Arrayb{nDimMetadata{err: b.err}, nil}
 		if debug {
 			r.debug = fmt.Sprintf("Error in %s arrays", mthd)
 			r.stack = string(stackBuf[:runtime.Stack(stackBuf, false)])
@@ -363,7 +363,7 @@ func (a *Arrayb) compValid(b *Arrayb, mthd string) (r *Arrayb) {
 		return r
 
 	case len(a.shape) < len(b.shape):
-		r = &Arrayb{nDimArray{err: ShapeError}, nil}
+		r = &Arrayb{nDimMetadata{err: ShapeError}, nil}
 		if debug {
 			r.debug = fmt.Sprintf("Array received by %s can not be broadcast.  Shape: %v  Val shape: %v", mthd, a.shape, b.shape)
 			r.stack = string(stackBuf[:runtime.Stack(stackBuf, false)])
@@ -373,7 +373,7 @@ func (a *Arrayb) compValid(b *Arrayb, mthd string) (r *Arrayb) {
 
 	for i, j := len(b.shape)-1, len(a.shape)-1; i >= 0; i, j = i-1, j-1 {
 		if a.shape[j] != b.shape[i] {
-			r = &Arrayb{nDimArray{err: ShapeError}, nil}
+			r = &Arrayb{nDimMetadata{err: ShapeError}, nil}
 			if debug {
 				r.debug = fmt.Sprintf("Array received by %s can not be broadcast.  Shape: %v  Val shape: %v", mthd, a.shape, b.shape)
 				r.stack = string(stackBuf[:runtime.Stack(stackBuf, false)])
