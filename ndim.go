@@ -267,7 +267,7 @@ func (a *Array64) String() (s string) {
 // Reshape Changes the size of the array axes.  Values are not changed or moved.
 // This must not change the size of the array.
 // Incorrect dimensions will return a nil pointer
-func (a *nDimMetadata) Reshape(shape ...int) *nDimMetadata {
+func (a *Array64) Reshape(shape ...int) *Array64 {
 	if a.HasErr() || len(shape) == 0 {
 		return a
 	}
