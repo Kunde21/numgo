@@ -21,12 +21,14 @@ func (a *Array64) C() (b *Array64) {
 	}
 
 	b = &Array64{
-		shape:   make([]int, len(a.shape)),
-		strides: make([]int, len(a.strides)),
-		data:    make([]float64, a.strides[0]),
-		err:     nil,
-		debug:   "",
-		stack:   "",
+		nDimMetadata{
+			shape:   make([]int, len(a.shape)),
+			strides: make([]int, len(a.strides)),
+			err:     nil,
+			debug:   "",
+			stack:   "",
+		},
+		make([]float64, a.strides[0]),
 	}
 
 	copy(b.shape, a.shape)

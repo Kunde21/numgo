@@ -82,7 +82,7 @@ func TestMinSet(t *testing.T) {
 		{[]*Array64{a.C().AddC(1), a}, a, nil},
 		{[]*Array64{}, nil, NilError},
 		{[]*Array64{a, nil}, nil, NilError},
-		{[]*Array64{a, {err: InvIndexError}}, nil, InvIndexError},
+		{[]*Array64{a, {nDimMetadata{err: InvIndexError}, nil}}, nil, InvIndexError},
 		{[]*Array64{a, a.C().Reshape(2, 10)}, nil, ShapeError},
 	}
 
@@ -113,7 +113,7 @@ func TestMaxSet(t *testing.T) {
 		{[]*Array64{a.C().AddC(-1), a}, a, nil},
 		{[]*Array64{}, nil, NilError},
 		{[]*Array64{a, nil}, nil, NilError},
-		{[]*Array64{a, {err: InvIndexError}}, nil, InvIndexError},
+		{[]*Array64{a, {nDimMetadata{err: InvIndexError}, nil}}, nil, InvIndexError},
 		{[]*Array64{a, a.C().Reshape(2, 10)}, nil, ShapeError},
 	}
 

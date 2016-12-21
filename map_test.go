@@ -39,7 +39,7 @@ tests:
 		{Arange(10), []int{1}, []int{1}, IndexError},
 		{Arange(10).Reshape(2, 5), []int{1, -1}, []int{1, -1}, IndexError},
 		{Arange(10).Reshape(2, 5), []int{1, 0}, []int{}, nil},
-		{&Array64{err: InvIndexError}, []int{}, []int{}, InvIndexError},
+		{&Array64{nDimMetadata{err: InvIndexError}, nil}, []int{}, []int{}, InvIndexError},
 	} {
 		if v.a.valAxis(&v.ax, "Test"); v.a.getErr() != v.err {
 			t.Log("Error mismatch.", i, "Expected", v.err, "Got", v.a.getErr())
