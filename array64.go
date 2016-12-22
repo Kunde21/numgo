@@ -9,13 +9,6 @@ import (
 	"strings"
 )
 
-type nDimMetadata struct {
-	shape        []int
-	strides      []int
-	err          error
-	debug, stack string
-}
-
 // Array64 is an n-dimensional array of float64 data
 type Array64 struct {
 	nDimMetadata
@@ -30,90 +23,36 @@ func NewArray64(data []float64, shape ...int) (a *Array64) {
 		switch {
 		case data != nil:
 			return &Array64{
-				nDimMetadata{
-					shape:   []int{len(data)},
-					strides: []int{len(data), 1},
-					err:     nil,
-					debug:   "",
-					stack:   "",
-				},
-
+				newNDim([]int{len(data)}),
 				data,
 			}
 		default:
 			return &Array64{
-				nDimMetadata{
-					shape:   []int{0},
-					strides: []int{0, 0},
-					err:     nil,
-					debug:   "",
-					stack:   "",
-				},
+				newNDim([]int{0}),
 				[]float64{},
 			}
 		}
 	}
 
-	var sz = 1
-	sh := make([]int, len(shape))
-	for _, v := range shape {
-		if v < 0 {
-			a = &Array64{nDimMetadata{err: NegativeAxis}, nil}
-			if debug {
-				a.debug = fmt.Sprintf("Negative axis length received by Create: %v", shape)
-				a.stack = string(stackBuf[:runtime.Stack(stackBuf, false)])
-			}
-			return
-		}
-		sz *= v
-	}
-	copy(sh, shape)
-
+	ndim := newNDim(shape)
 	a = &Array64{
-
-		nDimMetadata{
-			shape:   sh,
-			strides: make([]int, len(shape)+1),
-			err:     nil,
-			debug:   "",
-			stack:   "",
-		},
-		make([]float64, sz),
+		ndim,
+		make([]float64, ndim.strides[0]),
 	}
 
 	if data != nil {
 		copy(a.data, data)
 	}
 
-	a.strides[len(shape)] = 1
-	for i := len(shape) - 1; i >= 0; i-- {
-		a.strides[i] = a.strides[i+1] * a.shape[i]
-	}
 	return
 }
 
 // Internal function to create using the shape of another array
 func newArray64(shape ...int) (a *Array64) {
-	var sz = 1
-	for _, v := range shape {
-		sz *= v
-	}
-
+	ndim := newNDim(shape)
 	a = &Array64{
-		nDimMetadata{
-			shape:   shape,
-			strides: make([]int, len(shape)+1),
-			err:     nil,
-			debug:   "",
-			stack:   "",
-		},
-
-		make([]float64, sz),
-	}
-
-	a.strides[len(shape)] = 1
-	for i := len(shape) - 1; i >= 0; i-- {
-		a.strides[i] = a.strides[i+1] * a.shape[i]
+		ndim,
+		make([]float64, ndim.strides[0]),
 	}
 	return
 }
@@ -233,7 +172,6 @@ func (a *Array64) String() (s string) {
 	}
 
 	stride := a.shape[len(a.shape)-1]
-
 	for i, k := 0, 0; i+stride <= len(a.data); i, k = i+stride, k+1 {
 
 		t := ""
@@ -266,45 +204,12 @@ func (a *Array64) String() (s string) {
 
 // Reshape Changes the size of the array axes.  Values are not changed or moved.
 // This must not change the size of the array.
-// Incorrect dimensions will return a nil pointer
 func (a *Array64) Reshape(shape ...int) *Array64 {
 	if a.HasErr() || len(shape) == 0 {
 		return a
 	}
 
-	var sz = 1
-	sh := make([]int, len(shape))
-	for _, v := range shape {
-		if v < 0 {
-			a.err = NegativeAxis
-			if debug {
-				a.debug = fmt.Sprintf("Negative dimension received by Reshape(): %v", shape)
-				a.stack = string(stackBuf[:runtime.Stack(stackBuf, false)])
-			}
-			return a
-		}
-		sz *= v
-	}
-	copy(sh, shape)
-
-	if sz != len(a.data) {
-		a.err = ReshapeError
-		if debug {
-			a.debug = fmt.Sprintf("Reshape() can not change data size.  Dimensions: %v reshape: %v", a.shape, shape)
-			a.stack = string(stackBuf[:runtime.Stack(stackBuf, false)])
-		}
-		return a
-	}
-
-	a.strides = make([]int, len(sh)+1)
-	tmp := 1
-	for i := len(a.strides) - 1; i > 0; i-- {
-		a.strides[i] = tmp
-		tmp *= sh[i-1]
-	}
-	a.strides[0] = tmp
-	a.shape = sh
-
+	a.reshape(shape)
 	return a
 }
 

@@ -16,64 +16,42 @@ type Arrayb struct {
 // NewArrayB creates an Arrayb object with dimensions given in order from outer-most to inner-most
 // All values will default to false
 func NewArrayB(data []bool, shape ...int) (a *Arrayb) {
-	if data != nil && len(shape) == 0 {
-		shape = append(shape, len(data))
-	}
-
-	a = new(Arrayb)
-	var sz = 1
-	sh := make([]int, len(shape))
-	for _, v := range shape {
-		if v <= 0 {
-			a.err = NegativeAxis
-			if debug {
-				a.debug = fmt.Sprintf("Negative axis length received by Createb.  Shape: %v", shape)
-				a.stack = string(stackBuf[:runtime.Stack(stackBuf, false)])
+	if len(shape) == 0 {
+		switch {
+		case data != nil:
+			return &Arrayb{
+				newNDim([]int{len(data)}),
+				data,
 			}
-			return
+		default:
+			return &Arrayb{
+				newNDim([]int{0}),
+				[]bool{},
+			}
 		}
-		sz *= v
 	}
-	copy(sh, shape)
 
-	a.shape = sh
-	a.data = make([]bool, sz)
+	ndim := newNDim(shape)
+	a = &Arrayb{
+		ndim,
+		make([]bool, ndim.strides[0]),
+	}
+
 	if data != nil {
 		copy(a.data, data)
 	}
 
-	a.strides = make([]int, len(sh)+1)
-	tmp := 1
-	for i := len(a.strides) - 1; i > 0; i-- {
-		a.strides[i] = tmp
-		tmp *= sh[i-1]
-	}
-	a.strides[0] = tmp
-	a.err = nil
 	return
 }
 
 // Internal function to create using the shape of another array
 func newArrayB(shape ...int) (a *Arrayb) {
 	a = new(Arrayb)
-	var sz = 1
-	sh := make([]int, len(shape))
-	for _, v := range shape {
-		sz *= v
+	ndim := newNDim(shape)
+	a = &Arrayb{
+		ndim,
+		make([]bool, ndim.strides[0]),
 	}
-	copy(sh, shape)
-
-	a.shape = sh
-	a.data = make([]bool, sz)
-
-	a.strides = make([]int, len(sh)+1)
-	tmp := 1
-	for i := len(a.strides) - 1; i > 0; i-- {
-		a.strides[i] = tmp
-		tmp *= sh[i-1]
-	}
-	a.strides[0] = tmp
-	a.err = nil
 	return
 }
 
@@ -151,43 +129,11 @@ func (a *Arrayb) String() (s string) {
 // This must not change the size of the array.
 // Incorrect dimensions will return a nil pointer
 func (a *Arrayb) Reshape(shape ...int) *Arrayb {
-	if a.HasErr() {
+	if a.HasErr() || len(shape) == 0 {
 		return a
 	}
 
-	var sz = 1
-	sh := make([]int, len(shape))
-	for _, v := range shape {
-		if v < 0 {
-			a.err = NegativeAxis
-			if debug {
-				a.debug = fmt.Sprintf("Negative axis length received by Reshape().  Shape: %v", shape)
-				a.stack = string(stackBuf[:runtime.Stack(stackBuf, false)])
-			}
-			return a
-		}
-		sz *= v
-	}
-	copy(sh, shape)
-
-	if sz != len(a.data) {
-		a.err = ReshapeError
-		if debug {
-			a.debug = fmt.Sprintf("Reshape() can not change data size.  Dimensions: %v reshape: %v", a.shape, shape)
-			a.stack = string(stackBuf[:runtime.Stack(stackBuf, false)])
-		}
-		return a
-	}
-
-	a.strides = make([]int, len(sh)+1)
-	tmp := 1
-	for i := len(a.strides) - 1; i > 0; i-- {
-		a.strides[i] = tmp
-		tmp *= sh[i-1]
-	}
-	a.strides[0] = tmp
-	a.shape = sh
-
+	a.reshape(shape)
 	return a
 }
 
