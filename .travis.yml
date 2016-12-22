@@ -3,11 +3,12 @@ sudo: false
 go:
   - 1.5.4
   - 1.6.2
+  - 1.7.4
   - tip
 before_install:
 script:
-  - go test ./internal
-  - go test ./internal -tags noasm
+  - go test 
+  - go test -tags noasm
   - go test -coverprofile=coverage.txt -covermode=atomic
 after_success:
   - bash <(curl -s https://codecov.io/bash)
