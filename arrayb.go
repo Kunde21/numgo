@@ -152,6 +152,9 @@ func (a *Arrayb) C() (b *Arrayb) {
 // Any errors will return a false value and record the error for the
 // HasErr() and GetErr() functions.
 func (a *Arrayb) At(index ...int) bool {
+	if a == nil {
+		return false
+	}
 	idx := a.valIdx(index, "At")
 	if a.HasErr() {
 		return false
@@ -162,6 +165,9 @@ func (a *Arrayb) At(index ...int) bool {
 // SliceElement returns the element group at one axis above the leaf elements.
 // Data is returned as a copy  in a float slice.
 func (a *Arrayb) SliceElement(index ...int) (ret []bool) {
+	if a == nil {
+		return nil
+	}
 	idx := a.valIdx(index, "SliceElement")
 	switch {
 	case a.HasErr():
@@ -182,6 +188,9 @@ func (a *Arrayb) SliceElement(index ...int) (ret []bool) {
 // These are applied startig from the top axis.
 // Intermediate slicing of axes is not available at this point.
 func (a *Arrayb) SubArr(index ...int) (ret *Arrayb) {
+	if a == nil {
+		return nil
+	}
 	idx := a.valIdx(index, "SubArr")
 	if a.HasErr() {
 		return nil
@@ -195,6 +204,9 @@ func (a *Arrayb) SubArr(index ...int) (ret *Arrayb) {
 // Set sets the element at the given index.
 // There should be one index per axis.  Generates a ShapeError if incorrect index.
 func (a *Arrayb) Set(val bool, index ...int) *Arrayb {
+	if a == nil {
+		return nil
+	}
 	idx := a.valIdx(index, "Set")
 	if a.HasErr() {
 		return a
@@ -207,6 +219,9 @@ func (a *Arrayb) Set(val bool, index ...int) *Arrayb {
 // SetSliceElement sets the element group at one axis above the leaf elements.
 // Source Array is returned, for function-chaining design.
 func (a *Arrayb) SetSliceElement(vals []bool, index ...int) *Arrayb {
+	if a == nil {
+		return nil
+	}
 	idx := a.valIdx(index, "SetSliceElement")
 	switch {
 	case a.HasErr():
@@ -233,6 +248,9 @@ func (a *Arrayb) SetSliceElement(vals []bool, index ...int) *Arrayb {
 // SetSubArr sets the array below a given index to the values in vals.
 // Values will be broadcast up multiple axes if the shapes match.
 func (a *Arrayb) SetSubArr(vals *Arrayb, index ...int) *Arrayb {
+	if a == nil {
+		return nil
+	}
 	idx := a.valIdx(index, "SetSubArr")
 	switch {
 	case a.HasErr():
@@ -452,31 +470,4 @@ func (a *Arrayb) UnmarshalJSON(b []byte) error {
 	a.strides[0] = tmp
 
 	return err
-}
-
-// helper function to validate index inputs
-func (a *Arrayb) valIdx(index []int, mthd string) (idx int) {
-	if a.HasErr() {
-		return 0
-	}
-	if len(index) > len(a.shape) {
-		a.err = InvIndexError
-		if debug {
-			a.debug = fmt.Sprintf("Incorrect number of indicies received by %s().  Shape: %v  Index: %v", mthd, a.shape, index)
-			a.stack = string(stackBuf[:runtime.Stack(stackBuf, false)])
-		}
-		return 0
-	}
-	for i, v := range index {
-		if v >= a.shape[i] || v < 0 {
-			a.err = IndexError
-			if debug {
-				a.debug = fmt.Sprintf("Index received by %s() does not exist shape: %v index: %v", mthd, a.shape, index)
-				a.stack = string(stackBuf[:runtime.Stack(stackBuf, false)])
-			}
-			return 0
-		}
-		idx += v * a.strides[i+1]
-	}
-	return
 }

@@ -319,8 +319,8 @@ func TestResize(t *testing.T) {
 		t.Log("Negative axis failed to error", e)
 		t.Fail()
 	}
-
-	a.Set(1, 0, 0, 0, 2).Resize(5, 5)
+	a.Set(1, 0, 0, 0, 2)
+	a.Resize(5, 5)
 	if a.HasErr() {
 		t.Log("Error in set/resize", a.GetErr())
 		t.Fail()

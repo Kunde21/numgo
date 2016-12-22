@@ -11,7 +11,8 @@ func (a *Array64) Flatten() *Array64 {
 	if a.HasErr() {
 		return a
 	}
-	return a.Reshape(a.strides[0])
+	a.reshape(a.strides[:1])
+	return a
 }
 
 // C will return a deep copy of the source array.
@@ -19,7 +20,6 @@ func (a *Array64) C() (b *Array64) {
 	if a.HasErr() {
 		return a
 	}
-
 	b = &Array64{
 		nDimMetadata{
 			shape:   make([]int, len(a.shape)),
@@ -30,7 +30,6 @@ func (a *Array64) C() (b *Array64) {
 		},
 		make([]float64, a.strides[0]),
 	}
-
 	copy(b.shape, a.shape)
 	copy(b.strides, a.strides)
 	copy(b.data, a.data)
@@ -42,7 +41,6 @@ func (a *Array64) Shape() []int {
 	if a.HasErr() {
 		return nil
 	}
-
 	res := make([]int, len(a.shape), len(a.shape))
 	copy(res, a.shape)
 	return res
@@ -51,6 +49,9 @@ func (a *Array64) Shape() []int {
 // At returns the element at the given index.
 // There should be one index per axis.  Generates a ShapeError if incorrect index.
 func (a *Array64) At(index ...int) float64 {
+	if a == nil {
+		return 0
+	}
 	idx := a.valIdx(index, "At")
 	if a.HasErr() {
 		return math.NaN()
@@ -67,35 +68,12 @@ func (a *Array64) at(index []int) float64 {
 	return a.data[idx]
 }
 
-func (a *Array64) valIdx(index []int, mthd string) (idx int) {
-	if a.HasErr() {
-		return 0
-	}
-	if len(index) > len(a.shape) {
-		a.err = InvIndexError
-		if debug {
-			a.debug = fmt.Sprintf("Incorrect number of indicies received by %s().  Shape: %v  Index: %v", mthd, a.shape, index)
-			a.stack = string(stackBuf[:runtime.Stack(stackBuf, false)])
-		}
-		return 0
-	}
-	for i, v := range index {
-		if v >= a.shape[i] || v < 0 {
-			a.err = IndexError
-			if debug {
-				a.debug = fmt.Sprintf("Index received by %s() does not exist shape: %v index: %v", mthd, a.shape, index)
-				a.stack = string(stackBuf[:runtime.Stack(stackBuf, false)])
-			}
-			return 0
-		}
-		idx += v * a.strides[i+1]
-	}
-	return
-}
-
 // SliceElement returns the element group at one axis above the leaf elements.
 // Data is returned as a copy  in a float slice.
 func (a *Array64) SliceElement(index ...int) (ret []float64) {
+	if a == nil {
+		return nil
+	}
 	idx := a.valIdx(index, "SliceElement")
 	switch {
 	case a.HasErr():
@@ -103,7 +81,9 @@ func (a *Array64) SliceElement(index ...int) (ret []float64) {
 	case len(a.shape)-1 != len(index):
 		a.err = InvIndexError
 		if debug {
-			a.debug = fmt.Sprintf("Incorrect number of indicies received by SliceElement().  Shape: %v  Index: %v", a.shape, index)
+			a.debug = fmt.Sprintf(
+				"Incorrect number of indicies received by SliceElement().  Shape: %v  Index: %v",
+				a.shape, index)
 			a.stack = string(stackBuf[:runtime.Stack(stackBuf, false)])
 		}
 		return nil
@@ -114,6 +94,9 @@ func (a *Array64) SliceElement(index ...int) (ret []float64) {
 
 // SubArr slices the array at a given index.
 func (a *Array64) SubArr(index ...int) (ret *Array64) {
+	if a == nil {
+		return nil
+	}
 	idx := a.valIdx(index, "SubArr")
 	if a.HasErr() {
 		return a
@@ -121,18 +104,19 @@ func (a *Array64) SubArr(index ...int) (ret *Array64) {
 
 	ret = newArray64(a.shape[len(index):]...)
 	copy(ret.data, a.data[idx:idx+a.strides[len(index)]])
-
 	return
 }
 
 // Set sets the element at the given index.
 // There should be one index per axis.  Generates a ShapeError if incorrect index.
 func (a *Array64) Set(val float64, index ...int) *Array64 {
+	if a == nil {
+		return nil
+	}
 	idx := a.valIdx(index, "Set")
 	if a.HasErr() {
 		return a
 	}
-
 	a.data[idx] = val
 	return a
 }
@@ -140,6 +124,9 @@ func (a *Array64) Set(val float64, index ...int) *Array64 {
 // SetSliceElement sets the element group at one axis above the leaf elements.
 // Source Array is returned, for function-chaining design.
 func (a *Array64) SetSliceElement(vals []float64, index ...int) *Array64 {
+	if a == nil {
+		return nil
+	}
 	idx := a.valIdx(index, "SetSliceElement")
 	switch {
 	case a.HasErr():
@@ -166,6 +153,9 @@ func (a *Array64) SetSliceElement(vals []float64, index ...int) *Array64 {
 // SetSubArr sets the array below a given index to the values in vals.
 // Values will be broadcast up multiple axes if the shapes match.
 func (a *Array64) SetSubArr(vals *Array64, index ...int) *Array64 {
+	if a == nil {
+		return nil
+	}
 	idx := a.valIdx(index, "SetSubArr")
 	switch {
 	case a.HasErr():
@@ -190,7 +180,9 @@ func (a *Array64) SetSubArr(vals *Array64, index ...int) *Array64 {
 		if a.shape[i] != vals.shape[j] {
 			a.err = ShapeError
 			if debug {
-				a.debug = fmt.Sprintf("Shape of array recieved by SetSubArr() doesn't match receiver.  Shape: %v  Vals Shape: %v", a.shape, vals.shape)
+				a.debug = fmt.Sprintf(
+					"Shape of array recieved by SetSubArr() doesn't match receiver.  Shape: %v  Vals Shape: %v",
+					a.shape, vals.shape)
 				a.stack = string(stackBuf[:runtime.Stack(stackBuf, false)])
 			}
 			return a
@@ -201,7 +193,6 @@ func (a *Array64) SetSubArr(vals *Array64, index ...int) *Array64 {
 		copy(a.data[idx:idx+len(vals.data)], vals.data)
 		return a
 	}
-
 	reps := 1
 	for i := len(index); i < len(a.shape)-len(vals.shape); i++ {
 		reps *= a.shape[i]
@@ -219,58 +210,17 @@ func (a *Array64) SetSubArr(vals *Array64, index ...int) *Array64 {
 // Make a copy C() if the original array needs to remain unchanged.
 // Element location in the underlying slice will not be adjusted to the new shape.
 func (a *Array64) Resize(shape ...int) *Array64 {
-	switch {
-	case a.HasErr():
-		return a
-	case len(shape) == 0:
-		tmp := newArray64(0)
-		a.shape, a.strides = tmp.shape, tmp.strides
-		a.data = tmp.data
+	a.resize(shape)
+	if a.HasErr() {
 		return a
 	}
 
-	var sz int = 1
-	for _, v := range shape {
-		if v >= 0 {
-			sz *= v
-			continue
-		}
-
-		a.err = NegativeAxis
-		if debug {
-			a.debug = fmt.Sprintf("Negative axis length received by Resize.  Shape: %v", shape)
-			a.stack = string(stackBuf[:runtime.Stack(stackBuf, false)])
-		}
-		return a
-	}
-
-	ln, cp := len(shape), cap(a.shape)
-	if ln > cp {
-		a.shape = append(a.shape[:cp], make([]int, ln-cp)...)
-	} else {
-		a.shape = a.shape[:ln]
-	}
-
-	ln, cp = ln+1, cap(a.strides)
-	if ln > cp {
-		a.strides = append(a.strides[:cp], make([]int, ln-cp)...)
-	} else {
-		a.strides = a.strides[:ln]
-	}
-
-	a.strides[ln-1] = 1
-	for i := ln - 2; i >= 0; i-- {
-		a.shape[i] = shape[i]
-		a.strides[i] = a.shape[i] * a.strides[i+1]
-	}
-
-	cp = cap(a.data)
+	sz, cp := a.strides[0], cap(a.data)
 	if sz > cp {
 		a.data = append(a.data[:cp], make([]float64, sz-cp)...)
 	} else {
 		a.data = a.data[:sz]
 	}
-
 	return a
 }
 
@@ -285,7 +235,9 @@ func (a *Array64) Append(val *Array64, axis int) *Array64 {
 	case axis >= len(a.shape), axis < 0:
 		a.err = IndexError
 		if debug {
-			a.debug = fmt.Sprintf("Axis received by Append() out of range.  Shape: %v  Axis: %v", a.shape, axis)
+			a.debug = fmt.Sprintf(
+				"Axis received by Append() out of range.  Shape: %v  Axis: %v",
+				a.shape, axis)
 			a.stack = string(stackBuf[:runtime.Stack(stackBuf, false)])
 		}
 		return a
@@ -299,7 +251,9 @@ func (a *Array64) Append(val *Array64, axis int) *Array64 {
 	case len(a.shape) != len(val.shape):
 		a.err = ShapeError
 		if debug {
-			a.debug = fmt.Sprintf("Array received by Append() can not be matched.  Shape: %v  Val shape: %v", a.shape, val.shape)
+			a.debug = fmt.Sprintf(
+				"Array received by Append() can not be matched.  Shape: %v  Val shape: %v",
+				a.shape, val.shape)
 			a.stack = string(stackBuf[:runtime.Stack(stackBuf, false)])
 		}
 		return a
@@ -309,7 +263,9 @@ func (a *Array64) Append(val *Array64, axis int) *Array64 {
 		if v != val.shape[k] && k != axis {
 			a.err = ShapeError
 			if debug {
-				a.debug = fmt.Sprintf("Array received by Append() can not be matched.  Shape: %v  Val shape: %v", a.shape, val.shape)
+				a.debug = fmt.Sprintf(
+					"Array received by Append() can not be matched.  Shape: %v  Val shape: %v",
+					a.shape, val.shape)
 				a.stack = string(stackBuf[:runtime.Stack(stackBuf, false)])
 			}
 			return a
@@ -333,7 +289,6 @@ func (a *Array64) Append(val *Array64, axis int) *Array64 {
 
 	a.data = dat
 	a.shape[axis] += val.shape[axis]
-
 	for i := axis; i >= 0; i-- {
 		a.strides[i] = a.strides[i+1] * a.shape[i]
 	}
