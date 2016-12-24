@@ -9,7 +9,10 @@ func init() {
 func TestDebug(t *testing.T) {
 	Debug(true)
 	var nilp *Array64
-	nilp.Set(12, 1, 4, 0).AddC(2).DivC(6).At(1, 4, 0)
+	nilp.Set(12, 1, 4, 0)
+	nilp.AddC(2)
+	nilp.DivC(6)
+	nilp.At(1, 4, 0)
 	if !nilp.HasErr() {
 		t.FailNow()
 		err, debug, stack := nilp.GetDebug()
@@ -18,7 +21,7 @@ func TestDebug(t *testing.T) {
 		t.Log(stack)
 		t.Fail()
 	}
-	nilp = MinSet(Arange(10).Reshape(2, 5), Arange(10))
+	nilp = MinSet(Arange(10).Reshape(2, 5).(*Array64), Arange(10))
 	if err, debug, stack := nilp.GetDebug(); err != ShapeError {
 		t.Log(err)
 		t.Log(debug)

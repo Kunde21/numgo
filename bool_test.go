@@ -12,8 +12,8 @@ func init() {
 	debug = true
 }
 
-func rndBool() (sz []bool) {
-	sz = make([]bool, rand.Intn(100)+10)
+func rndBool() (sz []nDimElement) {
+	sz = make([]nDimElement, rand.Intn(100)+10)
 	for i := range sz {
 		sz[i] = rand.Intn(1) == 1
 	}
@@ -30,7 +30,7 @@ func TestCreateb(t *testing.T) {
 	}
 
 	for _, v := range a.data {
-		if v {
+		if v.(bool) {
 			t.Logf("Value %v, expected %v", v, false)
 			t.Fail()
 		}
@@ -41,26 +41,26 @@ func TestCreateb(t *testing.T) {
 		t.Fail()
 	}
 
-	a = NewArrayB([]bool{false, false, true, false, false})
-	if e := a.Equals(NewArrayB(nil, 5).Set(true, 2)); !e.All().At(0) {
+	a = NewArrayB([]nDimElement{false, false, true, false, false})
+	if e := a.Equals(NewArrayB(nil, 5).Set(true, 2)); !e.All().At(0).(bool) {
 		t.Log("Slice Assignment Failed", a.GetErr(), e)
 		t.Fail()
 	}
 
-	a = NewArrayB([]bool{false, false, false, false, true}, 3)
-	if e := a.Equals(NewArrayB(nil, 3)); !e.All().At(0) {
+	a = NewArrayB([]nDimElement{false, false, false, false, true}, 3)
+	if e := a.Equals(NewArrayB(nil, 3)); !e.All().At(0).(bool) {
 		t.Log("Slice Assignment Failed", a.GetErr(), e)
 		t.Fail()
 	}
 
-	a = NewArrayB([]bool{false, false, false, false, true}, 2, -1, 3)
+	a = NewArrayB([]nDimElement{false, false, false, false, true}, 2, -1, 3)
 	if e := a.GetErr(); e != NegativeAxis {
 		t.Log("Expected NegativeAxis, got:", e)
 		t.Fail()
 	}
 
 	a = NewArrayB(nil, 1, 2, 5, 9)
-	if e := a.Equals(newArrayB(1, 2, 5, 9)); !e.All().At(0) {
+	if e := a.Equals(newArrayB(1, 2, 5, 9)); !e.All().At(0).(bool) {
 		t.Log("Creation has different results:", e)
 		t.Fail()
 	}
@@ -76,18 +76,18 @@ func TestFullb(t *testing.T) {
 	}
 
 	for _, v := range a.data {
-		if !v {
+		if !v.(bool) {
 			t.Logf("Value %v, expected %v\n", v, true)
 			t.Fail()
 			break
 		}
 	}
 
-	if e := a.Equals(fullb(true, 2, 3, 4)); !e.All().At(0) {
+	if e := a.Equals(fullb(true, 2, 3, 4)); !e.All().At(0).(bool) {
 		t.Log("Full creation has different results:", e)
 		t.Fail()
 	}
-	if e := Fullb(false, shp...).Equals(fullb(false, 2, 3, 4)); !e.All().At(0) {
+	if e := Fullb(false, shp...).Equals(fullb(false, 2, 3, 4)); !e.All().At(0).(bool) {
 		t.Log("Full creation has different results:", e)
 		t.Fail()
 	}
@@ -113,10 +113,10 @@ func TestStringB(t *testing.T) {
 	}{
 		{nil, "<nil>"},
 		{newArrayB(0), "[]"},
-		{&Arrayb{err: InvIndexError}, "Error: " + InvIndexError.s},
+		{&Arrayb{nDimFields{err: InvIndexError}}, "Error: " + InvIndexError.s},
 		{Fullb(true, 10), fmt.Sprint(Fullb(true, 10).data)},
-		{Fullb(false, 10).Reshape(2, 5), "[[false false false false false] \n [false false false false false]]"},
-		{Fullb(true, 20).Reshape(2, 2, 5), "[[[true true true true true]  \n  [true true true true true]] \n\n [[true true true true true]  \n  [true true true true true]]]"},
+		{Fullb(false, 10).Reshape(2, 5).(*Arrayb), "[[false false false false false] \n [false false false false false]]"},
+		{Fullb(true, 20).Reshape(2, 2, 5).(*Arrayb), "[[[true true true true true]  \n  [true true true true true]] \n\n [[true true true true true]  \n  [true true true true true]]]"},
 		{&Arrayb{}, "<nil>"},
 	}
 
@@ -140,7 +140,7 @@ func TestReshapeB(t *testing.T) {
 		{Fullb(false, 10), []int{2, 5}, nil},
 		{Fullb(false, 11), []int{2, 5}, ReshapeError},
 		{Fullb(false, 10), []int{2, -5}, NegativeAxis},
-		{&Arrayb{err: InvIndexError}, []int{0}, InvIndexError},
+		{&Arrayb{nDimFields{err: InvIndexError}}, []int{0}, InvIndexError},
 		{nil, []int{1}, NilError},
 	}
 
@@ -168,11 +168,11 @@ func TestCb(t *testing.T) {
 	for i := 0; i < 20; i++ {
 		a := NewArrayB(rndBool())
 		b := a.C()
-		if v := a.strides[0] - a.C().strides[0]; v != 0 {
+		if v := a.fields().strides[0] - a.C().fields().strides[0]; v != 0 {
 			t.Log("Size Changed", v)
 			t.Fail()
 		}
-		if v := a.Equals(b); !v.All().At(0) {
+		if v := a.Equals(b); !v.All().At(0).(bool) {
 			t.Log("Data Changed", v)
 			t.Fail()
 		}
@@ -190,7 +190,7 @@ func TestAtb(t *testing.T) {
 	for i := 0; i < 20; i++ {
 		x, y, z := rand.Intn(6), rand.Intn(6), rand.Intn(6)
 		v := a.At(x, y, z)
-		if !v && !a.HasErr() {
+		if !v.(bool) && !a.HasErr() {
 			t.Logf("Value %d failed.  Expected: %v Received: %v", i, true, v)
 			t.Log(x, y, z)
 			t.Fail()
@@ -216,7 +216,7 @@ func TestSliceElementb(t *testing.T) {
 		x, y := rand.Intn(6), rand.Intn(6)
 		val := a.SliceElement(x, y)
 		for i, v := range val {
-			if !v && !a.HasErr() {
+			if !v.(bool) && !a.HasErr() {
 				t.Logf("Value %d failed.  Expected: %v Received: %v", i, true, v)
 				t.Log(x, y)
 				t.Fail()
@@ -245,8 +245,8 @@ func TestSubArrb(t *testing.T) {
 
 	for i := 0; i < 20 || !g || !b; i++ {
 		x, y := rand.Intn(6), rand.Intn(6)
-		val := a.SubArr(x, y)
-		if val.Any().At(0) && !val.HasErr() {
+		val := Arrayb{*a.SubArr(x, y)}
+		if val.Any().At(0).(bool) && !val.HasErr() {
 			t.Logf("Value %d failed.  Expected: %v Received: %v", i, false, val)
 			t.Log(x, y)
 			t.Fail()
@@ -358,22 +358,22 @@ func TestSetSubArrb(t *testing.T) {
 		t.Fail()
 	}
 	for i := range a.data {
-		if i >= 15 && i < 30 && !a.data[i] {
+		if i >= 15 && i < 30 && !a.data[i].(bool) {
 			t.Log("Failed at:", i, a.data[i])
 			t.Fail()
 		}
-		if !(i >= 15 && i < 30) && a.data[i] {
+		if !(i >= 15 && i < 30) && a.data[i].(bool) {
 			t.Log("Not 0 Failed at:", i, a.data[i])
 			t.Fail()
 		}
 	}
 	a.SetSubArr(b, 0)
 	for i := range a.data {
-		if i >= 0 && i < 5*15 && !a.data[i] {
+		if i >= 0 && i < 5*15 && !a.data[i].(bool) {
 			t.Log("Failed 2 at:", i, a.data[i])
 			t.Fail()
 		}
-		if !(i >= 0 && i < 5*15) && a.data[i] {
+		if !(i >= 0 && i < 5*15) && a.data[i].(bool) {
 			t.Log("Not 0 Failed 2 at:", i, a.data[i])
 			t.Fail()
 		}
@@ -427,15 +427,15 @@ func TestResizeb(t *testing.T) {
 		t.Log("Bad Error after resize", e)
 		t.Fail()
 	}
-	if c := a.At(0, 2); !c {
+	if c := a.At(0, 2).(bool); !c {
 		t.Log("Data didn't move correctly in reduction.  Expected 1, got", c)
 		t.Fail()
 	}
-	if c := a.Resize(5, 5, 3).At(0, 0, 2); !c {
+	if c := a.Resize(5, 5, 3).At(0, 0, 2).(bool); !c {
 		t.Log("Data didn't move correctly in small expansion.  Expected 1, got", c)
 		t.Fail()
 	}
-	if c := a.Resize(5, 5, 3, 5, 10).At(0, 0, 0, 0, 2); !c {
+	if c := a.Resize(5, 5, 3, 5, 10).At(0, 0, 0, 0, 2).(bool); !c {
 		t.Log("Data didn't move correctly in large expansion.  Expected 1, got", c)
 		t.Fail()
 	}
@@ -526,7 +526,7 @@ func TestJSONb(t *testing.T) {
 	tests := []*Arrayb{
 		NewArrayB(nil, 0),
 		fullb(true, 10),
-		newArrayB(10).Reshape(2, 2),
+		newArrayB(10).Reshape(2, 2).(*Arrayb),
 		Fullb(false, 10),
 		Fullb(true, 10),
 	}
@@ -553,7 +553,7 @@ func TestJSONb(t *testing.T) {
 			t.Fail()
 		}
 
-		if e := tmp.Equals(v); e1 == nil && !e.All().At(0) {
+		if e := tmp.Equals(v); e1 == nil && !e.All().At(0).(bool) {
 			t.Log("Value changedin test", i)
 			t.Log(string(b))
 			t.Log(v)

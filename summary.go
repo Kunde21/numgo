@@ -3,8 +3,6 @@ package numgo
 import (
 	"math"
 	"sort"
-
-	"github.com/Kunde21/numgo/internal"
 )
 
 // Sum calculates the sum result array along a given axes.
@@ -16,7 +14,7 @@ func (a *Array64) Sum(axis ...int) (r *Array64) {
 	case len(axis) == 0:
 		tot := float64(0)
 		for _, v := range a.data {
-			tot += v
+			tot += v.(float64)
 		}
 		return FullArray64(tot, 1)
 	}
@@ -42,7 +40,7 @@ axisR:
 		}
 		v, wd, st := a.shape[axis[k]], a.strides[axis[k]], a.strides[axis[k]+1]
 		if st == 1 {
-			asm.Hadd(uint64(wd), a.data)
+			Hadd(uint64(wd), a.data)
 			ln /= v
 			a.data = a.data[:ln]
 			continue
@@ -52,7 +50,7 @@ axisR:
 			t := a.data[w/wd*st : (w/wd+1)*st]
 			copy(t, a.data[w:w+st])
 			for i := 1; i*st+1 < wd; i++ {
-				asm.Vadd(t, a.data[w+(i)*st:w+(i+1)*st])
+				Vadd(t, a.data[w+(i)*st:w+(i+1)*st])
 			}
 		}
 		ln /= v
@@ -81,15 +79,17 @@ func (a *Array64) NaNSum(axis ...int) *Array64 {
 		return a
 	}
 
-	ns := func(d []float64) (r float64) {
+	ns := func(d []nDimElement) (r nDimElement) {
 		flag := false
+		rtmp := 0.0
 		for _, v := range d {
-			if !math.IsNaN(v) {
+			if !math.IsNaN(v.(float64)) {
 				flag = true
-				r += v
+				rtmp += v.(float64)
 			}
 		}
 		if flag {
+			r = nDimElement(rtmp)
 			return r
 		}
 		return math.NaN()
@@ -101,10 +101,10 @@ func (a *Array64) NaNSum(axis ...int) *Array64 {
 
 // Count gives the number of elements along a set of axis.
 // Value in the element is not tested, all elements are counted.
-func (a *Array64) Count(axis ...int) *Array64 {
+func (a nDimFields) Count(axis ...int) *Array64 {
 	switch {
 	case a.valAxis(&axis, "Count"):
-		return a
+		return &Array64{a}
 	case len(axis) == 0:
 		return full(float64(a.strides[0]), 1)
 	}
@@ -127,7 +127,7 @@ cntAx:
 
 // count is an internal function for scalar count
 // TODO:  Make public?
-func (a *Array64) count(axis ...int) float64 {
+func (a nDimFields) count(axis ...int) float64 {
 	if len(axis) == 0 {
 		return float64(a.strides[0])
 	}
@@ -147,13 +147,15 @@ func (a *Array64) NaNCount(axis ...int) *Array64 {
 		return a
 	}
 
-	nc := func(d []float64) (r float64) {
+	nc := func(d []nDimElement) nDimElement {
+		rtmp := 0.0
 		for _, v := range d {
-			if !math.IsNaN(v) {
-				r++
+			if !math.IsNaN(v.(float64)) {
+				rtmp++
 			}
 		}
-		return r
+
+		return nDimElement(rtmp)
 	}
 
 	return a.Fold(nc, axis...)
@@ -166,7 +168,9 @@ func (a *Array64) Mean(axis ...int) *Array64 {
 	case a.valAxis(&axis, "Mean"):
 		return a
 	}
-	return a.C().Sum(axis...).DivC(a.count(axis...))
+	arr := a.C().(Array64)
+	arr.Sum(axis...).DivC(a.count(axis...))
+	return &arr
 }
 
 // NaNMean calculates the mean across the given axes.
@@ -185,7 +189,7 @@ func (a *Array64) Nonzero(axis ...int) *Array64 {
 		return a
 	}
 
-	return a.Map(func(d float64) float64 {
+	return a.Map(func(d nDimElement) nDimElement {
 		if d == 0 {
 			return 0
 		}

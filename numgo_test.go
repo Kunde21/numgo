@@ -33,26 +33,26 @@ func TestNewArray64(t *testing.T) {
 		t.Fail()
 	}
 
-	a = NewArray64([]float64{0, 1, 2, 3, 4})
-	if e := a.Equals(Arange(5)); !e.All().At(0) {
+	a = NewArray64([]nDimElement{0, 1, 2, 3, 4})
+	if e := a.Equals(Arange(5)); !e.All().At(0).(bool) {
 		t.Log("Slice Assignment Failed", a.GetErr(), e)
 		t.Fail()
 	}
 
-	a = NewArray64([]float64{0, 1, 2, 3, 4}, 3)
-	if e := a.Equals(Arange(3)); !e.All().At(0) {
+	a = NewArray64([]nDimElement{0, 1, 2, 3, 4}, 3)
+	if e := a.Equals(Arange(3)); !e.All().At(0).(bool) {
 		t.Log("Slice Assignment Failed", a.GetErr(), e)
 		t.Fail()
 	}
 
-	a = NewArray64([]float64{0, 1, 2, 3, 4, 5}, 2, -1, 3)
+	a = NewArray64([]nDimElement{0, 1, 2, 3, 4, 5}, 2, -1, 3)
 	if e := a.GetErr(); e != NegativeAxis {
 		t.Log("Expected NegativeAxis, got:", e)
 		t.Fail()
 	}
 
 	a = NewArray64(nil, 1, 2, 5, 9)
-	if e := a.Equals(newArray64(1, 2, 5, 9)); !e.All().At(0) {
+	if e := a.Equals(newArray64(1, 2, 5, 9)); !e.All().At(0).(bool) {
 		t.Log("Creation has different results:", e)
 		t.Fail()
 	}
@@ -74,11 +74,11 @@ func TestFull(t *testing.T) {
 		}
 	}
 
-	if e := a.Equals(full(1, 2, 3, 4)); !e.All().At(0) {
+	if e := a.Equals(full(1, 2, 3, 4)); !e.All().At(0).(bool) {
 		t.Log("Full creation has different results:", e)
 		t.Fail()
 	}
-	if e := FullArray64(0, shp...).Equals(full(0, 2, 3, 4)); !e.All().At(0) {
+	if e := FullArray64(0, shp...).Equals(full(0, 2, 3, 4)); !e.All().At(0).(bool) {
 		t.Log("Full creation has different results:", e)
 		t.Fail()
 	}
@@ -119,20 +119,20 @@ func TestArange(t *testing.T) {
 		}
 	}
 
-	if e := a.Equals(Arange(1, 25).SubtrC(1)); e.All().At(0) {
+	if e := a.Equals(Arange(1, 25).SubtrC(1)); e.All().At(0).(bool) {
 		t.Log("Arange generating incorrect ranges", e)
 		t.Fail()
 	}
 
 	a = Arange(24, 0)
 	for i := 1; i < len(a.data); i++ {
-		if a.data[i]-a.data[i-1] != -1 {
+		if a.data[i].(float64)-a.data[i-1].(float64) != -1 {
 			t.Log("Stepping incorrect for negative range.", a)
 			t.Fail()
 		}
 	}
 
-	if e := a.Equals(Arange(-24).MultC(-1)); !e.All().At(0) {
+	if e := a.Equals(Arange(-24).MultC(-1)); !e.All().At(0).(bool) {
 		t.Log("Negative Arange failed", e)
 		t.Fail()
 	}
@@ -199,14 +199,14 @@ func TestSubArray(t *testing.T) {
 	a := Arange(100).Reshape(2, 5, 10)
 	b := Arange(50).Reshape(5, 10)
 	c := a.SubArr(0)
-	if !c.Equals(b).All().At(0) {
+	if !c.Equals(b).All().At(0).(bool) {
 		t.Log("Subarray incorrect. Expected\n", b, "\nReceived\n", c)
 		t.Fail()
 	}
 
 	b = Arange(50).AddC(50).Reshape(5, 10)
 	c = a.SubArr(1)
-	if !c.Equals(b).All().At(0) {
+	if !c.Equals(b).All().At(0).(bool) {
 		t.Log("Subarray incorrect. Expected\n", b, "\nReceived\n", c)
 		t.Fail()
 	}
@@ -220,10 +220,10 @@ func TestString(t *testing.T) {
 	}{
 		{nil, "<nil>"},
 		{newArray64(0), "[]"},
-		{&Array64{err: InvIndexError}, "Error: " + InvIndexError.s},
+		{&Array64{nDimFields{err: InvIndexError}}, "Error: " + InvIndexError.s},
 		{Arange(10), fmt.Sprint(Arange(10).data)},
-		{Arange(10).Reshape(2, 5), "[[0 1 2 3 4] \n [5 6 7 8 9]]"},
-		{Arange(20).Reshape(2, 2, 5), "[[[0 1 2 3 4]  \n  [5 6 7 8 9]] \n\n [[10 11 12 13 14]  \n  [15 16 17 18 19]]]"},
+		{Arange(10).Reshape(2, 5).(*Array64), "[[0 1 2 3 4] \n [5 6 7 8 9]]"},
+		{Arange(20).Reshape(2, 2, 5).(*Array64), "[[[0 1 2 3 4]  \n  [5 6 7 8 9]] \n\n [[10 11 12 13 14]  \n  [15 16 17 18 19]]]"},
 		{&Array64{}, "<nil>"},
 	}
 
@@ -247,7 +247,7 @@ func TestReshape(t *testing.T) {
 		{Arange(10), []int{2, 5}, nil},
 		{Arange(11), []int{2, 5}, ReshapeError},
 		{Arange(10), []int{2, -5}, NegativeAxis},
-		{&Array64{err: InvIndexError}, []int{0}, InvIndexError},
+		{&Array64{nDimFields{err: InvIndexError}}, []int{0}, InvIndexError},
 		{nil, []int{1}, NilError},
 	}
 
@@ -277,7 +277,7 @@ func TestJSON(t *testing.T) {
 		NewArray64(nil, 0),
 		Arange(10),
 		RandArray64(0, 2, ([]int{10, 10})...).Div(Arange(10)),
-		Arange(10).Reshape(2, 2),
+		Arange(10).Reshape(2, 2).(*Array64),
 		FullArray64(math.NaN(), 10),
 		FullArray64(math.Inf(1), 10),
 		FullArray64(math.Inf(-1), 10),
@@ -305,7 +305,7 @@ func TestJSON(t *testing.T) {
 			t.Fail()
 		}
 
-		if e := tmp.Equals(v); !e.All().At(0) {
+		if e := tmp.Equals(v); !e.All().At(0).(bool) {
 			t.Log("Value changedin test", i)
 			t.Log(string(b))
 			t.Log(v)

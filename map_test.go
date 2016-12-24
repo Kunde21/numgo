@@ -37,9 +37,9 @@ tests:
 		{new(Array64), []int{0}, []int{0}, NilError},
 		{Arange(10), []int{0}, []int{}, nil},
 		{Arange(10), []int{1}, []int{1}, IndexError},
-		{Arange(10).Reshape(2, 5), []int{1, -1}, []int{1, -1}, IndexError},
-		{Arange(10).Reshape(2, 5), []int{1, 0}, []int{}, nil},
-		{&Array64{err: InvIndexError}, []int{}, []int{}, InvIndexError},
+		{Arange(10).Reshape(2, 5).(*Array64), []int{1, -1}, []int{1, -1}, IndexError},
+		{Arange(10).Reshape(2, 5).(*Array64), []int{1, 0}, []int{}, nil},
+		{&Array64{nDimFields{err: InvIndexError}}, []int{}, []int{}, InvIndexError},
 	} {
 		if v.a.valAxis(&v.ax, "Test"); v.a.getErr() != v.err {
 			t.Log("Error mismatch.", i, "Expected", v.err, "Got", v.a.getErr())
@@ -62,22 +62,25 @@ tests:
 
 func TestFoldCC(t *testing.T) {
 
-	num := func(i float64) FoldFunc {
-		return func(d []float64) float64 {
+	num := func(i nDimElement) FoldFunc {
+		return func(d []nDimElement) nDimElement {
 			return i
 		}
 	}
 
-	sum := func(d []float64) (r float64) {
+	sum := func(d []nDimElement) nDimElement {
+		r := 0.0
 		for i := range d {
-			r += d[i]
+			r += d[i].(float64)
 		}
-		return r
+		return nDimElement(r)
 	}
 
-	pan := func(d []float64) (r float64) {
+	pan := func(d []nDimElement) nDimElement {
+		r := 0.0
+		//TODO check this loop, isn't it useless to assign to r?
 		for i := range d {
-			r += d[i]
+			r += d[i].(float64)
 		}
 		return d[len(d)+1]
 	}
@@ -90,17 +93,17 @@ func TestFoldCC(t *testing.T) {
 		f    FoldFunc
 		err  error
 	}{
-		{a.C(), a.C().Reshape(2, 5, 2, 5), []int{1}, sum, nil},
-		{a.C(), full(2, 2, 2, 5), []int{1, 2}, num(2), nil},
-		{a.C(), a, []int{1}, pan, FoldMapError},
-		{a.C(), a.C().Sum(0, 1, 2), []int{0, 1, 2}, sum, nil},
-		{a.C().Flatten(), a, []int{1}, sum, IndexError},
-		{a.C().Flatten(), a, []int{0, 1, 2}, sum, ShapeError},
+		{a.C().(*Array64), a.C().Reshape(2, 5, 2, 5).(*Array64), []int{1}, sum, nil},
+		{a.C().(*Array64), full(2, 2, 2, 5), []int{1, 2}, num(2), nil},
+		{a.C().(*Array64), a.(*Array64), []int{1}, pan, FoldMapError},
+		{a.C().(*Array64), a.C().(*Array64).Sum(0, 1, 2), []int{0, 1, 2}, sum, nil},
+		{a.C().(*Array64).Flatten().(*Array64), a.(*Array64), []int{1}, sum, IndexError},
+		{a.C().(*Array64).Flatten().(*Array64), a.(*Array64), []int{0, 1, 2}, sum, ShapeError},
 	}
 
 	for i, v := range tests {
 		r := v.a.FoldCC(v.f, v.ax...)
-		if !r.Equals(v.b).All().At(0) && !r.HasErr() {
+		if !r.Equals(v.b).All().At(0).(bool) && !r.HasErr() {
 			t.Logf("Test %d failed.  \nExpected:\n %v \nReceived:\n %v\n", i, v.b, r)
 			t.Fail()
 		}
@@ -115,22 +118,24 @@ func TestFoldCC(t *testing.T) {
 
 func TestFold(t *testing.T) {
 
-	num := func(i float64) FoldFunc {
-		return func(d []float64) float64 {
+	num := func(i nDimElement) FoldFunc {
+		return func(d []nDimElement) nDimElement {
 			return i
 		}
 	}
 
-	sum := func(d []float64) (r float64) {
+	sum := func(d []nDimElement) nDimElement {
+		r := 0.0
 		for i := range d {
-			r += d[i]
+			r += d[i].(float64)
 		}
 		return r
 	}
 
-	pan := func(d []float64) (r float64) {
+	pan := func(d []nDimElement) nDimElement {
+		r := 0.0
 		for i := range d {
-			r += d[i]
+			r += d[i].(float64)
 		}
 		return d[len(d)+1]
 	}
@@ -143,18 +148,18 @@ func TestFold(t *testing.T) {
 		f    FoldFunc
 		err  error
 	}{
-		{a.C(), a.C().Reshape(2, 5, 2, 5), []int{1}, sum, nil},
-		{a.C(), full(2, 2, 2, 5), []int{1, 2}, num(2), nil},
-		{a.C(), a, []int{1}, pan, FoldMapError},
-		{a.C(), a.C().Sum(0, 1, 2), []int{0, 1, 2}, sum, nil},
-		{a.C().Flatten(), a, []int{1}, sum, IndexError},
-		{a.C().Flatten(), a, []int{0, 1, 2}, sum, ShapeError},
-		{a.C(), a.C().Sum(), []int{}, sum, nil},
+		{a.C().(*Array64), a.C().Reshape(2, 5, 2, 5).(*Array64), []int{1}, sum, nil},
+		{a.C().(*Array64), full(2, 2, 2, 5), []int{1, 2}, num(2), nil},
+		{a.C().(*Array64), a.(*Array64), []int{1}, pan, FoldMapError},
+		{a.C().(*Array64), a.C().(*Array64).Sum(0, 1, 2), []int{0, 1, 2}, sum, nil},
+		{a.C().Flatten().(*Array64), a.(*Array64), []int{1}, sum, IndexError},
+		{a.C().Flatten().(*Array64), a.(*Array64), []int{0, 1, 2}, sum, ShapeError},
+		{a.C().(*Array64), a.C().(*Array64).Sum(), []int{}, sum, nil},
 	}
 
 	for i, v := range tests {
 		r := v.a.Fold(v.f, v.ax...)
-		if !r.Equals(v.b).All().At(0) && !r.HasErr() {
+		if !r.Equals(v.b).All().At(0).(bool) && !r.HasErr() {
 			t.Logf("Test %d failed.  \nExpected:\n %v \nReceived:\n %v\n", i, v.b, r)
 			t.Fail()
 		}
@@ -167,19 +172,19 @@ func TestFold(t *testing.T) {
 }
 
 func TestMap(t *testing.T) {
-	num := func(i float64) MapFunc {
-		return func(d float64) float64 {
+	num := func(i nDimElement) MapFunc {
+		return func(d nDimElement) nDimElement {
 			return i
 		}
 	}
 
-	inc := func(i float64) MapFunc {
-		return func(d float64) float64 {
-			return d + i
+	inc := func(i nDimElement) MapFunc {
+		return func(d nDimElement) nDimElement {
+			return d.(float64) + i.(float64)
 		}
 	}
 
-	pan := func(d float64) float64 {
+	pan := func(d nDimElement) nDimElement {
 		var f *float64
 		return *f
 	}
@@ -191,16 +196,16 @@ func TestMap(t *testing.T) {
 		f    MapFunc
 		err  error
 	}{
-		{a.C(), a.C(), inc(0), nil},
-		{a.C(), full(2, a.shape...), num(2), nil},
-		{a.C(), a, pan, FoldMapError},
-		{a.C(), a.C().AddC(5), inc(5), nil},
-		{a.C().Reshape(100, 100), a, num(1), ReshapeError},
+		{a.C().(*Array64), a.C().(*Array64), inc(0), nil},
+		{a.C().(*Array64), full(2, a.fields().shape...), num(2), nil},
+		{a.C().(*Array64), a.(*Array64), pan, FoldMapError},
+		{a.C().(*Array64), a.C().(*Array64).AddC(5), inc(5), nil},
+		{a.C().Reshape(100, 100).(*Array64), a.(*Array64), num(1), ReshapeError},
 	}
 
 	for i, v := range tests {
 		r := v.a.Map(v.f)
-		if !r.Equals(v.b).All().At(0) && !r.HasErr() {
+		if !r.Equals(v.b).All().At(0).(bool) && !r.HasErr() {
 			t.Logf("Test %d failed.  \nExpected:\n %v \nReceived:\n %v\n", i, v.b, r)
 			t.Fail()
 		}

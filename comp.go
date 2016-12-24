@@ -11,10 +11,10 @@ func (a *Array64) Max(axis ...int) (r *Array64) {
 		return a
 	}
 
-	max := func(d []float64) (r float64) {
+	max := func(d []nDimElement) (r nDimElement) {
 		r = d[0]
 		for _, v := range d {
-			if v > r {
+			if v.(float64) > r.(float64) {
 				r = v
 			}
 		}
@@ -32,10 +32,10 @@ func (a *Array64) Min(axis ...int) (r *Array64) {
 		return a
 	}
 
-	min := func(d []float64) (r float64) {
+	min := func(d []nDimElement) (r nDimElement) {
 		r = d[0]
 		for _, v := range d {
-			if v < r {
+			if v.(float64) < r.(float64) {
 				r = v
 			}
 		}
@@ -55,11 +55,11 @@ func MaxSet(arrSet ...*Array64) (b *Array64) {
 		return b
 	}
 
-	b = arrSet[0].C()
+	b = &Array64{arrSet[0].C().fields()}
 
 	for j := 1; j < len(arrSet); j++ {
 		for i := range b.data {
-			if arrSet[j].data[i] > b.data[i] {
+			if arrSet[j].data[i].(float64) > b.data[i].(float64) {
 				b.data[i] = arrSet[j].data[i]
 			}
 		}
@@ -75,11 +75,11 @@ func MinSet(arrSet ...*Array64) (b *Array64) {
 		return b
 	}
 
-	b = arrSet[0].C()
+	b = &Array64{arrSet[0].C().fields()}
 
 	for j := 1; j < len(arrSet); j++ {
 		for i := range b.data {
-			if arrSet[j].data[i] < b.data[i] {
+			if arrSet[j].data[i].(float64) < b.data[i].(float64) {
 				b.data[i] = arrSet[j].data[i]
 			}
 		}
@@ -90,7 +90,7 @@ func MinSet(arrSet ...*Array64) (b *Array64) {
 func (a *Array64) valSet(arrSet []*Array64, mthd string) (b *Array64) {
 
 	if len(arrSet) == 0 {
-		b = &Array64{err: NilError}
+		b = &Array64{nDimFields{err: NilError}}
 		if debug {
 			b.debug = mthd + "() called with no arrays"
 			b.stack = string(stackBuf[:runtime.Stack(stackBuf, false)])
@@ -101,7 +101,7 @@ func (a *Array64) valSet(arrSet []*Array64, mthd string) (b *Array64) {
 	a = arrSet[0]
 	for _, v := range arrSet {
 		if v == nil {
-			b = &Array64{err: NilError}
+			b = &Array64{nDimFields{err: NilError}}
 			if debug {
 				b.debug = mthd + "() received a Nil pointer array as an argument."
 				b.stack = string(stackBuf[:runtime.Stack(stackBuf, false)])
@@ -109,7 +109,7 @@ func (a *Array64) valSet(arrSet []*Array64, mthd string) (b *Array64) {
 			return b
 		}
 		if v.err != nil {
-			b = &Array64{err: v.err}
+			b = &Array64{nDimFields{err: v.err}}
 			if debug {
 				b.debug = "Error in data passed to " + mthd + "()."
 				b.stack = string(stackBuf[:runtime.Stack(stackBuf, false)])
@@ -119,7 +119,7 @@ func (a *Array64) valSet(arrSet []*Array64, mthd string) (b *Array64) {
 
 		for k, s := range v.shape {
 			if s != a.shape[k] {
-				b = &Array64{err: ShapeError}
+				b = &Array64{nDimFields{err: ShapeError}}
 				if debug {
 					b.debug = fmt.Sprintf("Array received by %s() does not match shape.  Shape: %v  Val shape: %v", mthd, a.shape, v.shape)
 					b.stack = string(stackBuf[:runtime.Stack(stackBuf, false)])
