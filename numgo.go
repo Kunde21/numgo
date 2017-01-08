@@ -151,10 +151,12 @@ func Arange(vals ...float64) (a *Array64) {
 	case 0:
 		return newArray64(0)
 	case 1:
-		if vals[0] <= 0 {
-			start = vals[0]
-		} else {
+		if vals[0] == 0 {
+			stop = 0
+		} else if vals[0] > 0 {
 			stop = vals[0] - 1
+		} else {
+			start = vals[0] + 1
 		}
 	case 2:
 		if vals[1] < vals[0] {
